@@ -139,8 +139,8 @@ function ywmp3
         return 2
     end
 
-    mkdir -p "$HOME/Music/YouTube"
-    command yt-dlp --no-playlist --extract-audio --audio-format mp3 --audio-quality 0 --embed-metadata --output "$HOME/Music/YouTube/%(title)s.%(ext)s" $argv
+    mkdir -p "$HOME/Music"
+    command yt-dlp --no-playlist --extract-audio --audio-format mp3 --audio-quality 0 --embed-metadata --output "$HOME/Music/%(title)s.%(ext)s" $argv
 end
 
 function ywmp4
@@ -149,6 +149,6 @@ function ywmp4
         return 2
     end
 
-    mkdir -p "$HOME/Music/YouTube"
-    command yt-dlp --no-playlist --format "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b" --merge-output-format mp4 --embed-metadata --output "$HOME/Music/YouTube/%(title)s.%(ext)s" $argv
+    mkdir -p "$HOME/Videos/YouTube"
+    command yt-dlp --no-playlist --format "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b" --merge-output-format mp4 --embed-metadata --output "$HOME/Videos/YouTube/%(title)s.%(ext)s" $argv
 end
