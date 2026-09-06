@@ -131,7 +131,7 @@ while :; do
     selected="$(fzf --delimiter=$'\t' --with-nth=1,2,3 \
         --prompt="Wallhaven · página $page › " \
         --header='Enter aplicar · flechas para navegar · 10 fondos locales · sin límite de resolución' \
-        --preview "kitten icat --clear --transfer-mode=memory --scale-up --align=center --place=\$FZF_PREVIEW_COLUMNSx\$FZF_PREVIEW_LINES@0x0 /home/calli/Pictures/temp/page/{1} 2>/dev/null" \
+        --preview "$HOME/.local/bin/sww-preview /home/calli/Pictures/temp/page/{1}" \
         --preview-window='right:60%' \
         --height='100%' < "$choices" || true)"
 

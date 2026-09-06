@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+image="${1:-}"
+cols="${FZF_PREVIEW_COLUMNS:-80}"
+lines="${FZF_PREVIEW_LINES:-24}"
+preview_dir="$HOME/Pictures/temp/page"
+preview="$preview_dir/.kitty-preview.png"
+
+mkdir -p "$preview_dir"
+
+if [[ ! -s "$image" ]]; then
+    kitten icat --clear >/dev/null 2>&1 || true
+    exit 0
+fi
+
+width=$((cols * 20))
+height=$((lines * 40))
+magick "${image}[0]" -auto-orient -thumbnail "${width}x${height}>" -strip "$preview"
+kitten icat --clear --transfer-mode=memory --align=center \
+    --place="${cols}x${lines}@0x0" "$preview"
