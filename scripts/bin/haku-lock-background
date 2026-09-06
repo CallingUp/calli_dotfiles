@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+wallpaper="${1:?Uso: haku-lock-background /ruta/al/wallpaper}"
+state="$HOME/.local/state/haku_theme"
+output="$state/lockscreen-background.png"
+tmp_dir="$(mktemp -d "$state/.lock-background.XXXXXX")"
+trap 'rm -rf "$tmp_dir"' EXIT
+
+sharp="$tmp_dir/sharp.png"
+blur="$tmp_dir/blur.png"
+card="$tmp_dir/card.png"
+
+magick "${wallpaper}[0]" -auto-orient -resize '1920x1080^' -gravity center -extent 1920x1080 "$sharp"
+magick "$sharp" -blur 0x16 "$blur"
+magick "$blur" -crop 440x440+740+320 +repage \
+    \( -size 440x440 xc:none -fill white -draw 'roundrectangle 0,0 439,439 24,24' \) \
+    -alpha off -compose CopyOpacity -composite "$card"
+magick "$sharp" "$card" -geometry +740+320 -compose over -composite "$output.tmp.png"
+mv -f "$output.tmp.png" "$output"

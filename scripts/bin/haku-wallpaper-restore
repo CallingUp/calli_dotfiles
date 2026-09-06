@@ -21,5 +21,7 @@ if [[ ! -f "$backdrop" || "$wallpaper" -nt "$backdrop" ]]; then
     magick "${wallpaper}[0]" -background black -alpha remove -blur 0x15 "$backdrop"
 fi
 
+"$HOME/.local/bin/haku-lock-background" "$wallpaper"
+
 awww img "$wallpaper" --transition-type none
 awww img -n awww-daemon-backdrop "$backdrop" --transition-type none
