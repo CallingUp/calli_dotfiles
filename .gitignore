@@ -1,0 +1,6 @@
+*.pkg.tar.zst
+*.sqlite
+*.log
+build/
+secrets/
+private/

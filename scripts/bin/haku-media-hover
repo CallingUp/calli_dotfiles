@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+dir="/tmp/haku-media-hover-$UID"
+waybar="$dir/waybar"
+panel="$dir/panel"
+opened="$dir/opened"
+generation="$dir/generation"
+
+mkdir -p "$dir"
+[ -f "$generation" ] || printf '0\n' >"$generation"
+
+bump() {
+    value="$(cat "$generation" 2>/dev/null)"
+    value="${value:-0}"
+    value=$((value + 1))
+    printf '%s\n' "$value" >"$generation"
+    printf '%s\n' "$value"
+}
+
+close_later() {
+    token="$(bump)"
+
+    (
+        sleep 0.4
+        current="$(cat "$generation" 2>/dev/null)"
+
+        [ "$current" = "$token" ] || exit 0
+        [ -e "$waybar" ] && exit 0
+        [ -e "$panel" ] && exit 0
+
+        noctalia msg panel-close calli/haku-media:player >/dev/null 2>&1
+        rm -f "$opened"
+    ) &
+}
+
+open_later() {
+    token="$(bump)"
+    anchor=""
+    if [ -n "$HAKU_HOVER_X" ] && [ -n "$HAKU_HOVER_Y" ]; then
+        anchor="@anchor=$HAKU_HOVER_X,$HAKU_HOVER_Y"
+    fi
+    signature="calli/haku-media:player|$anchor"
+
+    (
+        sleep 0.12
+        current="$(cat "$generation" 2>/dev/null)"
+        [ "$current" = "$token" ] || exit 0
+        [ -e "$waybar" ] || exit 0
+        [ "$(cat "$opened" 2>/dev/null)" = "$signature" ] && exit 0
+        if noctalia msg panel-open calli/haku-media:player "$anchor" >/dev/null 2>&1; then
+            printf '%s\n' "$signature" >"$opened"
+        fi
+    ) &
+}
+
+case "$1" in
+    waybar-enter)
+        bump >/dev/null
+        touch "$waybar"
+        open_later
+        ;;
+    waybar-leave)
+        rm -f "$waybar"
+        close_later
+        ;;
+    waybar-toggle)
+        anchor=""
+        if [ -n "$HAKU_HOVER_X" ] && [ -n "$HAKU_HOVER_Y" ]; then
+            anchor="@anchor=$HAKU_HOVER_X,$HAKU_HOVER_Y"
+        fi
+        signature="calli/haku-media:player|$anchor"
+        if [ "$(cat "$opened" 2>/dev/null)" = "$signature" ]; then
+            noctalia msg panel-close calli/haku-media:player >/dev/null 2>&1
+            bump >/dev/null
+            rm -f "$opened" "$waybar"
+        else
+            bump >/dev/null
+            touch "$waybar"
+            if noctalia msg panel-open calli/haku-media:player "$anchor" >/dev/null 2>&1; then
+                printf '%s\n' "$signature" >"$opened"
+            fi
+        fi
+        ;;
+    panel-enter)
+        bump >/dev/null
+        touch "$panel"
+        ;;
+    panel-leave)
+        rm -f "$panel"
+        close_later
+        ;;
+    panel-close)
+        bump >/dev/null
+        rm -f "$panel" "$opened"
+        ;;
+    reset)
+        rm -rf "$dir"
+        ;;
+esac

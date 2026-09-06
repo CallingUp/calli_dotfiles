@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+for _ in {1..20}; do
+    if printf '\n' | gnome-keyring-daemon --unlock >/dev/null 2>&1; then
+        exit 0
+    fi
+    sleep 0.25
+done
+
+exit 1

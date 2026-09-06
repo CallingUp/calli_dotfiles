@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+disk=/dev/nvme1n1
+expected_bytes=500107862016
+expected_model='WD Green SN350 500GB 2G0C'
+partition=/dev/nvme1n1p1
+start_sector=2048
+leave_sectors=104857600
+
+[[ "$(id -u)" -eq 0 ]] || { printf 'Este programa requiere root.\n' >&2; exit 1; }
+[[ -b "$disk" ]] || { printf 'No existe %s\n' "$disk" >&2; exit 1; }
+[[ "$(lsblk -bdno SIZE "$disk")" == "$expected_bytes" ]] || {
+    printf 'El tamaño de %s no coincide.\n' "$disk" >&2
+    exit 1
+}
+[[ "$(lsblk -dno MODEL "$disk" | sed 's/[[:space:]]*$//')" == "$expected_model" ]] || {
+    printf 'El modelo de %s no coincide.\n' "$disk" >&2
+    exit 1
+}
+
+root_source="$(findmnt -nro SOURCE /)"
+root_parent="$(lsblk -no PKNAME "$root_source" 2>/dev/null || true)"
+[[ "$root_parent" != "nvme1n1" ]] || {
+    printf 'Seguridad: %s contiene el sistema raíz.\n' "$disk" >&2
+    exit 1
+}
+
+mapfile -t child_partitions < <(lsblk -lnpo NAME,TYPE "$disk" | awk '$2=="part" {print $1}')
+for child in "${child_partitions[@]}"; do
+    mapfile -t mounted_targets < <(findmnt -rn -S "$child" -o TARGET 2>/dev/null || true)
+    for target in "${mounted_targets[@]}"; do
+        umount "$target"
+    done
+done
+swapoff /dev/nvme1n1p2 2>/dev/null || true
+
+total_sectors="$(blockdev --getsz "$disk")"
+last_usable=$((total_sectors - 34))
+end_sector=$((last_usable - leave_sectors))
+partition_sectors=$((end_sector - start_sector + 1))
+
+printf 'label: gpt\nstart=%s, size=%s, type=linux, name="Extra-Data"\n' \
+    "$start_sector" "$partition_sectors" |
+    sfdisk --wipe always --wipe-partitions always "$disk"
+
+partprobe "$disk"
+udevadm settle
+[[ -b "$partition" ]] || { printf 'No apareció %s\n' "$partition" >&2; exit 1; }
+
+mkfs.ext4 -F -m 0 -L Extra-Data "$partition"
+printf 'UUID=%s\n' "$(blkid -s UUID -o value "$partition")"
+printf 'PARTITION_BYTES=%s\n' "$(lsblk -bdno SIZE "$partition")"
+printf 'UNALLOCATED_BYTES=%s\n' "$((leave_sectors * 512))"

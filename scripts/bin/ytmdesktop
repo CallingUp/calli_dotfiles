@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+root="/mnt/Extra-Data/YTMDesktop"
+binary="$root/app/usr/lib/youtube-music-desktop-app/youtube-music-desktop-app"
+
+if [[ ! -x "$binary" ]]; then
+    notify-send "YTMDesktop" "Extra-Data no está disponible"
+    exit 1
+fi
+
+export XDG_CONFIG_HOME="$root/config"
+exec "$binary" "$@"

@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source_codex="${1:-/run/media/calli/5f34a217-91f8-4e79-97d8-747ac047e9df/home/calli/.codex}"
+target_codex="${2:-/home/calli/.codex}"
+source_project="${3:-/mnt/linux-data/FICON/1}"
+target_project="${4:-/mnt/Linux-Data/FICON/1}"
+stamp="$(date +%Y%m%d-%H%M%S)"
+backup_dir="/home/calli/backups/codex-ficon-${stamp}"
+manifest="${backup_dir}/imported-rollouts.sha256"
+
+source_db="${source_codex}/state_5.sqlite"
+target_db="${target_codex}/state_5.sqlite"
+
+for required in sqlite3 jq sha256sum; do
+    command -v "$required" >/dev/null || {
+        printf 'Falta el comando requerido: %s\n' "$required" >&2
+        exit 1
+    }
+done
+
+[[ -r "$source_db" ]] || { printf 'No se puede leer %s\n' "$source_db" >&2; exit 1; }
+[[ -r "$target_db" ]] || { printf 'No se puede leer %s\n' "$target_db" >&2; exit 1; }
+[[ -d "$target_project" ]] || { printf 'No existe el proyecto destino: %s\n' "$target_project" >&2; exit 1; }
+
+mkdir -p "$backup_dir"
+sqlite3 "$target_db" ".backup '${backup_dir}/state_5-before.sqlite'"
+[[ ! -e "${target_codex}/session_index.jsonl" ]] ||
+    cp -a "${target_codex}/session_index.jsonl" "${backup_dir}/session_index-before.jsonl"
+sqlite3 "file:${source_db}?mode=ro" ".backup '${backup_dir}/state_5-source.sqlite'"
+
+mapfile -d '' rollout_files < <(
+    find "${source_codex}/sessions" -type f -name 'rollout-*.jsonl' -print0
+)
+
+imported=0
+: > "$manifest"
+for source_file in "${rollout_files[@]}"; do
+    cwd="$(head -n 1 "$source_file" | jq -r '.payload.cwd // empty' 2>/dev/null || true)"
+    [[ "${cwd,,}" == "${source_project,,}" ]] || continue
+
+    relative_path="${source_file#${source_codex}/}"
+    target_file="${target_codex}/${relative_path}"
+    if [[ -e "$target_file" ]]; then
+        printf 'Ya existe, se conserva: %s\n' "$target_file"
+        continue
+    fi
+
+    install -D -m 600 "$source_file" "$target_file"
+    sed -i "s#${source_project}#${target_project}#g; s#${source_project,,}#${target_project}#g" "$target_file"
+    sha256sum "$target_file" >> "$manifest"
+    ((imported += 1))
+done
+
+mkdir -p "${target_codex}/attachments"
+if [[ -d "${source_codex}/attachments" ]]; then
+    cp -an "${source_codex}/attachments/." "${target_codex}/attachments/"
+fi
+
+sqlite3 "$target_db" <<SQL
+PRAGMA foreign_keys = ON;
+ATTACH DATABASE '${backup_dir}/state_5-source.sqlite' AS source_db;
+BEGIN IMMEDIATE;
+INSERT OR IGNORE INTO threads (
+    id, rollout_path, created_at, updated_at, source, model_provider, cwd, title,
+    sandbox_policy, approval_mode, tokens_used, has_user_event, archived, archived_at,
+    git_sha, git_branch, git_origin_url, cli_version, first_user_message,
+    agent_nickname, agent_role, memory_mode, model, reasoning_effort, agent_path,
+    created_at_ms, updated_at_ms, thread_source, preview, recency_at, recency_at_ms,
+    history_mode, name, is_pinned, thread_section_id, section_position,
+    section_entered_at_ms, project_id
+)
+SELECT
+    id,
+    replace(rollout_path, '${source_codex}', '${target_codex}'),
+    created_at, updated_at, source, model_provider, '${target_project}', title,
+    sandbox_policy, approval_mode, tokens_used, has_user_event, archived, archived_at,
+    git_sha, git_branch, git_origin_url, cli_version, first_user_message,
+    agent_nickname, agent_role, memory_mode, model, reasoning_effort, agent_path,
+    created_at_ms, updated_at_ms, thread_source, preview, recency_at, recency_at_ms,
+    history_mode, name, is_pinned, NULL, NULL, NULL, NULL
+FROM source_db.threads
+WHERE lower(cwd) = lower('${source_project}');
+COMMIT;
+DETACH DATABASE source_db;
+SQL
+
+db_count="$(sqlite3 "$target_db" "SELECT count(*) FROM threads WHERE lower(cwd)=lower('${target_project}');")"
+integrity="$(sqlite3 "$target_db" 'PRAGMA integrity_check;')"
+
+{
+    printf 'source_codex=%s\n' "$source_codex"
+    printf 'target_codex=%s\n' "$target_codex"
+    printf 'source_project=%s\n' "$source_project"
+    printf 'target_project=%s\n' "$target_project"
+    printf 'files_copied=%s\n' "$imported"
+    printf 'threads_at_target=%s\n' "$db_count"
+    printf 'database_integrity=%s\n' "$integrity"
+} > "${backup_dir}/migration-summary.txt"
+
+[[ "$integrity" == "ok" ]] || { printf 'La comprobación SQLite falló: %s\n' "$integrity" >&2; exit 1; }
+printf 'Recuperación terminada: %s chats, %s archivos nuevos.\n' "$db_count" "$imported"
+printf 'Respaldo y manifiesto: %s\n' "$backup_dir"

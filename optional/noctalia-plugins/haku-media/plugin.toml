@@ -1,0 +1,16 @@
+id = "calli/haku-media"
+name = "Haku Media"
+version = "1.2.0"
+author = "calli"
+plugin_api = 24
+
+[[panel]]
+id = "player"
+entry = "player.luau"
+width = 500
+height = 220
+placement = "floating"
+position = "auto"
+open_near_click = true
+dismiss_on_outside_click = false
+keyboard_focus = "none"

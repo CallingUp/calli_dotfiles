@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+old_root='/run/media/calli/5f34a217-91f8-4e79-97d8-747ac047e9df/home/calli/.config/net.imput.helium'
+new_root='/home/calli/.config/net.imput.helium'
+old="${old_root}/Default"
+new="${new_root}/Default"
+stamp="$(date +%Y%m%d-%H%M%S)"
+backup="/home/calli/backups/helium-before-popos-${stamp}"
+
+if pgrep -x helium >/dev/null || pgrep -x helium-browser >/dev/null || pgrep -x chrome >/dev/null; then
+    printf 'Helium está abierto; ciérralo antes de continuar.\n' >&2
+    exit 1
+fi
+
+mkdir -p "$backup"
+for file in History Cookies Bookmarks Preferences 'Secure Preferences'; do
+    [[ ! -e "$new/$file" ]] || cp -a --reflink=auto "$new/$file" "$backup/"
+done
+cp -a --reflink=auto "$new_root/Local State" "$backup/"
+
+sqlite3 "$new/History" <<SQL
+ATTACH DATABASE '${old}/History' AS old;
+BEGIN IMMEDIATE;
+INSERT INTO main.urls (url,title,visit_count,typed_count,last_visit_time,hidden)
+SELECT o.url,o.title,o.visit_count,o.typed_count,o.last_visit_time,o.hidden
+FROM old.urls o
+WHERE NOT EXISTS (SELECT 1 FROM main.urls n WHERE n.url=o.url);
+
+CREATE TEMP TABLE url_map AS
+SELECT o.id AS old_id,n.id AS new_id
+FROM old.urls o JOIN main.urls n ON n.url=o.url;
+
+CREATE TEMP TABLE missing_visits AS
+SELECT o.id AS old_id,
+       (SELECT coalesce(max(id),0) FROM main.visits)
+       + row_number() OVER (ORDER BY o.id) AS new_id
+FROM old.visits o JOIN url_map m ON m.old_id=o.url
+WHERE NOT EXISTS (
+  SELECT 1 FROM main.visits n
+  WHERE n.url=m.new_id AND n.visit_time=o.visit_time AND n.transition=o.transition
+);
+
+INSERT INTO main.visits (
+ id,url,visit_time,from_visit,external_referrer_url,transition,segment_id,
+ visit_duration,incremented_omnibox_typed_score,opener_visit,originator_cache_guid,
+ originator_visit_id,originator_from_visit,originator_opener_visit,is_known_to_sync,
+ consider_for_ntp_most_visited,visited_link_id,app_id
+)
+SELECT mv.new_id,um.new_id,o.visit_time,coalesce(fm.new_id,0),o.external_referrer_url,
+       o.transition,NULL,o.visit_duration,o.incremented_omnibox_typed_score,
+       coalesce(om.new_id,0),o.originator_cache_guid,o.originator_visit_id,
+       o.originator_from_visit,o.originator_opener_visit,o.is_known_to_sync,
+       o.consider_for_ntp_most_visited,o.visited_link_id,o.app_id
+FROM missing_visits mv
+JOIN old.visits o ON o.id=mv.old_id
+JOIN url_map um ON um.old_id=o.url
+LEFT JOIN missing_visits fm ON fm.old_id=o.from_visit
+LEFT JOIN missing_visits om ON om.old_id=o.opener_visit;
+
+INSERT OR IGNORE INTO main.visit_source (id,source)
+SELECT mv.new_id,s.source
+FROM old.visit_source s JOIN missing_visits mv ON mv.old_id=s.id;
+
+UPDATE main.urls
+SET visit_count=(SELECT count(*) FROM main.visits v WHERE v.url=main.urls.id),
+    last_visit_time=coalesce((SELECT max(visit_time) FROM main.visits v WHERE v.url=main.urls.id),last_visit_time);
+COMMIT;
+DETACH DATABASE old;
+SQL
+
+sqlite3 "$new/Cookies" <<SQL
+ATTACH DATABASE '${old}/Cookies' AS old;
+BEGIN IMMEDIATE;
+INSERT OR IGNORE INTO main.cookies SELECT * FROM old.cookies;
+COMMIT;
+DETACH DATABASE old;
+SQL
+
+old_indexed="$old/IndexedDB"
+new_indexed="$new/IndexedDB"
+mkdir -p "$new_indexed"
+while IFS= read -r entry; do
+    cp -a --reflink=auto "$old_indexed/$entry" "$new_indexed/"
+done < <(
+    comm -23 \
+        <(find "$old_indexed" -mindepth 1 -maxdepth 1 -printf '%f\n' | sort) \
+        <(find "$new_indexed" -mindepth 1 -maxdepth 1 -printf '%f\n' | sort)
+)
+
+printf 'history=%s\n' "$(sqlite3 "$new/History" 'PRAGMA integrity_check;')" > "$backup/verification.txt"
+printf 'cookies=%s\n' "$(sqlite3 "$new/Cookies" 'PRAGMA integrity_check;')" >> "$backup/verification.txt"
+printf 'Respaldo: %s\n' "$backup"

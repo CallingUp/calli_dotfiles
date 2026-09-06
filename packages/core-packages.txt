@@ -1,0 +1,16 @@
+niri
+waybar
+noctalia
+kitty
+fish
+rofi-wayland
+fastfetch
+fzf
+jq
+curl
+awww
+playerctl
+cava
+cliphist
+wl-clipboard
+imagemagick

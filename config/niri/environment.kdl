@@ -1,0 +1,27 @@
+//         ______           _                                       __
+//        / ____/___ _   __(_)________  ____  ____ ___  ___  ____  / /_
+//       / __/ / __ \ | / / / ___/ __ \/ __ \/ __ `__ \/ _ \/ __ \/ __/
+//      / /___/ / / / |/ / / /  / /_/ / / / / / / / / /  __/ / / / /_
+//     /_____/_/ /_/|___/_/_/   \____/_/ /_/_/ /_/ /_/\___/_/ /_/\__/
+
+environment {
+    // Wayland
+    GDK_BACKEND "wayland"
+    QT_QPA_PLATFORM "wayland;xcb"
+    SDL_VIDEODRIVER "wayland"
+
+    // Desktop session
+    XDG_CURRENT_DESKTOP "niri"
+    XDG_SESSION_TYPE "wayland"
+    XDG_SESSION_DESKTOP "niri"
+
+    // Qt
+    QT_QPA_PLATFORMTHEME "qt6ct"
+    QT_WAYLAND_DISABLE_WINDOWDECORATION "1"
+
+    // Firefox / Mozilla
+    MOZ_ENABLE_WAYLAND "1"
+
+    // Electron
+    ELECTRON_OZONE_PLATFORM_HINT "auto"
+}

@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+CONFIG="$HOME/.config/font/config"
+
+if [[ ! -r "$CONFIG" ]]; then
+    echo "No existe $CONFIG" >&2
+    exit 1
+fi
+
+source "$CONFIG"
+
+show_sizes() {
+    printf 'Fuente: %s\n' "$FONT_FAMILY"
+    printf 'Escala activa: -%s\n\n' "$CURRENT"
+    printf '%-10s %-12s %-12s %-12s\n' 'Comando' 'Interfaz' 'Kitty' 'Shell'
+    printf '%-10s %-12s %-12s %-12s\n' 'font -10' '10 px' '10.0 pt' '12 px'
+    printf '%-10s %-12s %-12s %-12s\n' 'font -11' '11 px' '11.5 pt' '14 px'
+    printf '%-10s %-12s %-12s %-12s\n' 'font -12' '12 px' '13.0 pt' '16 px'
+    printf '%-10s %-12s %-12s %-12s\n' 'font -14' '14 px' '15.0 pt' '18 px'
+}
+
+if [[ $# -eq 0 || "${1:-}" == "--list" || "${1:-}" == "-l" ]]; then
+    show_sizes
+    exit 0
+fi
+
+PRESET="${1#-}"
+case "$PRESET" in
+    10|11|12|14) ;;
+    *)
+        echo "Tamaño no disponible: $1" >&2
+        echo
+        show_sizes
+        exit 2
+        ;;
+esac
+
+general_var="SIZE_${PRESET}_GENERAL"
+kitty_var="SIZE_${PRESET}_KITTY"
+shell_var="SIZE_${PRESET}_SHELL"
+GENERAL="${!general_var}"
+KITTY="${!kitty_var}"
+SHELL="${!shell_var}"
+
+sed -i -E "s/^(font_size[[:space:]]+).*/\\1$KITTY/" "$HOME/.config/kitty/kitty.conf"
+sed -i -E "s/(font-size:[[:space:]]*)[0-9]+px/\\1${SHELL}px/" "$HOME/.local/state/haku_theme/fonts.css"
+if grep -q 'font: "Iosevka Nerd Font ' "$HOME/.local/state/haku_theme/rofi-style.rasi"; then
+    sed -i -E "s/(font:[[:space:]]*\"Iosevka Nerd Font )[0-9]+/\\1$SHELL/" "$HOME/.local/state/haku_theme/rofi-style.rasi"
+else
+    sed -i "/^\* {/a\\    font: \"Iosevka Nerd Font $SHELL\";" "$HOME/.local/state/haku_theme/rofi-style.rasi"
+fi
+sed -i -E "s/(font:[[:space:]]*\"Iosevka Nerd Font )[0-9]+/\\1$SHELL/" "$HOME/.config/rofi/clipboard.rasi"
+sed -i -E "s/^(gtk-font-name=Iosevka Nerd Font )[0-9]+/\\1$GENERAL/" "$HOME/.config/gtk-3.0/settings.ini"
+sed -i -E "s/^(gtk-font-name=Iosevka Nerd Font )[0-9]+/\\1$GENERAL/" "$HOME/.config/gtk-4.0/settings.ini"
+sed -i -E "s|^fixed=.*|fixed=\"Iosevka Nerd Font Mono,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,\"|; s|^general=.*|general=\"Iosevka Nerd Font,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,\"|" "$HOME/.config/qt5ct/qt5ct.conf"
+sed -i -E "s|^fixed=.*|fixed=\"Iosevka Nerd Font Mono,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0\"|; s|^general=.*|general=\"Iosevka Nerd Font,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0\"|" "$HOME/.config/qt6ct/qt6ct.conf"
+sed -i -E "s/^CURRENT=.*/CURRENT=\"$PRESET\"/" "$CONFIG"
+
+gsettings set org.gnome.desktop.interface font-name "$FONT_FAMILY $GENERAL" 2>/dev/null || true
+gsettings set org.gnome.desktop.interface document-font-name "$FONT_FAMILY $GENERAL" 2>/dev/null || true
+gsettings set org.gnome.desktop.interface monospace-font-name "$FONT_MONO $GENERAL" 2>/dev/null || true

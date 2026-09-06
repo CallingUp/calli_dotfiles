@@ -1,0 +1,571 @@
+diff --git a/src/shell/control_center/tabs/media_tab.cpp b/src/shell/control_center/tabs/media_tab.cpp
+index 7709a78..fb6220a 100644
+--- a/src/shell/control_center/tabs/media_tab.cpp
++++ b/src/shell/control_center/tabs/media_tab.cpp
+@@ -7,7 +7,6 @@
+ #include "dbus/mpris/mpris_service.h"
+ #include "i18n/i18n.h"
+ #include "net/http_client.h"
+-#include "pipewire/pipewire_spectrum.h"
+ #include "render/core/renderer.h"
+ #include "render/scene/node.h"
+ #include "shell/control_center/tab.h"
+@@ -15,7 +14,6 @@
+ #include "ui/builders.h"
+ #include "ui/controls/context_menu.h"
+ #include "ui/controls/context_menu_popup.h"
+-#include "ui/visuals/audio_visualizer.h"
+ 
+ #include <algorithm>
+ #include <chrono>
+@@ -66,8 +64,6 @@ namespace {
+   std::string repeatGlyph(const std::string& loopStatus) { return loopStatus == "Track" ? "repeat-once" : "repeat"; }
+ 
+   ButtonVariant toggleVariant(bool active) { return active ? ButtonVariant::Primary : ButtonVariant::Ghost; }
+-  constexpr int kVisualizerBandCount = 32;
+-
+ } // namespace
+ 
+ MediaTab::MediaTab(
+@@ -232,7 +228,6 @@ std::unique_ptr<Flex> MediaTab::create() {
+       .out = &m_mediaStack,
+       .align = FlexAlign::Stretch,
+       .gap = Style::spaceMd * scale,
+-      .flexGrow = 1.0F,
+   });
+ 
+   auto artworkRow = ui::row(
+@@ -436,41 +431,13 @@ std::unique_ptr<Flex> MediaTab::create() {
+   controlsRow->addChild(std::move(controls));
+   mediaStack->addChild(std::move(controlsRow));
+ 
+-  nowCard->addChild(std::move(mediaStack));
++  nowCard->addChild(ui::row(
++      {.align = FlexAlign::Stretch, .justify = FlexJustify::Center, .gap = 0.0F, .fillWidth = true, .flexGrow = 1.0F},
++      std::move(mediaStack)
++  ));
+   mediaColumn->addChild(std::move(nowCard));
+ 
+-  auto visualizerColumn = ui::column({
+-      .out = &m_visualizerColumn,
+-      .align = FlexAlign::Stretch,
+-      .gap = Style::spaceMd * scale,
+-      .clipChildren = true,
+-      .flexGrow = 2.0F,
+-      .configure = [scale, opacity = panelCardOpacity()](Flex& column) {
+-        applySectionCardStyle(column, scale, opacity);
+-      },
+-  });
+-
+-  auto visualizerBody = ui::row({
+-      .out = &m_visualizerBody,
+-      .align = FlexAlign::Stretch,
+-      .justify = FlexJustify::Start,
+-      .fillWidth = true,
+-      .flexGrow = 1.0F,
+-  });
+-
+-  auto visualizerSpectrum = std::make_unique<AudioVisualizer>();
+-  visualizerSpectrum->setGradient(colorForRole(ColorRole::Secondary), colorForRole(ColorRole::Tertiary));
+-  visualizerSpectrum->setOrientation(AudioSpectrumOrientation::Vertical);
+-  visualizerSpectrum->setMirrored(true);
+-  visualizerSpectrum->setCentered(true);
+-  visualizerSpectrum->setValues(std::vector<float>(kVisualizerBandCount, 0.0F));
+-  visualizerSpectrum->tick(0.0F);
+-  visualizerSpectrum->setFlexGrow(1.0F);
+-  m_visualizerSpectrum = visualizerSpectrum.get();
+-  visualizerBody->addChild(std::move(visualizerSpectrum));
+-  visualizerColumn->addChild(std::move(visualizerBody));
+   tab->addChild(std::move(mediaColumn));
+-  tab->addChild(std::move(visualizerColumn));
+ 
+   if (m_wayland != nullptr && m_renderContext != nullptr) {
+     m_playerMenuPopup = std::make_unique<ContextMenuPopup>(*m_wayland, *m_renderContext);
+@@ -570,18 +537,6 @@ void MediaTab::doLayout(Renderer& renderer, float contentWidth, float bodyHeight
+     m_mediaStack->layout(renderer);
+   }
+ 
+-  if (m_visualizerBody != nullptr && m_visualizerSpectrum != nullptr) {
+-    const float bodyWidth = std::max(
+-        0.0F, m_visualizerBody->width() - (m_visualizerBody->paddingLeft() + m_visualizerBody->paddingRight())
+-    );
+-    const float bodyHeightAvail = std::max(
+-        0.0F, m_visualizerBody->height() - (m_visualizerBody->paddingTop() + m_visualizerBody->paddingBottom())
+-    );
+-    const float spectrumWidth = std::max(1.0F, bodyWidth);
+-    const float spectrumHeight = std::max(1.0F, bodyHeightAvail);
+-    m_visualizerSpectrum->setSize(spectrumWidth, spectrumHeight);
+-    m_visualizerBody->layout(renderer);
+-  }
+ }
+ 
+ void MediaTab::doUpdate(Renderer& renderer) {
+@@ -589,12 +544,6 @@ void MediaTab::doUpdate(Renderer& renderer) {
+     m_progressTimer.stop();
+     return;
+   }
+-  if (m_visualizerSpectrum != nullptr && m_spectrum != nullptr && m_spectrumListenerId != 0) {
+-    if (!m_spectrum->idle() || !m_visualizerSpectrum->converged()) {
+-      m_visualizerSpectrum->setValues(m_spectrum->values(m_spectrumListenerId));
+-    }
+-  }
+-
+   const auto active = m_mpris != nullptr ? m_mpris->activePlayer() : std::nullopt;
+   const auto now = std::chrono::steady_clock::now();
+   const bool hasPendingSeek = m_pendingSeekUs >= 0 && now < m_pendingSeekUntil;
+@@ -618,37 +567,11 @@ void MediaTab::doUpdate(Renderer& renderer) {
+   refresh(renderer);
+ }
+ 
+-void MediaTab::onFrameTick(float deltaMs) {
+-  if (!m_active) {
+-    return;
+-  }
+-
+-  if (m_visualizerSpectrum != nullptr) {
+-    if (m_spectrum != nullptr && m_spectrumListenerId != 0) {
+-      if (!m_spectrum->idle() || !m_visualizerSpectrum->converged()) {
+-        m_visualizerSpectrum->setValues(m_spectrum->values(m_spectrumListenerId));
+-      }
+-    }
+-    m_visualizerSpectrum->tick(deltaMs);
+-  }
+-}
++void MediaTab::onFrameTick(float /*deltaMs*/) {}
+ 
+ void MediaTab::setActive(bool active) {
+   const bool becameActive = active && !m_active;
+   m_active = active;
+-  if (m_spectrum != nullptr) {
+-    if (active && m_spectrumListenerId == 0) {
+-      m_spectrumListenerId = m_spectrum->addChangeListener(kVisualizerBandCount, [this]() {
+-        if (!m_active || m_spectrum->idle()) {
+-          return;
+-        }
+-        PanelManager::instance().requestFrameTick();
+-      });
+-    } else if (!active && m_spectrumListenerId != 0) {
+-      m_spectrum->removeChangeListener(m_spectrumListenerId);
+-      m_spectrumListenerId = 0;
+-    }
+-  }
+   if (!active) {
+     m_progressTimer.stop();
+     m_positionSampleAt = {};
+@@ -664,12 +587,6 @@ void MediaTab::setActive(bool active) {
+ 
+ void MediaTab::onClose() {
+   m_progressTimer.stop();
+-  if (m_spectrum != nullptr) {
+-    if (m_spectrumListenerId != 0) {
+-      m_spectrum->removeChangeListener(m_spectrumListenerId);
+-      m_spectrumListenerId = 0;
+-    }
+-  }
+   m_active = false;
+   m_rootLayout = nullptr;
+   m_mediaColumn = nullptr;
+diff --git a/src/shell/panel/panel.h b/src/shell/panel/panel.h
+index e6865fd..d34716d 100644
+--- a/src/shell/panel/panel.h
++++ b/src/shell/panel/panel.h
+@@ -31,6 +31,7 @@ public:
+   virtual void onFrameTick(float deltaMs) { (void)deltaMs; }
+   virtual void onOpen(std::string_view context) { (void)context; }
+   virtual void onClose() {}
++  virtual void onSurfaceHover(bool hovered) { (void)hovered; }
+   virtual void onIconThemeChanged() {}
+   virtual void scrollFocusedInputIntoView(InputArea* area) { (void)area; }
+   [[nodiscard]] virtual bool isContextActive(std::string_view context) const {
+diff --git a/src/shell/panel/panel_manager.cpp b/src/shell/panel/panel_manager.cpp
+index d48ddc0..654232f 100644
+--- a/src/shell/panel/panel_manager.cpp
++++ b/src/shell/panel/panel_manager.cpp
+@@ -6,6 +6,7 @@
+ #include "core/input/key_chord.h"
+ #include "core/input/keybind_matcher.h"
+ #include "core/log.h"
++#include "core/process/process.h"
+ #include "core/ui_phase.h"
+ #include "ipc/ipc_arg_parse.h"
+ #include "ipc/ipc_service.h"
+@@ -34,6 +35,8 @@
+ 
+ #include <algorithm>
+ #include <cmath>
++#include <cstdlib>
++#include <filesystem>
+ #include <format>
+ #include <optional>
+ #include <string>
+@@ -45,6 +48,23 @@ namespace {
+   constexpr Logger kLog("panel");
+   constexpr auto kKeyboardRelaxDelay = std::chrono::milliseconds(100);
+ 
++  void notifyNativePanelHover(std::string_view panelId, bool hovered) {
++    if (panelId.contains(':')) {
++      return;
++    }
++    const char* home = std::getenv("HOME");
++    if (home == nullptr || home[0] == '\0') {
++      return;
++    }
++    const auto helper = std::filesystem::path(home) / ".local/bin/haku-panel-hover";
++    if (!std::filesystem::exists(helper)) {
++      return;
++    }
++    (void)process::runAsync(
++        std::vector<std::string>{helper.string(), hovered ? "panel-enter" : "panel-leave", std::string(panelId)}
++    );
++  }
++
+   // Layer-shell keyboard interactivity for a panel surface: `initial` is applied at
+   // map time, `relaxed` (when set) shortly after by m_keyboardRelaxTimer.
+   struct PanelKeyboardPlan {
+@@ -704,6 +724,9 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
+       standaloneMarginRight = sp.marginRight;
+       standaloneMarginBottom = sp.marginBottom;
+       standaloneMarginLeft = sp.marginLeft;
++      if (m_activePanelId == "session" && panelPosition == "top_right") {
++        standaloneMarginRight += 10;
++      }
+     } else if (useReservedEdgePlacement) {
+       if (isLeft) {
+         standaloneAnchor = LayerShellAnchor::Left | LayerShellAnchor::Top;
+@@ -850,7 +873,8 @@ void PanelManager::openPanel(const std::string& panelId, PanelOpenRequest reques
+   // focus: the click shield swallows the click meant for the app below, and the
+   // compositor focus grab takes the keyboard.
+   const bool wantsOutsideDismiss =
+-      m_activePanel->dismissOnOutsideClick() && m_activePanel->keyboardMode() != LayerShellKeyboard::None;
++      m_activePanel->dismissOnOutsideClick() && m_activePanel->keyboardMode() != LayerShellKeyboard::None
++      && !request.hasExplicitAnchor;
+   // Two plans: the attached branch falls back to the standalone surface when its
+   // layer-shell init fails, and that surface is placed detached.
+   const PanelKeyboardPlan keyboardPlan =
+@@ -1531,6 +1555,8 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
+   case PointerEvent::Type::Enter: {
+     if (event.surface == m_wlSurface) {
+       m_pointerInside = true;
++      m_activePanel->onSurfaceHover(true);
++      notifyNativePanelHover(m_activePanelId, true);
+       m_inputDispatcher.pointerEnter(static_cast<float>(event.sx), static_cast<float>(event.sy), event.serial);
+     }
+     break;
+@@ -1538,6 +1564,8 @@ bool PanelManager::onPointerEvent(const PointerEvent& event) {
+   case PointerEvent::Type::Leave: {
+     if (event.surface == m_wlSurface) {
+       m_pointerInside = false;
++      m_activePanel->onSurfaceHover(false);
++      notifyNativePanelHover(m_activePanelId, false);
+       m_inputDispatcher.pointerLeave();
+     }
+     break;
+@@ -2732,6 +2760,42 @@ void PanelManager::registerIpc(IpcService& ipc) {
+     return std::nullopt;
+   };
+ 
++  auto anchoredRequest = [](std::string& context) {
++    PanelOpenRequest request{};
++    constexpr std::string_view prefix = "@anchor=";
++    if (!context.starts_with(prefix)) {
++      request.context = context;
++      return request;
++    }
++
++    const auto end = context.find_first_of(" \t\n\r\f\v");
++    const std::string_view anchor = std::string_view(context).substr(prefix.size(), end - prefix.size());
++    const auto comma = anchor.find(',');
++    if (comma == std::string_view::npos) {
++      request.context = context;
++      return request;
++    }
++
++    const std::string x(anchor.substr(0, comma));
++    const std::string y(anchor.substr(comma + 1));
++    char* xEnd = nullptr;
++    char* yEnd = nullptr;
++    const float anchorX = std::strtof(x.c_str(), &xEnd);
++    const float anchorY = std::strtof(y.c_str(), &yEnd);
++    if (xEnd == x.c_str() || *xEnd != '\0' || yEnd == y.c_str() || *yEnd != '\0') {
++      request.context = context;
++      return request;
++    }
++
++    context = end == std::string_view::npos ? std::string{} : std::string(StringUtils::trimLeftView(context.substr(end)));
++    request.anchorX = anchorX;
++    request.anchorY = anchorY;
++    request.hasExplicitAnchor = true;
++    request.hasAnchorPosition = true;
++    request.context = context;
++    return request;
++  };
++
+   auto unknownPanelError = [this](std::string_view panelId) -> std::string {
+     std::vector<std::string> ids;
+     ids.reserve(m_panels.size());
+@@ -2751,7 +2815,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
+ 
+   ipc.bind(
+       noctalia::cli::msg::panelToggle,
+-      [this, parseOpenArgs, unknownPanelError](const std::string& args) -> std::string {
++      [this, parseOpenArgs, anchoredRequest, unknownPanelError](const std::string& args) -> std::string {
+         std::string panelId;
+         std::string context;
+         if (auto error = parseOpenArgs(args, "panel-toggle", panelId, context)) {
+@@ -2761,17 +2825,19 @@ void PanelManager::registerIpc(IpcService& ipc) {
+           return unknownPanelError(panelId);
+         }
+         // Output left unset: openPanel resolves it (focus source, else compositor probe).
+-        if (context.empty()) {
++        auto request = anchoredRequest(context);
++        if (context.empty() && !request.hasAnchorPosition) {
+           togglePanel(panelId);
+         } else {
+-          togglePanel(panelId, PanelOpenRequest{.context = context});
++          togglePanel(panelId, request);
+         }
+         return "ok\n";
+       }
+   );
+ 
+   ipc.bind(
+-      noctalia::cli::msg::panelOpen, [this, parseOpenArgs, unknownPanelError](const std::string& args) -> std::string {
++      noctalia::cli::msg::panelOpen,
++      [this, parseOpenArgs, anchoredRequest, unknownPanelError](const std::string& args) -> std::string {
+         std::string panelId;
+         std::string context;
+         if (auto error = parseOpenArgs(args, "panel-open", panelId, context)) {
+@@ -2781,7 +2847,8 @@ void PanelManager::registerIpc(IpcService& ipc) {
+           return unknownPanelError(panelId);
+         }
+ 
+-        if (isOpen() && !m_closing && m_activePanelId == panelId) {
++        auto request = anchoredRequest(context);
++        if (isOpen() && !m_closing && m_activePanelId == panelId && !request.hasAnchorPosition) {
+           if (!context.empty() && m_activePanel != nullptr) {
+             m_activePanel->onOpen(context);
+             refresh();
+@@ -2790,7 +2857,7 @@ void PanelManager::registerIpc(IpcService& ipc) {
+         }
+ 
+         // Output left unset: openPanel resolves it (focus source, else compositor probe).
+-        openPanel(panelId, PanelOpenRequest{.context = context});
++        openPanel(panelId, request);
+         return "ok\n";
+       }
+   );
+diff --git a/src/shell/panel/plugin_panel.cpp b/src/shell/panel/plugin_panel.cpp
+index 7cc35a8..4a47bf6 100644
+--- a/src/shell/panel/plugin_panel.cpp
++++ b/src/shell/panel/plugin_panel.cpp
+@@ -257,6 +257,12 @@ void PluginPanel::onClose() {
+   }
+ }
+ 
++void PluginPanel::onSurfaceHover(bool hovered) {
++  if (m_runtime != nullptr) {
++    (void)m_runtime->enqueueCallBool("onSurfaceHover", hovered, makeScriptSnapshot());
++  }
++}
++
+ bool PluginPanel::dismissTransientUi() {
+   if (m_contextMenuPopup == nullptr || !m_contextMenuPopup->isOpen()) {
+     return false;
+diff --git a/src/shell/panel/plugin_panel.h b/src/shell/panel/plugin_panel.h
+index 911125f..4dbc9e0 100644
+--- a/src/shell/panel/plugin_panel.h
++++ b/src/shell/panel/plugin_panel.h
+@@ -59,6 +59,7 @@ public:
+   void create() override;
+   void onOpen(std::string_view context) override;
+   void onClose() override;
++  void onSurfaceHover(bool hovered) override;
+   void onFrameTick(float deltaMs) override;
+ 
+   [[nodiscard]] float preferredWidth() const override { return scaled(m_preferredWidth); }
+diff --git a/src/shell/session/session_panel.cpp b/src/shell/session/session_panel.cpp
+index 448e0a9..2f13317 100644
+--- a/src/shell/session/session_panel.cpp
++++ b/src/shell/session/session_panel.cpp
+@@ -83,7 +83,7 @@ PanelPlacement SessionPanel::panelPlacement() const noexcept {
+ 
+ float SessionPanel::preferredWidth() const {
+   const std::size_t n = visibleColumnCount();
+-  const float gap = Style::spaceMd;
++  const float gap = Style::spaceSm;
+   const float w = kButtonMinWidth * static_cast<float>(n)
+       + gap * static_cast<float>(n > 1 ? n - 1 : 0)
+       + Style::panelPadding * 2.0F;
+@@ -92,7 +92,7 @@ float SessionPanel::preferredWidth() const {
+ 
+ float SessionPanel::preferredHeight() const {
+   const std::size_t rows = visibleRowCount();
+-  const float gap = Style::spaceMd;
++  const float gap = Style::spaceSm;
+   const float h = kActionButtonMinHeight * static_cast<float>(rows)
+       + gap * static_cast<float>(rows > 1 ? rows - 1 : 0)
+       + Style::panelPadding * 2.0F;
+@@ -133,8 +133,8 @@ void SessionPanel::create() {
+ 
+   auto rootLayout = std::make_unique<GridView>();
+   rootLayout->setColumns(columns);
+-  rootLayout->setColumnGap(Style::spaceMd * scale);
+-  rootLayout->setRowGap(Style::spaceMd * scale);
++  rootLayout->setColumnGap(Style::spaceSm * scale);
++  rootLayout->setRowGap(Style::spaceSm * scale);
+   rootLayout->setStretchItems(true);
+   rootLayout->setUniformCellSize(true);
+   rootLayout->setMinCellWidth(kButtonMinWidth * scale);
+@@ -173,8 +173,6 @@ void SessionPanel::create() {
+ }
+ 
+ Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, std::size_t index, float scale) {
+-  const std::string labelText =
+-      cfg.label.has_value() && !cfg.label->empty() ? *cfg.label : i18n::tr(session_action::labelKey(cfg.action));
+   const std::string glyph =
+       cfg.glyph.has_value() && !cfg.glyph->empty() ? *cfg.glyph : session_action::defaultGlyph(cfg.action);
+   const std::optional<std::string> badge = index < m_entryShortcutBadges.size()
+@@ -184,20 +182,20 @@ Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, st
+       : std::nullopt;
+ 
+   auto button = ui::button({
+-      .text = labelText,
++      .text = "",
+       .glyph = glyph,
+-      .fontSize = (Style::fontSizeBody + 1.0F) * scale,
+-      .glyphSize = 28.0F * scale,
++      .fontSize = Style::fontSizeBody * scale,
++      .glyphSize = 20.0F * scale,
+       .contentAlign = ButtonContentAlign::Center,
+       .variant = buttonVariantFor(cfg.variant),
+       .surfaceOpacity = panelCardOpacity(),
+       .badge = badge,
+       .minWidth = kButtonMinWidth * scale,
+       .minHeight = kActionButtonMinHeight * scale,
+-      .paddingV = Style::spaceMd * scale,
+-      .paddingH = Style::spaceMd * scale,
+-      .gap = Style::spaceSm * scale,
+-      .radius = Style::scaledRadiusLg(scale),
++      .paddingV = Style::spaceXs * scale,
++      .paddingH = Style::spaceXs * scale,
++      .gap = 0.0F,
++      .radius = Style::scaledRadiusMd(scale),
+       .flexGrow = 1.0F,
+       .onClick = [this, index]() { armEntry(index); },
+       .configure =
+@@ -213,7 +211,7 @@ Button* SessionPanel::createActionButton(const SessionPanelActionConfig& cfg, st
+ }
+ 
+ void SessionPanel::attachCountdownOverlay(Button& button, ActionCountdownOverlay& overlay, float scale) {
+-  const float ringSize = 64.0F * scale;
++  const float ringSize = 28.0F * scale;
+ 
+   auto overlayRoot = ui::column({
+       .out = &overlay.root,
+diff --git a/src/shell/session/session_panel.h b/src/shell/session/session_panel.h
+index 53a62da..b36d3f2 100644
+--- a/src/shell/session/session_panel.h
++++ b/src/shell/session/session_panel.h
+@@ -49,8 +49,8 @@ private:
+     double totalMs = 0.0;
+   };
+ 
+-  static constexpr float kActionButtonMinHeight = 112.0F;
+-  static constexpr float kButtonMinWidth = 152.0F;
++  static constexpr float kActionButtonMinHeight = 42.0F;
++  static constexpr float kButtonMinWidth = 32.0F;
+   static constexpr std::size_t kMaxColumns = 5;
+ 
+   void doLayout(Renderer& renderer, float width, float height) override;
+diff --git a/src/ui/controls/slider.cpp b/src/ui/controls/slider.cpp
+index 752a9d9..52b4a19 100644
+--- a/src/ui/controls/slider.cpp
++++ b/src/ui/controls/slider.cpp
+@@ -150,7 +150,7 @@ Slider::Slider() {
+   applyVisualState();
+ }
+ 
+-void Slider::setRange(double minValue, double maxValue) {
++void Slider::setRange(double minValue, double maxValue, bool notify) {
+   if (maxValue < minValue) {
+     std::swap(minValue, maxValue);
+   }
+@@ -164,24 +164,24 @@ void Slider::setRange(double minValue, double maxValue) {
+   m_value = next;
+   updateGeometry();
+   markPaintDirty();
+-  if (valueChanged && m_onValueChanged) {
++  if (notify && valueChanged && m_onValueChanged) {
+     m_onValueChanged(m_value);
+   }
+ }
+ 
+-void Slider::setStep(double step) {
++void Slider::setStep(double step, bool notify) {
+   m_step = std::max(step, 0.0);
+   const double next = snapped(m_value);
+   const bool valueChanged = std::abs(next - m_value) >= kValueEpsilon;
+   m_value = next;
+   updateGeometry();
+   markPaintDirty();
+-  if (valueChanged && m_onValueChanged) {
++  if (notify && valueChanged && m_onValueChanged) {
+     m_onValueChanged(m_value);
+   }
+ }
+ 
+-void Slider::setValue(double value) {
++void Slider::setValue(double value, bool notify) {
+   const double next = snapped(value);
+   if (std::abs(next - m_value) < kValueEpsilon) {
+     return;
+@@ -189,7 +189,7 @@ void Slider::setValue(double value) {
+   m_value = next;
+   updateGeometry();
+   markPaintDirty();
+-  if (m_onValueChanged) {
++  if (notify && m_onValueChanged) {
+     m_onValueChanged(m_value);
+   }
+ }
+diff --git a/src/ui/controls/slider.h b/src/ui/controls/slider.h
+index b8d5551..35c5828 100644
+--- a/src/ui/controls/slider.h
++++ b/src/ui/controls/slider.h
+@@ -12,9 +12,9 @@ class Slider : public Flex {
+ public:
+   Slider();
+ 
+-  void setRange(double minValue, double maxValue);
+-  void setStep(double step);
+-  void setValue(double value);
++  void setRange(double minValue, double maxValue, bool notify = true);
++  void setStep(double step, bool notify = true);
++  void setValue(double value, bool notify = true);
+   void setEnabled(bool enabled);
+   void setTrackHeight(float height);
+   void setThumbSize(float size);
+diff --git a/src/ui/ui_tree_reconciler.cpp b/src/ui/ui_tree_reconciler.cpp
+index 3b617ee..667ff65 100644
+--- a/src/ui/ui_tree_reconciler.cpp
++++ b/src/ui/ui_tree_reconciler.cpp
+@@ -1467,16 +1467,16 @@ namespace ui {
+       const double* minV = numProp(desired, "min");
+       const double* maxV = numProp(desired, "max");
+       if (minV != nullptr || maxV != nullptr) {
+-        slider->setRange(minV != nullptr ? *minV : slider->minValue(), maxV != nullptr ? *maxV : slider->maxValue());
++        slider->setRange(minV != nullptr ? *minV : slider->minValue(), maxV != nullptr ? *maxV : slider->maxValue(), false);
+       }
+       if (const double* step = numProp(desired, "step")) {
+-        slider->setStep(*step);
++        slider->setStep(*step, false);
+       }
+       if (const double* value = numProp(desired, "value")) {
+         // Don't fight an in-progress drag, and only re-apply a changed value.
+         if (!slider->dragging() && (!slot.lastScalar.has_value() || *slot.lastScalar != *value)) {
+           slot.lastScalar = *value;
+-          slider->setValue(*value);
++          slider->setValue(*value, false);
+         }
+       }
+       if (const bool* enabled = boolProp(desired, "enabled")) {

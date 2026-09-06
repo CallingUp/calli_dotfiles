@@ -1,0 +1,38 @@
+#!/bin/sh
+set -eu
+
+config_dir="$HOME/.config/niri"
+target="$config_dir/effects.kdl"
+profile_dir="$config_dir/profiles"
+main_config="$config_dir/config.kdl"
+backup_dir="$HOME/backups/compositor-lowram-20260902/switches"
+
+case "${1:-status}" in
+    normal|gaming)
+        source="$profile_dir/$1.kdl"
+        mkdir -p "$backup_dir"
+        stamp="$(date +%Y%m%d-%H%M%S)"
+        cp --preserve=mode,timestamps "$target" "$backup_dir/effects.kdl.$stamp"
+        cp --preserve=mode,timestamps "$source" "$target"
+        if niri validate --config "$main_config" >/dev/null 2>&1; then
+            printf 'Perfil aplicado: %s\n' "$1"
+        else
+            cp --preserve=mode,timestamps "$backup_dir/effects.kdl.$stamp" "$target"
+            printf 'Niri rechazó el perfil; se restauró el estado anterior.\n' >&2
+            exit 1
+        fi
+        ;;
+    status)
+        if cmp -s "$target" "$profile_dir/normal.kdl"; then
+            printf 'Perfil actual: normal\n'
+        elif cmp -s "$target" "$profile_dir/gaming.kdl"; then
+            printf 'Perfil actual: gaming\n'
+        else
+            printf 'Perfil actual: personalizado\n'
+        fi
+        ;;
+    *)
+        printf 'Uso: haku-shell-profile {normal|gaming|status}\n' >&2
+        exit 2
+        ;;
+esac
