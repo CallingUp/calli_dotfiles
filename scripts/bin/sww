@@ -8,9 +8,15 @@ temp_root="$HOME/Pictures/temp"
 page_dir="$temp_root/page"
 mkdir -p "$temp_root"
 session_dir="$(mktemp -d "$temp_root/sww.XXXXXX")"
+catalog="$session_dir/catalog.tsv"
+seen_ids="$session_dir/seen-ids"
+next_api_page=1
+last_api_page=0
 
 mkdir -p "$wall_dir"
 trap 'rm -rf "$session_dir" "$page_dir"' EXIT
+: > "$catalog"
+: > "$seen_ids"
 
 for tool in curl jq fzf kitten; do
     command -v "$tool" >/dev/null || {
@@ -28,11 +34,34 @@ fetch_api_page() {
         --data-urlencode "q=$query" \
         --data-urlencode 'categories=110' \
         --data-urlencode 'purity=100' \
-        --data-urlencode 'resolutions=1920x1080' \
-        --data-urlencode 'ratios=16x9' \
         --data-urlencode 'sorting=date_added' \
         --data-urlencode "page=$page" \
         --output "$response_file"
+}
+
+extend_catalog() {
+    local required="$1" response_file row id resolution category url
+
+    while (( $(wc -l < "$catalog") < required )); do
+        if (( last_api_page > 0 && next_api_page > last_api_page )); then
+            break
+        fi
+
+        fetch_api_page "$next_api_page"
+        response_file="$session_dir/api-$next_api_page.json"
+        last_api_page="$(jq -r '.meta.pagination.last_page // 0' "$response_file")"
+
+        while IFS=$'\t' read -r id resolution category url; do
+            [[ -n "$id" ]] || continue
+            if grep -qxF "$id" "$seen_ids"; then
+                continue
+            fi
+            printf '%s\n' "$id" >> "$seen_ids"
+            printf '%s\t%s\t%s\t%s\n' "$id" "$url" "$resolution" "$category" >> "$catalog"
+        done < <(jq -r '.data[]? | [.id, .resolution, .category, .path] | @tsv' "$response_file")
+
+        ((next_api_page += 1))
+    done
 }
 
 download_page() {
@@ -44,18 +73,16 @@ download_page() {
     : > "$index"
     : > "$queue"
 
-    for ((position = offset; position < offset + 10; position++)); do
-        local api_page=$(( position / 24 + 1 )) item=$(( position % 24 )) row id resolution category url extension file
-        fetch_api_page "$api_page"
-        row="$(jq -r --argjson item "$item" '.data[$item] // empty | [.id, .resolution, .category, .path] | @tsv' "$session_dir/api-$api_page.json")"
-        [[ -n "$row" ]] || break
-        IFS=$'\t' read -r id resolution category url <<< "$row"
+    extend_catalog $((offset + 10))
+
+    while IFS=$'\t' read -r id url resolution category; do
+        local extension file
         extension="${url##*.}"
         file="$page_dir/wallhaven-$id.$extension"
         printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$url" "$file" "$resolution" "$category" >> "$index"
         printf '%s\t%s\t%s\n' "$id" "$url" "$file" >> "$queue"
         ((count += 1))
-    done
+    done < <(sed -n "$((offset + 1)),$((offset + 10))p" "$catalog")
 
     (( count > 0 )) || return 1
     printf '\nPágina %s · descargando %s fondos con 4 conexiones…\n' "$page" "$count"
@@ -103,8 +130,8 @@ while :; do
 
     selected="$(fzf --delimiter=$'\t' --with-nth=1,2,3 \
         --prompt="Wallhaven · página $page › " \
-        --header='Enter aplicar · selecciona flechas para navegar · 10 fondos locales' \
-        --preview "kitten icat --clear --transfer-mode=memory --place=\$FZF_PREVIEW_COLUMNSx\$FZF_PREVIEW_LINES@0x0 /home/calli/Pictures/temp/page/{1} 2>/dev/null" \
+        --header='Enter aplicar · flechas para navegar · 10 fondos locales · sin límite de resolución' \
+        --preview "kitten icat --clear --transfer-mode=memory --scale-up --align=center --place=\$FZF_PREVIEW_COLUMNSx\$FZF_PREVIEW_LINES@0x0 /home/calli/Pictures/temp/page/{1} 2>/dev/null" \
         --preview-window='right:60%' \
         --height='100%' < "$choices" || true)"
 
