@@ -173,6 +173,52 @@ Partición Extra-Data: 416 GiB mostrados
 Free Space final:     50.0 GiB
 ```
 
+## Ampliación de Extra-Data con el espacio libre
+
+El 6 de septiembre de 2026 se incorporaron los 50 GiB que se habían reservado para una futura distro de pruebas. El motivo fue liberar espacio suficiente para trasladar Wuthering Waves fuera de la partición raíz.
+
+Antes de cambiar nada se comprobó que el espacio libre estaba al final del mismo disco y era contiguo a `nvme1n1p1`:
+
+```text
+Disco:              /dev/nvme1n1
+Partición ampliada: /dev/nvme1n1p1
+Etiqueta:           Extra-Data
+Sistema de archivos: ext4, montado en /mnt/Extra-Data
+Inicio:             sector 2048
+Espacio libre:      ~50 GiB al final del disco
+```
+
+El respaldo de la tabla GPT quedó en:
+
+```text
+~/backups/extra-data-expand-20260906/nvme1n1.sfdisk
+```
+
+Comandos ejecutados:
+
+```bash
+sudo sfdisk -d /dev/nvme1n1 > ~/backups/extra-data-expand-20260906/nvme1n1.sfdisk
+printf 'Yes\n' | sudo parted ---pretend-input-tty /dev/nvme1n1 resizepart 1 100%
+sudo partprobe /dev/nvme1n1
+sudo resize2fs /dev/nvme1n1p1
+df -hT /mnt/Extra-Data
+```
+
+- `sfdisk -d`: exporta la tabla de particiones en texto para poder restaurarla manualmente si fuera necesario.
+- `resizepart 1 100%`: solo extiende el final de la partición 1 hasta el final del disco; no formatea ni crea una partición nueva.
+- `partprobe`: pide al kernel releer la tabla de particiones actualizada.
+- `resize2fs`: amplía ext4 dentro de la partición ya extendida. Ext4 permite este crecimiento mientras está montado.
+- `---pretend-input-tty` hizo visible la confirmación de Parted, necesaria porque la partición estaba montada. La confirmación fue válida únicamente tras comprobar dispositivo, número de partición y espacio contiguo.
+
+Resultado comprobado:
+
+```text
+Antes: 408.2 GiB de sistema de archivos, 90.2 GiB libres
+Después: 457.4 GiB de sistema de archivos, 139.4 GiB libres
+```
+
+No fue necesario modificar `/etc/fstab`: la partición conservó su UUID `09cd7371-585f-4966-bf3b-1528197bb2c6`, que es el identificador usado por el montaje. Tras esta ampliación ya no queda el bloque de 50 GiB sin asignar en `nvme1n1`.
+
 ## Procedimiento seguro para fstab
 
 ```bash

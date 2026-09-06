@@ -50,6 +50,6 @@ Los comandos marcados como destructivos pueden borrar o sobrescribir informació
 - Sistema: CachyOS, Niri 26.04.
 - GPU: Intel UHD + NVIDIA GTX 1650 Mobile.
 - Steam está consolidado en `/mnt/Extra-Data/GAMES/SteamLibrary`.
-- `/dev/nvme1n1` aporta 415.8 GiB como `Extra-Data` y conserva 50 GiB sin asignar.
+- `/dev/nvme1n1` aporta 465.8 GiB como `Extra-Data`; los 50 GiB antes sin asignar se incorporaron el 6 de septiembre de 2026.
 - Proyecto FICON: `/mnt/Linux-Data/FICON/1`.
 - La raíz tenía poco espacio libre; consulta `df -h` antes de migraciones grandes.
