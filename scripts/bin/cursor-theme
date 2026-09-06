@@ -75,6 +75,21 @@ mkdir -p "$HOME/.config/environment.d" "$HOME/.local/state/haku_theme"
 printf 'XCURSOR_THEME=%s\nXCURSOR_SIZE=%s\n' "$theme" "$size" > "$HOME/.config/environment.d/10-haku-cursor.conf"
 printf '%s\n' "$theme" > "$HOME/.local/state/haku_theme/cursor-theme"
 
+export XCURSOR_THEME="$theme"
+export XCURSOR_SIZE="$size"
+
+if command -v gsettings >/dev/null; then
+    gsettings set org.gnome.desktop.interface cursor-theme "$theme" 2>/dev/null || true
+    gsettings set org.gnome.desktop.interface cursor-size "$size" 2>/dev/null || true
+fi
+
+if command -v xrdb >/dev/null && [[ -n "${DISPLAY:-}" ]]; then
+    printf 'Xcursor.theme: %s\nXcursor.size: %s\n' "$theme" "$size" | xrdb -merge 2>/dev/null || true
+fi
+
+dbus-update-activation-environment --systemd XCURSOR_THEME XCURSOR_SIZE 2>/dev/null || true
+systemctl --user import-environment XCURSOR_THEME XCURSOR_SIZE 2>/dev/null || true
+
 niri msg action load-config-file >/dev/null 2>&1 || true
 notify-send 'Cursor actualizado' "$theme · ${size}px" 2>/dev/null || true
 printf 'Cursor activo: %s · %spx\n' "$theme" "$size"
