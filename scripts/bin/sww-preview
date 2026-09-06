@@ -18,5 +18,6 @@ fi
 width=$((cols * 20))
 height=$((lines * 40))
 magick "${image}[0]" -auto-orient -thumbnail "${width}x${height}>" -strip "$preview"
-kitten icat --clear --transfer-mode=memory --align=center \
+kitten icat --clear >/dev/null 2>&1 || true
+kitten icat --transfer-mode=memory --align=center \
     --place="${cols}x${lines}@0x0" "$preview"
