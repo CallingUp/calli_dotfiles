@@ -17,6 +17,7 @@ alias g='cat ~/.config/fish/textoxd'
 alias ge='nano ~/.config/fish/textoxd'
 alias sc='cat ~/.config/fish/shortcuts'
 alias sce='nano ~/.config/fish/shortcuts'
+alias cursor='cursor-theme'
 
 #SSH???
 alias sshjuan='ssh admsupport@179.197.74.30'

@@ -12,7 +12,7 @@ elif [[ $# -ne 0 ]]; then
     exit 2
 fi
 
-items=(niri noctalia kitty fish rofi fastfetch font hypr)
+items=(niri noctalia kitty fish rofi fastfetch font hypr environment.d)
 
 if ! "$apply"; then
     printf 'Se restaurarán: %s y Waybar Neon.\n' "${items[*]}"

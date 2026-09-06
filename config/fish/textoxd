@@ -45,3 +45,7 @@ f             -> muestra las escalas tipográficas
 
 WALLPAPER
 sw               -> selecciona un fondo con vista previa
+
+CURSOR
+cursor           -> selector de cursores instalados
+cursor TEMA 24   -> aplica un tema y tamaño directamente
