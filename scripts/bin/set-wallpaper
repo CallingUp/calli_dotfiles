@@ -194,7 +194,9 @@ EOF
 
 "$HOME/.local/bin/haku-noctalia-theme" "$ACCENT"
 "$HOME/.local/bin/haku-greeter-sync" "$IMG" "$ACCENT" "$ACTIVE" "$INACTIVE" "$BACKDROP"
-printf '%s\n' "$(realpath "$IMG")" > "$CURRENT_WALLPAPER"
+wallpaper_path="$(realpath "$IMG")"
+printf '%s\n' "$wallpaper_path" > "$CURRENT_WALLPAPER"
+"$HOME/.local/bin/haku-lock-background" "$wallpaper_path"
 
 
 # Wallpaper
