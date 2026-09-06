@@ -41,6 +41,14 @@ ln -sfn "$waybar_target/neon/style.css" "$waybar_target/style.css"
 
 [[ -d "$HOME/.local/bin" ]] && cp -a "$HOME/.local/bin/." "$backup_dir/bin/"
 mkdir -p "$HOME/.local/bin"
-cp -a "$repo_dir/scripts/bin/." "$HOME/.local/bin/"
+for source in "$repo_dir/scripts/bin/"*; do
+    name="${source##*/}"
+    case "$name" in
+        codex|haku-ssh-unlock|import-ficon-codex-sessions|install-extra-data-mount|merge-helium-popos|repartition-pop-disk)
+            continue
+            ;;
+    esac
+    cp -a "$source" "$HOME/.local/bin/"
+done
 
 printf 'Restauración terminada. Respaldo: %s\n' "$backup_dir"
