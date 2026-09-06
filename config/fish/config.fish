@@ -120,7 +120,7 @@ function swr
         set img (begin
             find "$wallpaper_root" -type f \( -iname "*.jpg" -o -iname "*.png" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" \) -printf "%P\n"
             echo "$exit_item"
-        end | fzf --prompt="Eliminar fondo › " --header="Enter enviar a la Papelera · Esc o Salir para cerrar" --preview "kitten icat --clear --transfer-mode=memory --place=\$FZF_PREVIEW_COLUMNSx\$FZF_PREVIEW_LINES@0x0 $wallpaper_root/{} 2>/dev/null" --preview-window=right:60%)
+        end | fzf --prompt="Eliminar fondo › " --header="Enter enviar a la Papelera · Esc o Salir para cerrar" --preview "$HOME/.local/bin/sww-preview $wallpaper_root/{}" --preview-window=right:60%)
 
         if test -z "$img"; or test "$img" = "$exit_item"
             break
