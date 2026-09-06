@@ -11,13 +11,11 @@ preview="$preview_dir/.kitty-preview.png"
 mkdir -p "$preview_dir"
 
 if [[ ! -s "$image" ]]; then
-    kitten icat --clear >/dev/null 2>&1 || true
     exit 0
 fi
 
-width=$((cols * 20))
-height=$((lines * 40))
+width=$((cols * 8))
+height=$((lines * 24))
 magick "${image}[0]" -auto-orient -thumbnail "${width}x${height}>" -strip "$preview"
-kitten icat --clear >/dev/null 2>&1 || true
-kitten icat --transfer-mode=memory --align=center \
-    --place="${cols}x${lines}@0x0" "$preview"
+timeout 3 kitten icat --transfer-mode=memory --image-id=917 --align=center \
+    --place="${cols}x${lines}@0x0" "$preview" || true
