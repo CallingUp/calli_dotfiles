@@ -104,7 +104,7 @@ fish_add_path ~/.local/bin
 # ============================================================
 
 function sw
-    set img (find /home/calli/Pictures/Wallpapers/ -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.png" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" \) -printf "%f\n" | fzf --preview "kitten icat --clear --transfer-mode=memory --place=\$FZF_PREVIEW_COLUMNSx\$FZF_PREVIEW_LINES@0x0 /home/calli/Pictures/Wallpapers/{} 2>/dev/null" --preview-window=right:60%)
+    set img (find /home/calli/Pictures/Wallpapers/ -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.png" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" \) -printf "%f\n" | fzf --preview "$HOME/.local/bin/sww-preview /home/calli/Pictures/Wallpapers/{}" --preview-window=right:60%)
 
     if test -n "$img"
         set wallpaper_path "/home/calli/Pictures/Wallpapers/$img"
