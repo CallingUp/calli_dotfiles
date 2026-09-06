@@ -1,0 +1,399 @@
+//          __    _           __
+//         / /_  (_)___  ____/ /____
+//        / __ \/ / __ \/ __  / ___/
+//       / /_/ / / / / / /_/ (__  )
+//      /_.___/_/_/ /_/\__,_/____/
+
+binds {
+
+    // --------------------------------------------------------
+    // Help
+    // --------------------------------------------------------
+
+    Mod+Slash {
+        show-hotkey-overlay
+    }
+
+
+    // --------------------------------------------------------
+    // Applications
+    // --------------------------------------------------------
+
+    Mod+T hotkey-overlay-title="Terminal: Kitty" {
+        spawn "kitty"
+    }
+
+    Mod+F hotkey-overlay-title="Files: Nautilus" {
+        spawn "nautilus"
+    }
+
+    Mod+B hotkey-overlay-title="Browser: Librewolf" {
+        spawn "librewolf" "--restore-last-session"
+    }
+
+    Mod+V hotkey-overlay-title="Visual Studio Code" {
+        spawn "code"
+    }
+
+
+    // --------------------------------------------------------
+    // Noctalia
+    // --------------------------------------------------------
+
+    Mod+Space hotkey-overlay-title="Launcher" {
+        spawn-sh "noctalia msg panel-toggle launcher"
+    }
+
+    Mod+Z hotkey-overlay-title="Control Center" {
+        spawn-sh "noctalia msg panel-toggle control-center"
+    }
+
+    Mod+Comma hotkey-overlay-title="Noctalia Settings" {
+        spawn-sh "noctalia msg settings-toggle"
+    }
+
+    Alt+Tab {
+        spawn-sh "noctalia msg window-switcher"
+    }
+
+
+    // --------------------------------------------------------
+    // Clipboard
+    // --------------------------------------------------------
+
+    Mod+Shift+V hotkey-overlay-title="Clipboard History" {
+        spawn "cliphist.sh"
+    }
+
+
+    // --------------------------------------------------------
+    // Wallpapers
+    // --------------------------------------------------------
+
+    Mod+Shift+E hotkey-overlay-title="Wallpaper Selector" {
+        spawn "wallpaper_select.sh"
+    }
+
+
+    // --------------------------------------------------------
+    // Touchpad
+    // --------------------------------------------------------
+
+    XF86TouchpadToggle hotkey-overlay-title="Toggle Touchpad" {
+    spawn "toggle-touchpad.sh"
+    }
+
+    // --------------------------------------------------------
+    // Audio
+    // --------------------------------------------------------
+
+    XF86AudioRaiseVolume allow-when-locked=true {
+        spawn-sh "noctalia msg volume-up"
+    }
+
+    XF86AudioLowerVolume allow-when-locked=true {
+        spawn-sh "noctalia msg volume-down"
+    }
+
+    XF86AudioMute allow-when-locked=true {
+        spawn-sh "noctalia msg volume-mute"
+    }
+
+
+    // --------------------------------------------------------
+    // Brightness
+    // --------------------------------------------------------
+
+    XF86MonBrightnessUp allow-when-locked=true {
+        spawn-sh "noctalia msg brightness-up"
+    }
+
+    XF86MonBrightnessDown allow-when-locked=true {
+        spawn-sh "noctalia msg brightness-down"
+    }
+
+
+    // --------------------------------------------------------
+    // Overview / Window
+    // --------------------------------------------------------
+
+    Mod+E repeat=false hotkey-overlay-title="Overview" {
+        toggle-overview
+    }
+
+    Mod+Q hotkey-overlay-title="Close Window" {
+        close-window
+    }
+
+    Mod+C hotkey-overlay-title="Center Window" {
+        center-column
+    }
+
+
+    // --------------------------------------------------------
+    // Focus — WASD
+    // --------------------------------------------------------
+
+    Mod+A {
+        focus-column-left
+    }
+
+    Mod+D {
+        focus-column-right
+    }
+
+    Mod+W {
+        focus-window-or-workspace-up
+    }
+
+    Mod+S {
+        focus-window-or-workspace-down
+    }
+
+
+    // --------------------------------------------------------
+    // Move windows — Shift + WASD
+    // --------------------------------------------------------
+
+    Mod+Shift+A {
+        move-column-left
+    }
+
+    Mod+Shift+D {
+        move-column-right
+    }
+
+    Mod+Shift+W {
+        move-window-up
+    }
+
+    Mod+Shift+S {
+        move-window-down
+    }
+
+
+    // --------------------------------------------------------
+    // Mouse navigation
+    // --------------------------------------------------------
+
+    Mod+WheelScrollUp cooldown-ms=150 {
+        focus-workspace-up
+    }
+
+    Mod+WheelScrollDown cooldown-ms=150 {
+        focus-workspace-down
+    }
+
+    Mod+Shift+WheelScrollUp cooldown-ms=120 {
+        focus-column-left
+    }
+
+    Mod+Shift+WheelScrollDown cooldown-ms=120 {
+        focus-column-right
+    }
+
+
+    // --------------------------------------------------------
+    // Workspace movement
+    // --------------------------------------------------------
+
+    Mod+Alt+J {
+        move-window-to-workspace-down
+    }
+
+    Mod+Alt+K {
+        move-window-to-workspace-up
+    }
+
+    Mod+Ctrl+J {
+        move-workspace-down
+    }
+
+    Mod+Ctrl+K {
+        move-workspace-up
+    }
+
+
+    // --------------------------------------------------------
+    // Workspaces
+    // --------------------------------------------------------
+
+    Mod+1 {
+        focus-workspace 1
+    }
+
+    Mod+2 {
+        focus-workspace 2
+    }
+
+    Mod+3 {
+        focus-workspace 3
+    }
+
+    Mod+4 {
+        focus-workspace 4
+    }
+
+    Mod+5 {
+        focus-workspace 5
+    }
+
+    Mod+6 {
+        focus-workspace 6
+    }
+
+    Mod+7 {
+        focus-workspace 7
+    }
+
+    Mod+8 {
+        focus-workspace 8
+    }
+
+    Mod+9 {
+        focus-workspace 9
+    }
+
+
+    // --------------------------------------------------------
+    // Move focused window to workspace
+    // --------------------------------------------------------
+
+    Mod+Shift+1 {
+        move-window-to-workspace 1
+    }
+
+    Mod+Shift+2 {
+        move-window-to-workspace 2
+    }
+
+    Mod+Shift+3 {
+        move-window-to-workspace 3
+    }
+
+    Mod+Shift+4 {
+        move-window-to-workspace 4
+    }
+
+    Mod+Shift+5 {
+        move-window-to-workspace 5
+    }
+
+    Mod+Shift+6 {
+        move-window-to-workspace 6
+    }
+
+    Mod+Shift+7 {
+        move-window-to-workspace 7
+    }
+
+    Mod+Shift+8 {
+        move-window-to-workspace 8
+    }
+
+    Mod+Shift+9 {
+        move-window-to-workspace 9
+    }
+
+
+    // --------------------------------------------------------
+    // Consume / expel
+    // --------------------------------------------------------
+
+    Mod+BracketLeft {
+        consume-or-expel-window-left
+    }
+
+    Mod+BracketRight {
+        consume-or-expel-window-right
+    }
+
+
+    // --------------------------------------------------------
+    // Layout
+    // --------------------------------------------------------
+
+    Mod+R {
+        switch-preset-column-width
+    }
+
+    Mod+Shift+R {
+        switch-preset-window-height
+    }
+
+    Mod+Ctrl+R {
+        reset-window-height
+    }
+
+    Mod+X {
+        maximize-column
+    }
+
+    Alt+Return {
+        fullscreen-window
+    }
+
+
+    // --------------------------------------------------------
+    // Resize
+    // --------------------------------------------------------
+
+    Mod+Minus {
+        set-column-width "-10%"
+    }
+
+    Mod+Equal {
+        set-column-width "+10%"
+    }
+
+    Mod+Shift+Minus {
+        set-window-height "-10%"
+    }
+
+    Mod+Shift+Equal {
+        set-window-height "+10%"
+    }
+
+
+    // --------------------------------------------------------
+    // Keyboard layout
+    // --------------------------------------------------------
+
+    Mod+I {
+        spawn "keyboardswitch.sh"
+    }
+
+
+    // --------------------------------------------------------
+    // Screenshots
+    // --------------------------------------------------------
+
+    Print {
+        screenshot-screen
+    }
+
+    Mod+P {
+        screenshot
+    }
+
+    Mod+Shift+P {
+        spawn "hyprpicker" "-an"
+    }
+
+
+    // --------------------------------------------------------
+    // Session
+    // --------------------------------------------------------
+
+    Mod+Backspace {
+        spawn "logout-menu.sh"
+    }
+
+    Mod+Escape {
+        quit
+    }
+
+    Mod+F1 {
+        power-off-monitors
+    }
+}

@@ -1,0 +1,27 @@
+//         _____ __             __
+//        / ___// /_____ ______/ /_
+//        \__ \/ __/ __ `/ ___/ __/
+//       ___/ / /_/ /_/ / /  / /_
+//      /____/\__/\__,_/_/   \__/
+
+// Noctalia
+spawn-at-startup "noctalia"
+spawn-at-startup "haku-keyring-unlock"
+spawn-sh-at-startup "sleep 2 && haku-ssh-unlock"
+
+// Wallpapers
+spawn-at-startup "awww-daemon"
+spawn-at-startup "awww-daemon" "-n" "awww-daemon-backdrop"
+spawn-sh-at-startup "sleep 1 && haku-wallpaper-restore"
+
+// Waybar
+spawn-at-startup "waybar"
+
+// Clipboard history
+spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
+spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
+
+// Apps
+// spawn-sh-at-startup "sleep 1 && steam"
+//spawn-sh-at-startup "sleep 1 && helium-browser --restore-last-session"
+spawn-sh-at-startup "sleep 1 && librewolf --restore-last-session"

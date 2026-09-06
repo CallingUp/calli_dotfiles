@@ -1,0 +1,47 @@
+HAKU SHELL · GUÍA RÁPIDA
+
+g            -> muestra esta guía
+
+NIRI
+nc        -root  -> configuración general de Niri
+          -auto  -> programas de inicio automático
+          -env   -> variables de entorno
+          -in    -> teclado, ratón y touchpad
+          -out   -> monitores, resolución y escala
+          -ly    -> layout, espacios y apariencia
+          -ky    -> atajos de teclado
+          -wr    -> reglas de ventanas y capas
+          -fx    -> efectos y animaciones
+          -ac    -> color de acento dinámico
+
+nv               -> valida la configuración de Niri
+ne               -> recarga la configuración de Niri
+shellmode normal -> perfil visual diario de bajo consumo
+shellmode gaming -> sin blur ni transparencia de ventanas
+shellmode status -> muestra el perfil activo
+
+WAYBAR
+waybarconfig     -> estructura y módulos visibles
+waybarstyle      -> colores, formas y estilos
+waybarmodules    -> carpeta de módulos separados
+
+APLICACIONES
+kittyconfig      -> terminal Kitty
+roficonfig       -> apariencia general de Rofi
+roficlipboard    -> selector del portapapeles
+noctaliaconfig   -> launcher, paneles, OSD y notificaciones
+awwwconfig       -> fondo de pantalla
+cavaconfig       -> visualizador de audio
+fetchconfig      -> presentación de Fastfetch
+
+FISH
+fishconfig       -> aliases, funciones y PATH
+srcfish          -> recarga la configuración de Fish
+f             -> muestra las escalas tipográficas
+     -10         
+     -11        
+     -12         
+     -14         
+
+WALLPAPER
+sw               -> selecciona un fondo con vista previa

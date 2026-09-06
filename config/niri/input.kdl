@@ -1,0 +1,46 @@
+//       ____                   __
+//      /  _/___  ____  __  __/ /_
+//      / // __ \/ __ \/ / / / __/
+//    _/ // / / / /_/ / /_/ / /_
+//   /___/_/ /_/ .___/\__,_/\__/
+//             /_/
+
+input {
+    keyboard {
+        xkb {
+            layout "latam"
+        }
+
+        repeat-delay 600
+        repeat-rate 25
+        numlock
+    }
+
+    touchpad {
+        off // TOGGLE_TOUCHPAD_OFF
+        tap
+        dwt
+        drag true
+        scroll-method "two-finger"
+        accel-profile "flat"
+        accel-speed 1.0
+    }
+
+    mouse {
+        accel-speed 0.0
+    }
+
+    warp-mouse-to-focus
+    focus-follows-mouse max-scroll-amount="0%"
+}
+
+
+// ------------------------------------------------------------
+// Gestures
+// ------------------------------------------------------------
+
+gestures {
+    hot-corners {
+        top-left
+    }
+}

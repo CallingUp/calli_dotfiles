@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+colors="$HOME/.local/state/haku_theme/colors.css"
+root="/mnt/Extra-Data/YTMDesktop/themes"
+source_css="$HOME/.config/haku/ytmd.template.css"
+target_css="$root/Haku Dynamic.css"
+
+[[ -r "$colors" && -r "$source_css" ]] || exit 0
+
+accent="$(sed -n 's/.*accent_color \(#[0-9A-Fa-f]\{6\}\).*/\1/p' "$colors")"
+active="$(sed -n 's/.*accent_active \(#[0-9A-Fa-f]\{6\}\).*/\1/p' "$colors")"
+inactive="$(sed -n 's/.*accent_inactive \(#[0-9A-Fa-f]\{6\}\).*/\1/p' "$colors")"
+
+[[ -n "$accent" && -n "$active" && -n "$inactive" ]] || exit 0
+
+sed \
+    -e "557s/#[0-9A-Fa-f]\{6\}/#F7F2FF/" \
+    -e "558s/#[0-9A-Fa-f]\{6\}/#BAC7C4/" \
+    -e "559s/#[0-9A-Fa-f]\{6\}/#879491/" \
+    -e "560s/#[0-9A-Fa-f]\{6\}/$active/" \
+    -e "561s/#[0-9A-Fa-f]\{6\}/$accent/" \
+    -e "562s/#[0-9A-Fa-f]\{6\}/$inactive/" \
+    -e "563s/#[0-9A-Fa-f]\{6\}/$accent/" \
+    -e "566s/#[0-9A-Fa-f]\{6\}/$active/" \
+    -e "567s/#[0-9A-Fa-f]\{6\}/$active/" \
+    -e "568s/#[0-9A-Fa-f]\{6\}/$inactive/" \
+    -e "570s/#[0-9A-Fa-f]\{6\}/#08090D/" \
+    "$source_css" > "$target_css"
+
+printf '%s\n' '
+* { backdrop-filter: none !important; }
+
+#player-page,
+#nav-bar-background,
+#player-bar-background,
+#mini-guide-background { background: #08090d !important; }
+
+ytmusic-player-page #background-image,
+ytmusic-player-page .background-gradient,
+ytmusic-player-page #background { display: none !important; }
+
+#main-panel { height: auto !important; }
+
+[player-ui-state="PLAYER_PAGE_OPEN"] #song-image,
+[player-ui-state="PLAYER_PAGE_OPEN"] #song-video { transform: none !important; }
+
+#player[player-ui-state="PLAYER_PAGE_OPEN"] #song-image {
+  height: auto !important;
+  padding-top: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#player[player-ui-state="PLAYER_PAGE_OPEN"] #song-image #thumbnail {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  width: min(42vmin, 360px) !important;
+  height: min(42vmin, 360px) !important;
+}
+
+#player[player-ui-state="MINIPLAYER"] #song-image,
+#player[player-ui-state="MINIPLAYER"] #song-image #thumbnail {
+  min-height: 0 !important;
+  height: auto !important;
+  margin-top: 0 !important;
+}
+
+#player[player-ui-state="MINIPLAYER"] #song-image #thumbnail {
+  width: 48px !important;
+  height: 48px !important;
+}
+
+:root { --ytmusic-player-bar-height: 96px !important; }
+
+#player-bar-background,
+ytmusic-player-bar {
+  bottom: 0 !important;
+  height: 96px !important;
+  min-height: 96px !important;
+  max-height: 96px !important;
+  overflow: visible !important;
+}
+
+ytmusic-player-bar #left-controls,
+ytmusic-player-bar #middle-controls,
+ytmusic-player-bar #right-controls {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+}' >> "$target_css"

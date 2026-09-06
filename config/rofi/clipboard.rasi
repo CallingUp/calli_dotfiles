@@ -1,0 +1,74 @@
+@import "../../.local/state/haku_theme/rofi-style.rasi"
+
+* {
+    background-color: transparent;
+    text-color: @accent;
+    font: "Iosevka Nerd Font 14";
+    margin: 0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    location: north;
+    anchor: north;
+    y-offset: 66px;
+    width: 34%;
+    background-color: rgba(0, 0, 0, 0.94);
+    border: 1px;
+    border-color: @accent-inactive;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+mainbox {
+    spacing: 10px;
+    children: [ inputbar, listview ];
+}
+
+inputbar {
+    padding: 8px 10px;
+    spacing: 8px;
+    background-color: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    children: [ prompt, entry ];
+}
+
+prompt {
+    text-color: @accent-active;
+}
+
+entry {
+    placeholder: "Buscar en el portapapeles…";
+    placeholder-color: @accent-inactive;
+}
+
+listview {
+    lines: 8;
+    fixed-height: false;
+    scrollbar: true;
+    spacing: 3px;
+}
+
+element {
+    padding: 8px 10px;
+    border-radius: 8px;
+}
+
+element-text {
+    text-color: @accent;
+}
+
+element selected {
+    background-color: @accent;
+}
+
+element-text selected {
+    text-color: #000000;
+}
+
+scrollbar {
+    handle-width: 4px;
+    handle-color: @accent-inactive;
+    border-radius: 4px;
+}

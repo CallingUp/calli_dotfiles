@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+uuid='09cd7371-585f-4966-bf3b-1528197bb2c6'
+partition='/dev/nvme1n1p1'
+mountpoint='/mnt/Extra-Data'
+staged='/home/calli/.local/state/fstab-with-extra-data'
+backup='/home/calli/backups/fstab-before-extra-data-20260901-1922'
+
+[[ "$(id -u)" -eq 0 ]] || { printf 'Este programa requiere root.\n' >&2; exit 1; }
+[[ "$(blkid -s UUID -o value "$partition")" == "$uuid" ]] || {
+    printf 'El UUID de %s no coincide.\n' "$partition" >&2
+    exit 1
+}
+mkdir -p "$mountpoint"
+findmnt --verify --tab-file "$staged"
+
+mkdir -p "$backup"
+cp -a /etc/fstab "$backup/fstab"
+install -o root -g root -m 644 "$staged" /etc/fstab
+mount "$mountpoint"
+chown calli:calli "$mountpoint"
+chmod 755 "$mountpoint"
+
+sudo -u calli touch "$mountpoint/.write-test"
+rm "$mountpoint/.write-test"
+findmnt --verify

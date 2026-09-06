@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+export SSH_AUTH_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/ssh-agent.socket"
+export SSH_ASKPASS=/usr/lib/seahorse/ssh-askpass
+export SSH_ASKPASS_REQUIRE=force
+
+[[ -S "$SSH_AUTH_SOCK" ]] || exit 0
+ssh-add -l >/dev/null 2>&1 && exit 0
+
+exec setsid ssh-add "$HOME/.ssh/id_ed25519_otra" </dev/null

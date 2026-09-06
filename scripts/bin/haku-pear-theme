@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+colors="$HOME/.local/state/haku_theme/colors.css"
+template="$HOME/.config/haku/pear-overlay.template.css"
+output="/mnt/Extra-Data/PearDesktop/themes/Haku Overlay.css"
+
+[[ -r "$colors" && -r "$template" ]] || exit 0
+
+accent="$(sed -n 's/.*accent_color \(#[0-9A-Fa-f]\{6\}\).*/\1/p' "$colors")"
+active="$(sed -n 's/.*accent_active \(#[0-9A-Fa-f]\{6\}\).*/\1/p' "$colors")"
+inactive="$(sed -n 's/.*accent_inactive \(#[0-9A-Fa-f]\{6\}\).*/\1/p' "$colors")"
+
+[[ -n "$accent" && -n "$active" && -n "$inactive" ]] || exit 0
+
+sed \
+  -e "s/__ACCENT__/$accent/g" \
+  -e "s/__ACTIVE__/$active/g" \
+  -e "s/__INACTIVE__/$inactive/g" \
+  "$template" > "$output"

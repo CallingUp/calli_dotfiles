@@ -1,0 +1,54 @@
+//      _________            __
+//     / ____/ __/___  _____/ /______
+//    / __/ / /_/ __ \/ ___/ __/ ___/
+//   / /___/ __/ /_/ / /__/ /_(__  )
+//  /_____/_/  \____/\___/\__/____/
+
+blur {
+    passes 2
+    offset 3.0
+    noise 0.02
+    saturation 1.0
+}
+
+window-rule {
+    geometry-corner-radius 10
+    clip-to-geometry true
+    draw-border-with-background false
+
+    shadow {
+        on
+        softness 40
+        spread 5
+        offset x=0 y=5
+        draw-behind-window true
+        color "#00000060"
+        inactive-color "#00000020"
+    }
+}
+
+window-rule {
+    match is-active=false
+
+    opacity 0.82
+
+    background-effect {
+        blur false
+        xray false
+        noise 0.025
+        saturation 0.90
+    }
+}
+
+window-rule {
+    match is-active=true
+
+    opacity 0.94
+
+    background-effect {
+        blur true
+        xray false
+        noise 0.0
+        saturation 1.25
+    }
+}

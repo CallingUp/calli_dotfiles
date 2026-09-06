@@ -1,0 +1,45 @@
+# --- [ General Settings ] ---
+include colors.conf
+
+font_family      CaskaydiaCove Nerd Font Mono
+bold_font        auto
+italic_font      auto
+bold_italic_font auto
+font_size        11.5
+
+window_padding_width 25
+cursor_trail         1
+enable_audio_bell    no
+allow_remote_control yes
+
+
+# --- [ Window Management ] ---
+enabled_layouts tall:bias=50;full_size=1;mirrored=false, stack
+
+window_border_width   1.0pt
+draw_minimal_borders  yes
+
+map ctrl+shift+n     new_window
+map ctrl+shift+enter move_window_to_top
+
+map ctrl+shift+h     neighboring_window left
+map ctrl+shift+l     neighboring_window right
+map ctrl+shift+k     neighboring_window up
+map ctrl+shift+j     neighboring_window down
+
+map shift+ctrl+i        prev_tab
+map shift+ctrl+o        next_tab
+
+# --- [ Tab Bar ] ---
+tab_bar_style           custom
+tab_bar_edge            bottom
+tab_bar_align           left
+tab_bar_margin_height   5.0 0.0
+tab_separator           ""
+tab_fade                0 0 0 0
+
+active_tab_font_style   bold
+inactive_tab_font_style normal
+
+tab_title_template          "{fmt.fg._6A698A}{fmt.bg.default}  {index}: {title} "
+active_tab_title_template   "{fmt.fg._83b6af}{fmt.bg.default}  {index}: {title} "

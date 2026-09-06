@@ -1,0 +1,63 @@
+HAKU SHELL · ATAJOS DE NIRI
+
+sc                         -> muestra esta guía
+sce                        -> edita esta guía
+Mod + /                    -> muestra los atajos de Niri
+
+APLICACIONES
+Mod + T                    -> Kitty
+Mod + F                    -> Nautilus
+Mod + B                    -> Helium
+Mod + G                    -> Pear Desktop
+Mod + V                    -> Visual Studio Code
+
+PANELES
+Mod + Espacio              -> launcher
+Mod + Z                    -> centro de control
+Mod + ,                    -> ajustes de Noctalia
+Alt + Tab                  -> selector de ventanas
+Mod + Shift + V            -> historial del portapapeles
+Mod + Shift + E            -> selector de wallpaper
+
+VENTANAS
+Mod + E                    -> vista general
+Mod + Q                    -> cerrar ventana
+Mod + C                    -> centrar columna
+Mod + A / D                -> enfocar izquierda / derecha
+Mod + W / S                -> enfocar arriba / abajo
+Mod + Shift + A / D        -> mover columna izquierda / derecha
+Mod + Shift + W / S        -> mover ventana arriba / abajo
+Mod + [ / ]                -> consumir o expulsar ventana
+Mod + R                    -> cambiar ancho predefinido
+Mod + Shift + R            -> cambiar altura predefinida
+Mod + Ctrl + R             -> restablecer altura
+Mod + X                    -> maximizar columna
+Alt + Enter                -> pantalla completa
+
+ESPACIOS DE TRABAJO
+Mod + rueda                -> cambiar de espacio
+Mod + Shift + rueda        -> enfocar columna lateral
+Mod + Alt + J / K          -> enviar ventana al espacio inferior / superior
+Mod + Ctrl + J / K         -> mover espacio abajo / arriba
+Mod + 1…9                  -> ir al espacio 1…9
+Mod + Shift + 1…9          -> enviar ventana al espacio 1…9
+
+TAMAÑO
+Mod + - / =                -> reducir / aumentar ancho 10 %
+Mod + Shift + - / =        -> reducir / aumentar altura 10 %
+
+SISTEMA
+Mod + I                    -> cambiar distribución del teclado
+Impr Pant                  -> capturar pantalla completa
+Mod + P                    -> captura interactiva
+Mod + Shift + P            -> selector de color
+Mod + Retroceso            -> menú de sesión
+Mod + Escape               -> salir de Niri
+Mod + F1                   -> apagar monitores
+
+Multimedia y brillo        -> teclas dedicadas del equipo
+
+CONFIGURACIÓN
+nc-ky                      -> edita los atajos reales de Niri
+nv                         -> valida la configuración
+nr                         -> recarga la configuración

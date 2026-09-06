@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+api_url="https://wallhaven.cc/api/v1/search"
+wall_dir="$HOME/Pictures/Wallpapers"
+temp_root="$HOME/Pictures/temp"
+page_dir="$temp_root/page"
+mkdir -p "$temp_root"
+session_dir="$(mktemp -d "$temp_root/sww.XXXXXX")"
+
+mkdir -p "$wall_dir"
+trap 'rm -rf "$session_dir" "$page_dir"' EXIT
+
+for tool in curl jq fzf kitten; do
+    command -v "$tool" >/dev/null || {
+        printf 'Falta dependencia: %s\n' "$tool" >&2
+        exit 1
+    }
+done
+
+read -r -p 'Wallhaven · búsqueda (vacío = recientes): ' query
+
+fetch_api_page() {
+    local page="$1" response_file="$session_dir/api-$page.json"
+    [[ -s "$response_file" ]] && return 0
+    curl --fail --silent --show-error --get "$api_url" \
+        --data-urlencode "q=$query" \
+        --data-urlencode 'categories=110' \
+        --data-urlencode 'purity=100' \
+        --data-urlencode 'resolutions=1920x1080' \
+        --data-urlencode 'ratios=16x9' \
+        --data-urlencode 'sorting=date_added' \
+        --data-urlencode "page=$page" \
+        --output "$response_file"
+}
+
+download_page() {
+    local page="$1" offset=$(( (page - 1) * 10 ))
+    local index="$session_dir/index.tsv" queue="$session_dir/queue.tsv" count=0 active=0 done_count=0
+
+    rm -rf "$page_dir"
+    mkdir -p "$page_dir"
+    : > "$index"
+    : > "$queue"
+
+    for ((position = offset; position < offset + 10; position++)); do
+        local api_page=$(( position / 24 + 1 )) item=$(( position % 24 )) row id resolution category url extension file
+        fetch_api_page "$api_page"
+        row="$(jq -r --argjson item "$item" '.data[$item] // empty | [.id, .resolution, .category, .path] | @tsv' "$session_dir/api-$api_page.json")"
+        [[ -n "$row" ]] || break
+        IFS=$'\t' read -r id resolution category url <<< "$row"
+        extension="${url##*.}"
+        file="$page_dir/wallhaven-$id.$extension"
+        printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$url" "$file" "$resolution" "$category" >> "$index"
+        printf '%s\t%s\t%s\n' "$id" "$url" "$file" >> "$queue"
+        ((count += 1))
+    done
+
+    (( count > 0 )) || return 1
+    printf '\nPágina %s · descargando %s fondos con 4 conexiones…\n' "$page" "$count"
+
+    while IFS=$'\t' read -r id url file; do
+        (
+            [[ -s "$file" ]] || curl --fail --silent --show-error --location "$url" --output "$file"
+            printf '  ✓ %s\n' "$id"
+        ) &
+        ((active += 1))
+        if (( active == 4 )); then
+            wait -n || true
+            ((active -= 1)) || true
+            ((done_count += 1))
+            printf '  [%s/%s listos]\n' "$done_count" "$count"
+        fi
+    done < "$queue"
+
+    while (( active > 0 )); do
+        wait -n || true
+        ((active -= 1)) || true
+        ((done_count += 1))
+        printf '  [%s/%s listos]\n' "$done_count" "$count"
+    done
+
+    find "$page_dir" -type f -size 0 -delete
+    awk -F '\t' 'FNR == NR { ready[$0] = 1; next } ready[$3]' \
+        <(find "$page_dir" -type f -size +0c -printf '%p\n') "$index" > "$session_dir/ready.tsv"
+    mv "$session_dir/ready.tsv" "$index"
+    [[ -s "$index" ]]
+}
+
+page=1
+while :; do
+    download_page "$page" || {
+        printf 'No hay más resultados.\n' >&2
+        exit 0
+    }
+
+    choices="$session_dir/choices.tsv"
+    : > "$choices"
+    (( page > 1 )) && printf '__PREV__\t← Página anterior\n' >> "$choices"
+    awk -F '\t' '{ path = $3; sub(".*/", "", path); printf "%s\t%s\t%s\n", path, $4, $5 }' "$session_dir/index.tsv" >> "$choices"
+    printf '__NEXT__\t→ Página siguiente\n' >> "$choices"
+
+    selected="$(fzf --delimiter=$'\t' --with-nth=1,2,3 \
+        --prompt="Wallhaven · página $page › " \
+        --header='Enter aplicar · selecciona flechas para navegar · 10 fondos locales' \
+        --preview "kitten icat --clear --transfer-mode=memory --place=\$FZF_PREVIEW_COLUMNSx\$FZF_PREVIEW_LINES@0x0 /home/calli/Pictures/temp/page/{1} 2>/dev/null" \
+        --preview-window='right:60%' \
+        --height='100%' < "$choices" || true)"
+
+    [[ -n "$selected" ]] || exit 0
+    item="${selected%%$'\t'*}"
+    case "$item" in
+        __PREV__)
+            ((page -= 1))
+            ;;
+        __NEXT__)
+            ((page += 1))
+            ;;
+        *)
+            file="/home/calli/Pictures/temp/page/$item"
+            [[ -s "$file" ]] || exit 1
+            target="$wall_dir/$(basename "$file")"
+            mv "$file" "$target"
+            set-wallpaper "$target"
+            printf 'Aplicado: %s\n' "$target"
+            exit 0
+            ;;
+    esac
+done

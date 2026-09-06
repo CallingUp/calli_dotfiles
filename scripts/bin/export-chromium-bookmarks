@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+
+import html
+import json
+import sys
+from pathlib import Path
+
+
+def write_node(node, output, depth=1):
+    indent = "    " * depth
+    if node.get("type") == "url":
+        name = html.escape(node.get("name") or node.get("url", ""))
+        url = html.escape(node.get("url", ""), quote=True)
+        output.write(f'{indent}<DT><A HREF="{url}">{name}</A>\n')
+        return 1
+
+    name = html.escape(node.get("name", "Bookmarks"))
+    output.write(f"{indent}<DT><H3>{name}</H3>\n{indent}<DL><p>\n")
+    count = sum(write_node(child, output, depth + 1) for child in node.get("children", []))
+    output.write(f"{indent}</DL><p>\n")
+    return count
+
+
+def main():
+    if len(sys.argv) != 3:
+        raise SystemExit(f"Uso: {Path(sys.argv[0]).name} ORIGEN.json DESTINO.html")
+
+    source, target = map(Path, sys.argv[1:])
+    data = json.loads(source.read_text(encoding="utf-8"))
+    roots = data.get("roots", {})
+
+    with target.open("w", encoding="utf-8") as output:
+        output.write("<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n")
+        count = sum(write_node(root, output) for root in roots.values() if root.get("children"))
+        output.write("</DL><p>\n")
+
+    print(f"Exportados {count} marcadores a {target}")
+
+
+if __name__ == "__main__":
+    main()

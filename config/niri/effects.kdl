@@ -1,0 +1,25 @@
+window-rule {
+    geometry-corner-radius 10
+    clip-to-geometry true
+    draw-border-with-background false
+
+    shadow {
+        on
+        softness 24
+        spread 3
+        offset x=0 y=3
+        draw-behind-window true
+        color "#00000040"
+        inactive-color "#00000018"
+    }
+}
+
+window-rule {
+    match is-active=false
+    opacity 0.88
+}
+
+window-rule {
+    match is-active=true
+    opacity 1.0
+}

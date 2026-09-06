@@ -1,0 +1,101 @@
+diff --git a/src/AModule.cpp b/src/AModule.cpp
+index c6fdff3..71a594d 100644
+--- a/src/AModule.cpp
++++ b/src/AModule.cpp
+@@ -124,6 +124,10 @@ void AModule::setCursor(Gdk::CursorType const& c) {
+ }
+ 
+ bool AModule::handleMouseEnter(GdkEventCrossing* const& e) {
++  if (e->mode != GDK_CROSSING_NORMAL || e->detail == GDK_NOTIFY_INFERIOR) {
++    return false;
++  }
++
+   if (auto* module = event_box_.get_child(); module != nullptr) {
+     module->set_state_flags(Gtk::StateFlags::STATE_FLAG_PRELIGHT);
+   }
+@@ -133,10 +137,23 @@ bool AModule::handleMouseEnter(GdkEventCrossing* const& e) {
+     setCursor(Gdk::HAND2);
+   }
+ 
++  if (config_["on-mouse-enter"].isString()) {
++    const auto allocation = event_box_.get_allocation();
++    const auto center_x = e->x_root - e->x + allocation.get_width() / 2.0;
++    const auto center_y = e->y_root - e->y + allocation.get_height() / 2.0;
++    const auto command = fmt::format("HAKU_HOVER_X={:.0f} HAKU_HOVER_Y={:.0f} {}", center_x, center_y,
++                                     config_["on-mouse-enter"].asString());
++    pid_children_.push_back(util::command::forkExec(command));
++  }
++
+   return false;
+ }
+ 
+ bool AModule::handleMouseLeave(GdkEventCrossing* const& e) {
++  if (e->mode != GDK_CROSSING_NORMAL || e->detail == GDK_NOTIFY_INFERIOR) {
++    return false;
++  }
++
+   if (auto* module = event_box_.get_child(); module != nullptr) {
+     module->unset_state_flags(Gtk::StateFlags::STATE_FLAG_PRELIGHT);
+   }
+@@ -146,6 +163,10 @@ bool AModule::handleMouseLeave(GdkEventCrossing* const& e) {
+     setCursor(Gdk::ARROW);
+   }
+ 
++  if (config_["on-mouse-leave"].isString()) {
++    pid_children_.push_back(util::command::forkExec(config_["on-mouse-leave"].asString()));
++  }
++
+   return false;
+ }
+ 
+@@ -186,7 +207,11 @@ bool AModule::handleUserEvent(GdkEventButton* const& e) {
+       format.clear();
+   }
+   if (!format.empty()) {
+-    pid_children_.push_back(util::command::forkExec(format));
++    const auto allocation = event_box_.get_allocation();
++    const auto center_x = e->x_root - e->x + allocation.get_width() / 2.0;
++    const auto center_y = e->y_root - e->y + allocation.get_height() / 2.0;
++    const auto command = fmt::format("HAKU_HOVER_X={:.0f} HAKU_HOVER_Y={:.0f} {}", center_x, center_y, format);
++    pid_children_.push_back(util::command::forkExec(command));
+   }
+   dp.emit();
+   return true;
+diff --git a/src/group.cpp b/src/group.cpp
+index 294743d..dd46c0d 100644
+--- a/src/group.cpp
++++ b/src/group.cpp
+@@ -95,6 +95,9 @@ void Group::hide_group() {
+ }
+ 
+ bool Group::handleMouseEnter(GdkEventCrossing* const& e) {
++  if (config_.isObject() && config_.isMember("on-mouse-enter")) {
++    AModule::handleMouseEnter(e);
++  }
+   if (!click_to_reveal) {
+     show_group();
+   }
+@@ -102,6 +105,9 @@ bool Group::handleMouseEnter(GdkEventCrossing* const& e) {
+ }
+ 
+ bool Group::handleMouseLeave(GdkEventCrossing* const& e) {
++  if (config_.isObject() && config_.isMember("on-mouse-leave")) {
++    AModule::handleMouseLeave(e);
++  }
+   if (!click_to_reveal && e->detail != GDK_NOTIFY_INFERIOR) {
+     hide_group();
+   }
+diff --git a/src/modules/clock.cpp b/src/modules/clock.cpp
+index 5fe5407..b6bcc08 100644
+--- a/src/modules/clock.cpp
++++ b/src/modules/clock.cpp
+@@ -154,6 +154,9 @@ waybar::modules::Clock::Clock(const std::string& id, const Json::Value& config)
+ 
+ bool waybar::modules::Clock::query_tlp_cb(int, int, bool,
+                                           const Glib::RefPtr<Gtk::Tooltip>& tooltip) {
++  const auto allocation = label_.get_allocation();
++  const GdkRectangle area{0, 0, allocation.get_width(), allocation.get_height()};
++  gtk_tooltip_set_tip_area(tooltip->gobj(), &area);
+   tooltip->set_custom(*m_tooltip_.get());
+   return true;
+ }

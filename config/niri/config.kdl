@@ -1,0 +1,17 @@
+//          _   ___      _
+//         / | / (_)____(_)
+//        /  |/ / / ___/ /
+//       / /|  / / /  / /
+//      /_/ |_/_/_/  /_/
+
+prefer-no-csd
+
+include "autostart.kdl"
+include "environment.kdl"
+include "input.kdl"
+include "output.kdl"
+include "layout.kdl"
+include "keybinds.kdl"
+include "rules.kdl"
+include "effects.kdl"
+include "accent.kdl"

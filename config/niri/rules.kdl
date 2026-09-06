@@ -1,0 +1,103 @@
+//          ____        __
+//         / __ \__  __/ /__  _____
+//        / /_/ / / / / / _ \/ ___/
+//       / _, _/ /_/ / /  __(__  )
+//      /_/ |_|\__,_/_/\___/____/
+
+
+// ------------------------------------------------------------
+// Application rules
+// ------------------------------------------------------------
+
+// Firefox Picture-in-Picture
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+window-rule {
+    match title="About Mozilla Firefox"
+    open-floating true
+}
+
+// Dolphin
+window-rule {
+    match app-id="org.kde.dolphin"
+    opacity 0.90
+}
+
+window-rule {
+    match app-id="org.kde.dolphin" title="Choose Application — Dolphin"
+
+    default-column-width {
+        fixed 450
+    }
+
+    default-window-height {
+        fixed 500
+    }
+}
+
+// Pavucontrol
+window-rule {
+    match app-id="org.pulseaudio.pavucontrol"
+    open-floating true
+}
+
+// NetworkManager
+window-rule {
+    match app-id="nm-connection-editor"
+    open-floating true
+}
+
+// Image viewer
+window-rule {
+    match app-id="imv"
+    open-floating true
+}
+
+// ------------------------------------------------------------
+// Application-specific opacity adjustments
+// ------------------------------------------------------------
+
+// Firefox
+window-rule {
+    match app-id="firefox"
+    opacity 0.95
+}
+
+// Kitty
+window-rule {
+    match app-id="kitty"
+    opacity 0.88
+}
+
+// Helium
+window-rule {
+    match app-id="helium-browser"
+    opacity 0.85
+}
+
+// Pear Desktop
+window-rule {
+    match app-id="com.github.th-ch.youtube-music"
+
+    default-column-width {
+        fixed 560
+    }
+}
+
+// ------------------------------------------------------------
+// Layer rules
+// ------------------------------------------------------------
+
+layer-rule {
+    match namespace="notifications"
+    opacity 1.0
+}
+
+// Awww backdrop
+layer-rule {
+    match namespace="^awww-daemonawww-daemon-backdrop$"
+    place-within-backdrop true
+}
