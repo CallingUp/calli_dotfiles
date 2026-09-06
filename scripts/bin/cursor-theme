@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+roots=(
+    "$HOME/.icons"
+    "$HOME/.local/share/icons"
+    "/usr/share/icons"
+)
+
+themes=()
+declare -A locations=()
+
+for root in "${roots[@]}"; do
+    [[ -d "$root" ]] || continue
+    while IFS= read -r theme; do
+        name="${theme##*/}"
+        [[ -d "$theme/cursors" ]] || continue
+        locations["$name"]="$theme"
+        themes+=("$name")
+    done < <(find "$root" -mindepth 1 -maxdepth 1 -type d -print)
+done
+
+mapfile -t themes < <(printf '%s\n' "${themes[@]}" | sort -u)
+
+if [[ ${#themes[@]} -eq 0 ]]; then
+    printf 'No se encontraron temas de cursor.\n' >&2
+    exit 1
+fi
+
+current=$(awk '/xcursor-theme/{gsub(/"/, "", $2); print $2; exit}' "$HOME/.config/niri/layout.kdl" 2>/dev/null || true)
+
+if [[ $# -gt 0 ]]; then
+    theme="$1"
+else
+    theme=$(printf '%s\n' "${themes[@]}" | fzf \
+        --prompt='Cursor › ' \
+        --header="Actual: ${current:-sin definir} · Enter aplicar · Esc cancelar") || exit 0
+fi
+
+if [[ -z "${locations[$theme]+x}" ]]; then
+    printf 'Tema no encontrado: %s\n' "$theme" >&2
+    printf 'Disponibles: %s\n' "$(IFS=', '; printf '%s' "${themes[*]}")" >&2
+    exit 1
+fi
+
+size="${2:-$(awk '/xcursor-size/{print $2; exit}' "$HOME/.config/niri/layout.kdl" 2>/dev/null || true)}"
+size="${size:-20}"
+[[ "$size" =~ ^[0-9]+$ ]] || { printf 'El tamaño debe ser un entero.\n' >&2; exit 2; }
+
+sed -i -E "s/(xcursor-theme )\"[^\"]*\"/\1\"$theme\"/; s/(xcursor-size )[0-9]+/\1$size/" "$HOME/.config/niri/layout.kdl"
+
+update_gtk() {
+    local file="$1"
+    mkdir -p "$(dirname "$file")"
+    [[ -f "$file" ]] || printf '[Settings]\n' > "$file"
+
+    if grep -q '^gtk-cursor-theme-name=' "$file"; then
+        sed -i -E "s|^gtk-cursor-theme-name=.*|gtk-cursor-theme-name=$theme|" "$file"
+    else
+        sed -i "/^\[Settings\]/a gtk-cursor-theme-name=$theme" "$file"
+    fi
+
+    if grep -q '^gtk-cursor-theme-size=' "$file"; then
+        sed -i -E "s|^gtk-cursor-theme-size=.*|gtk-cursor-theme-size=$size|" "$file"
+    else
+        sed -i "/^\[Settings\]/a gtk-cursor-theme-size=$size" "$file"
+    fi
+}
+
+update_gtk "$HOME/.config/gtk-3.0/settings.ini"
+update_gtk "$HOME/.config/gtk-4.0/settings.ini"
+
+mkdir -p "$HOME/.config/environment.d" "$HOME/.local/state/haku_theme"
+printf 'XCURSOR_THEME=%s\nXCURSOR_SIZE=%s\n' "$theme" "$size" > "$HOME/.config/environment.d/10-haku-cursor.conf"
+printf '%s\n' "$theme" > "$HOME/.local/state/haku_theme/cursor-theme"
+
+niri msg action load-config-file >/dev/null 2>&1 || true
+notify-send 'Cursor actualizado' "$theme · ${size}px" 2>/dev/null || true
+printf 'Cursor activo: %s · %spx\n' "$theme" "$size"
