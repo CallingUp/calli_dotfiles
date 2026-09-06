@@ -4,7 +4,7 @@
 
 #microfono
 
-alias mic='pactl set-source-port alsa_input.pci=0000_00_1f.3.analog-stereo analog-input-headset-mic'
+alias mic='pactl set-source-port alsa_input.pci-0000_00_1f.3.analog-stereo analog-input-headset-mic'
 
 #cpu-power
 alias cpui='sudo cpupower frequency-info'
@@ -131,4 +131,24 @@ function swr
             gio trash "$wallpaper_path"
         end
     end
+end
+
+function ywmp3
+    if test (count $argv) -eq 0
+        echo "Uso: ywmp3 URL"
+        return 2
+    end
+
+    mkdir -p "$HOME/Music/YouTube"
+    command yt-dlp --no-playlist --extract-audio --audio-format mp3 --audio-quality 0 --embed-metadata --output "$HOME/Music/YouTube/%(title)s.%(ext)s" $argv
+end
+
+function ywmp4
+    if test (count $argv) -eq 0
+        echo "Uso: ywmp4 URL"
+        return 2
+    end
+
+    mkdir -p "$HOME/Music/YouTube"
+    command yt-dlp --no-playlist --format "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b" --merge-output-format mp4 --embed-metadata --output "$HOME/Music/YouTube/%(title)s.%(ext)s" $argv
 end

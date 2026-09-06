@@ -49,3 +49,7 @@ sw               -> selecciona un fondo con vista previa
 CURSOR
 cursor           -> selector de cursores instalados
 cursor TEMA 24   -> aplica un tema y tamaño directamente
+
+DESCARGAS
+ywmp3 URL        -> descarga audio MP3 en ~/Music/YouTube
+ywmp4 URL        -> descarga vídeo MP4 en ~/Music/YouTube
