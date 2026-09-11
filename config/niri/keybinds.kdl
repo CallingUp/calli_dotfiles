@@ -27,8 +27,12 @@ binds {
         spawn "nautilus"
     }
 
-    Mod+B hotkey-overlay-title="Browser: Librewolf" {
-        spawn "librewolf" "--restore-last-session"
+    Mod+B hotkey-overlay-title="Browser: Zen" {
+        spawn "brave"
+    }
+
+    Mod+Shift+B hotkey-overlay-title="Browser: Zen new window" {
+        spawn "zen-browser" "--new-window" "about:blank"
     }
 
     Mod+V hotkey-overlay-title="Visual Studio Code" {
@@ -56,6 +60,14 @@ binds {
         spawn-sh "noctalia msg window-switcher"
     }
 
+    Mod+L hotkey-overlay-title="Lock Screen" {
+        spawn "lock.sh"
+    }
+
+    Mod+Shift+L hotkey-overlay-title="Lock and Suspend" {
+        spawn-sh "lock.sh & sleep 0.5 && systemctl suspend"
+    }
+
 
     // --------------------------------------------------------
     // Clipboard
@@ -71,7 +83,7 @@ binds {
     // --------------------------------------------------------
 
     Mod+Shift+E hotkey-overlay-title="Wallpaper Selector" {
-        spawn "wallpaper_select.sh"
+        spawn "/home/calli/.local/bin/wallpaper-carousel"
     }
 
 
@@ -121,14 +133,16 @@ binds {
         toggle-overview
     }
 
-    Mod+Q hotkey-overlay-title="Close Window" {
+    Mod+Shift+Q hotkey-overlay-title="Close Window" {
         close-window
     }
 
     Mod+C hotkey-overlay-title="Center Window" {
         center-column
     }
-
+    Mod+G {
+        toggle-window-floating
+    }
 
     // --------------------------------------------------------
     // Focus — WASD
@@ -197,19 +211,19 @@ binds {
     // Workspace movement
     // --------------------------------------------------------
 
-    Mod+Alt+J {
+    Mod+Alt+S {
         move-window-to-workspace-down
     }
 
-    Mod+Alt+K {
+    Mod+Alt+W {
         move-window-to-workspace-up
     }
 
-    Mod+Ctrl+J {
+    Mod+Ctrl+S {
         move-workspace-down
     }
 
-    Mod+Ctrl+K {
+    Mod+Ctrl+W {
         move-workspace-up
     }
 
@@ -329,6 +343,10 @@ binds {
         maximize-column
     }
 
+    Mod+M {
+        maximize-window-to-edges
+    }
+
     Alt+Return {
         fullscreen-window
     }
@@ -338,19 +356,19 @@ binds {
     // Resize
     // --------------------------------------------------------
 
-    Mod+Minus {
+    Mod+J {
         set-column-width "-10%"
     }
 
-    Mod+Equal {
+    Mod+K {
         set-column-width "+10%"
     }
 
-    Mod+Shift+Minus {
+    Mod+Shift+J {
         set-window-height "-10%"
     }
 
-    Mod+Shift+Equal {
+    Mod+Shift+K {
         set-window-height "+10%"
     }
 

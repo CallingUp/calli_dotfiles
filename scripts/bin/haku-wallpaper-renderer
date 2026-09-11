@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+import os, socket, sys, threading
+
+if not os.environ.get("HAKU_RENDERER_LAYER"):
+    env = os.environ.copy(); env["HAKU_RENDERER_LAYER"] = "1"; env["LD_PRELOAD"] = "/usr/lib/libgtk4-layer-shell.so"
+    os.execvpe(sys.executable, [sys.executable, os.path.abspath(__file__)], env)
+
+import gi
+gi.require_version("Gtk", "4.0"); gi.require_version("Gdk", "4.0"); gi.require_version("GdkPixbuf", "2.0"); gi.require_version("Gio", "2.0"); gi.require_version("Gtk4LayerShell", "1.0")
+from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, Gtk4LayerShell
+
+STATE = os.path.expanduser("~/.local/state/haku_theme/current_wallpaper")
+SOCKET = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "haku-wallpaper-renderer.sock")
+TYPES = {"left": Gtk.RevealerTransitionType.SLIDE_LEFT, "right": Gtk.RevealerTransitionType.SLIDE_RIGHT, "top": Gtk.RevealerTransitionType.SLIDE_UP, "bottom": Gtk.RevealerTransitionType.SLIDE_DOWN, "none": Gtk.RevealerTransitionType.CROSSFADE}
+
+class Renderer(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id="io.calli.haku.wallpaper-renderer")
+        self.connect("activate", self.activate); self.timer = 0; self.layers = []
+
+    def picture(self, path):
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, 1920, 1080, True)
+        image = Gtk.Picture.new_for_paintable(Gdk.Texture.new_for_pixbuf(pixbuf))
+        image.set_content_fit(Gtk.ContentFit.COVER); image.set_hexpand(True); image.set_vexpand(True)
+        return image
+
+    def activate(self, _):
+        try: self.current = open(STATE).read().strip()
+        except OSError: return
+        self.window = Gtk.ApplicationWindow(application=self); self.window.set_decorated(False)
+        Gtk4LayerShell.init_for_window(self.window); Gtk4LayerShell.set_layer(self.window, Gtk4LayerShell.Layer.BACKGROUND)
+        Gtk4LayerShell.set_namespace(self.window, "haku-wallpaper-renderer")
+        for edge in (Gtk4LayerShell.Edge.TOP, Gtk4LayerShell.Edge.BOTTOM, Gtk4LayerShell.Edge.LEFT, Gtk4LayerShell.Edge.RIGHT): Gtk4LayerShell.set_anchor(self.window, edge, True)
+        Gtk4LayerShell.set_exclusive_zone(self.window, -1)
+        Gtk4LayerShell.set_keyboard_mode(self.window, Gtk4LayerShell.KeyboardMode.NONE)
+        self.stack = Gtk.Overlay(); self.base = self.picture(self.current); self.stack.set_child(self.base); self.window.set_child(self.stack); self.window.present()
+        self.server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try: os.unlink(SOCKET)
+        except FileNotFoundError: pass
+        self.server.bind(SOCKET); self.server.listen(); threading.Thread(target=self.listen, daemon=True).start()
+
+    def listen(self):
+        while True:
+            try:
+                conn, _ = self.server.accept()
+                with conn:
+                    data = conn.recv(8192).decode().split("\t", 1)
+                    if len(data) == 2: GLib.idle_add(self.transition, data[0], data[1])
+            except OSError: return
+
+    def transition(self, target, direction):
+        reveal = Gtk.Revealer(transition_type=TYPES.get(direction, TYPES["bottom"]), transition_duration=1500)
+        reveal.set_hexpand(True); reveal.set_vexpand(True); reveal.set_child(self.picture(target)); self.stack.add_overlay(reveal); self.layers.append(reveal); self.current = target
+        GLib.idle_add(lambda: reveal.set_reveal_child(True))
+        if self.timer: GLib.source_remove(self.timer)
+        self.timer = GLib.timeout_add(1750, self.commit)
+        return False
+
+    def commit(self):
+        self.base.set_paintable(Gdk.Texture.new_for_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(self.current, 1920, 1080, True)))
+        for layer in self.layers: self.stack.remove_overlay(layer)
+        self.layers.clear(); self.timer = 0
+        return False
+
+Renderer().run(None)
