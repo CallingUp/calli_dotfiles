@@ -3,6 +3,9 @@
 set -euo pipefail
 
 IMG="${1:-}"
+FAST_APPLY="${HAKU_WALLPAPER_FAST:-0}"
+SYNC_ONLY="${HAKU_WALLPAPER_SYNC_ONLY:-0}"
+GENERATION="${HAKU_WALLPAPER_GENERATION:-}"
 
 if [[ -z "$IMG" ]]; then
     echo "Uso: set-wallpaper /ruta/a/imagen"
@@ -29,6 +32,15 @@ CURRENT_WALLPAPER="$HAKU_STATE/current_wallpaper"
 
 mkdir -p "$HAKU_STATE"
 
+generation_is_current() {
+    [[ -z "$GENERATION" || ( -r "$HAKU_STATE/wallpaper_generation" && "$(<"$HAKU_STATE/wallpaper_generation")" == "$GENERATION" ) ]]
+}
+
+if [[ "$FAST_APPLY" == "1" && "$SYNC_ONLY" != "1" ]]; then
+    transition="$(shuf -n 1 -e left right top bottom)"
+    "$HOME/.local/bin/haku-wallpaper-render" "$IMG" "$transition" >/dev/null 2>&1 &
+fi
+
 
 # ============================================================
 # Blurred backdrop
@@ -37,10 +49,24 @@ mkdir -p "$HAKU_STATE"
 echo "1..."
 
 magick "${IMG}[0]" \
+    -resize '1280x720^' \
+    -gravity center \
+    -extent 1280x720 \
     -background black \
     -alpha remove \
     -blur 0x15 \
     "$BACKDROP"
+
+if [[ "$SYNC_ONLY" == "1" ]] && ! generation_is_current; then
+    exit 0
+fi
+
+awww img \
+    -n "awww-daemon-backdrop" \
+    "$BACKDROP" \
+    --transition-type fade \
+    --transition-duration 0.35 \
+    --transition-fps 60 >/dev/null 2>&1 &
 
 
 # ============================================================
@@ -189,33 +215,29 @@ color14 #9dccc6
 color15 #ffffff
 EOF
 
+if [[ "$SYNC_ONLY" == "1" ]] && ! generation_is_current; then
+    exit 0
+fi
+
 "$HOME/.local/bin/haku-ytmd-theme"
 "$HOME/.local/bin/haku-pear-theme"
 
 "$HOME/.local/bin/haku-noctalia-theme" "$ACCENT"
 "$HOME/.local/bin/haku-greeter-sync" "$IMG" "$ACCENT" "$ACTIVE" "$INACTIVE" "$BACKDROP"
-wallpaper_path="$(realpath "$IMG")"
-printf '%s\n' "$wallpaper_path" > "$CURRENT_WALLPAPER"
-"$HOME/.local/bin/haku-lock-background" "$wallpaper_path"
+if [[ "$SYNC_ONLY" != "1" ]] || generation_is_current; then
+    wallpaper_path="$(realpath "$IMG")"
+    printf '%s\n' "$wallpaper_path" > "$CURRENT_WALLPAPER"
+    "$HOME/.local/bin/haku-lock-background" "$wallpaper_path"
+fi
 
 
 # Wallpaper
 
 echo "3..."
 
-awww img "$IMG" \
-    --transition-type random \
-    --transition-step 90 \
-    --transition-fps 60
-
-
-# Overview backdrop
-
-echo "4..."
-
-awww img \
-    -n "awww-daemon-backdrop" \
-    "$BACKDROP"
+if [[ "$FAST_APPLY" != "1" && "$SYNC_ONLY" != "1" ]]; then
+    "$HOME/.local/bin/haku-wallpaper-render" "$IMG" "$(shuf -n 1 -e left right top bottom)"
+fi
 
 
 # Reload Niri
@@ -236,7 +258,9 @@ echo
 echo "Wallpaper:        $IMG"
 echo ""
 echo ""
-kitten icat $IMG
+if [[ -t 1 && -n "${KITTY_WINDOW_ID:-}" ]]; then
+    kitten icat "$IMG" || true
+fi
 echo "Haku accent:      $ACCENT"
 echo "Borde activo:     $ACTIVE"
 echo "Borde inactivo:   $INACTIVE"

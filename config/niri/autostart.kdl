@@ -10,7 +10,7 @@ spawn-at-startup "haku-keyring-unlock"
 spawn-sh-at-startup "sleep 2 && haku-ssh-unlock"
 
 // Wallpapers
-spawn-at-startup "awww-daemon"
+spawn-at-startup "haku-wallpaper-renderer"
 spawn-at-startup "awww-daemon" "-n" "awww-daemon-backdrop"
 spawn-sh-at-startup "sleep 1 && haku-wallpaper-restore"
 
@@ -24,4 +24,4 @@ spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
 // Apps
 // spawn-sh-at-startup "sleep 1 && steam"
 //spawn-sh-at-startup "sleep 1 && helium-browser --restore-last-session"
-spawn-sh-at-startup "sleep 1 && librewolf --restore-last-session"
+//spawn-sh-at-startup "sleep 1 && zen-browser --restore-last-session"

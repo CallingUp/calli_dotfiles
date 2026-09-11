@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+wallpaper="${1:?missing wallpaper}"
+generation="${2:?missing generation}"
+state="$HOME/.local/state/haku_theme"
+
+sleep 0.55
+[[ -r "$state/wallpaper_generation" ]] || exit 0
+[[ "$(<"$state/wallpaper_generation")" == "$generation" ]] || exit 0
+
+HAKU_WALLPAPER_SYNC_ONLY=1 HAKU_WALLPAPER_GENERATION="$generation" set-wallpaper "$wallpaper"

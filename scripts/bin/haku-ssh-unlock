@@ -7,6 +7,10 @@ export SSH_ASKPASS=/usr/lib/seahorse/ssh-askpass
 export SSH_ASKPASS_REQUIRE=force
 
 [[ -S "$SSH_AUTH_SOCK" ]] || exit 0
-ssh-add -l >/dev/null 2>&1 && exit 0
 
-exec setsid ssh-add "$HOME/.ssh/id_ed25519_otra" </dev/null
+for key in "$HOME/.ssh/id_ed25519_otra" "$HOME/.ssh/id_ed25519_github_callingup"; do
+    [[ -r "$key" && -r "$key.pub" ]] || continue
+    fingerprint="$(ssh-keygen -lf "$key.pub" -E sha256 | awk '{print $2}')"
+    ssh-add -l 2>/dev/null | awk '{print $2}' | grep -Fxq "$fingerprint" && continue
+    setsid ssh-add "$key" </dev/null
+done

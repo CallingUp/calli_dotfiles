@@ -1,0 +1,644 @@
+#!/usr/bin/env python3
+
+import os
+import json
+import re
+import subprocess
+import sys
+import fcntl
+import hashlib
+import random
+import threading
+import time
+from pathlib import Path
+
+if not os.environ.get("HAKU_CAROUSEL_LAYER"):
+    environment = os.environ.copy()
+    environment["HAKU_CAROUSEL_LAYER"] = "1"
+    environment["LD_PRELOAD"] = "/usr/lib/libgtk4-layer-shell.so"
+    os.execvpe(sys.executable, [sys.executable, os.path.abspath(__file__)], environment)
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Gdk", "4.0")
+gi.require_version("Gtk4LayerShell", "1.0")
+from gi.repository import Gdk, GLib, Gtk
+from gi.repository import Gtk4LayerShell
+
+WALLPAPERS = Path.home() / "Pictures" / "Wallpapers"
+CURRENT = Path.home() / ".local" / "state" / "haku_theme" / "current_wallpaper"
+GENERATION = Path.home() / ".local" / "state" / "haku_theme" / "wallpaper_generation"
+COLORS = Path.home() / ".local" / "state" / "haku_theme" / "colors.css"
+CACHE = Path.home() / ".cache" / "haku-wallpaper-carousel"
+WEB_CACHE = CACHE / "wallhaven"
+SYNC = Path.home() / ".local" / "bin" / "wallpaper-theme-sync"
+API = "https://wallhaven.cc/api/v1/search"
+EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif"}
+THUMB_WIDTH = 400
+THUMB_HEIGHT = 340
+
+
+def accent() -> str:
+    try:
+        match = re.search(r"accent_color\s+(#[0-9A-Fa-f]{6})", COLORS.read_text())
+        if match:
+            return match.group(1)
+    except OSError:
+        pass
+    return "#ced0de"
+
+
+class Carousel:
+    def __init__(self):
+        self.loop = GLib.MainLoop()
+        self.all_files = sorted((path for path in WALLPAPERS.iterdir() if path.is_file() and path.suffix.lower() in EXTENSIONS), key=lambda path: path.name.lower())
+        self.files = list(self.all_files)
+        self.index = 0
+        self.window = None
+        self.applying = False
+        self.current = None
+        self.thumbnail_jobs = set()
+        self.source = "local"
+        self.web_items = []
+        self.web_query = ""
+        self.web_total = 0
+        self.web_next_page = 1
+        self.web_last_page = 0
+        self.web_loading_pages = set()
+        self.web_thumbnail_jobs = set()
+        self.web_thumbnail_failures = set()
+        self.search_mode = False
+        self.rotating = False
+        self.pending_rotation = 0
+        self.held_navigation = set()
+        self.generation = time.time_ns()
+        self.lock = open(Path(os.environ.get("XDG_RUNTIME_DIR", "/tmp")) / "haku-wallpaper-carousel.lock", "w")
+        try:
+            fcntl.flock(self.lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            self.has_lock = True
+        except BlockingIOError:
+            self.has_lock = False
+        try:
+            current = Path(CURRENT.read_text().strip()).resolve()
+            self.current = next(path for path in self.all_files if path.resolve() == current)
+            self.index = self.files.index(self.current)
+        except (OSError, StopIteration, ValueError):
+            pass
+        WEB_CACHE.mkdir(parents=True, exist_ok=True)
+
+    def palette_css(self):
+        return f"""
+            window {{ background: transparent; font-family: Iosevka Nerd Font; }}
+            .carousel {{ background: transparent; padding: 0; }}
+            .title {{ color: {accent()}; font-size: 16px; font-weight: bold; text-shadow: 0 2px 8px rgba(0,0,0,.95); }}
+            .hint, .caption, .counter {{ color: rgba(232, 237, 244, .78); font-size: 12px; text-shadow: 0 2px 8px rgba(0,0,0,.95); }}
+            entry {{ background: rgba(7,9,14,.88); color: #e8edf4; border: 2px solid {accent()}; border-radius: 12px; padding: 7px 10px; }}
+            .side-card {{ opacity: .62; padding: 5px; border-radius: 14px; background: rgba(7,9,14,.78); }}
+            .focus-card {{ padding: 8px; border-radius: 17px; background: rgba(7,9,14,.90); border: 2px solid {accent()}; }}
+            .current-card {{ background: rgba(206,208,222,.18); border: 3px solid {accent()}; }}
+            .applying {{ opacity: .62; border: 3px solid {accent()}; }}
+            picture {{ border-radius: 12px; }}
+        """
+
+    def refresh_palette(self):
+        self.provider.load_from_string(self.palette_css())
+
+    def watch_palette(self):
+        try:
+            stamp = COLORS.stat().st_mtime_ns
+        except OSError:
+            return True
+        if stamp != self.palette_stamp:
+            self.palette_stamp = stamp
+            self.refresh_palette()
+        return True
+
+    def card(self, name: str, width: int, height: int, css: str):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        box.add_css_class(css)
+        picture = Gtk.Picture()
+        picture.set_content_fit(Gtk.ContentFit.COVER)
+        picture.set_can_shrink(True)
+        picture.set_size_request(width, height)
+        label = Gtk.Label(ellipsize=3, max_width_chars=34)
+        label.add_css_class("caption")
+        box.append(picture)
+        box.append(label)
+        return box, picture, label
+
+    def on_activate(self, _app):
+        if not self.has_lock:
+            subprocess.run(["notify-send", "Wallpaper carousel", "El carrusel ya está abierto o aplicando un fondo."], check=False)
+            self.quit()
+            return
+        if not self.files:
+            subprocess.run(["notify-send", "Wallpaper carousel", "No hay fondos en Pictures/Wallpapers."], check=False)
+            self.quit()
+            return
+
+        self.window = Gtk.Window()
+        self.window.set_decorated(False)
+        self.window.set_resizable(False)
+        self.window.set_default_size(390, 820)
+        Gtk4LayerShell.init_for_window(self.window)
+        Gtk4LayerShell.set_layer(self.window, Gtk4LayerShell.Layer.OVERLAY)
+        Gtk4LayerShell.set_anchor(self.window, Gtk4LayerShell.Edge.LEFT, True)
+        Gtk4LayerShell.set_margin(self.window, Gtk4LayerShell.Edge.LEFT, 18)
+        Gtk4LayerShell.set_keyboard_mode(self.window, Gtk4LayerShell.KeyboardMode.EXCLUSIVE)
+        Gtk4LayerShell.set_namespace(self.window, "haku-wallpaper-carousel")
+
+        self.provider = Gtk.CssProvider()
+        self.palette_stamp = 0
+        self.refresh_palette()
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), self.provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+        root = Gtk.Fixed()
+        self.root = root
+        root.set_size_request(390, 820)
+        root.add_css_class("carousel")
+        header = Gtk.Label(label="Wallpaper", xalign=0)
+        header.add_css_class("title")
+        self.hint = Gtk.Label(label="Local · Tab: Wallhaven · Enter: aplicar · Supr: Papelera", xalign=0)
+        self.hint.add_css_class("hint")
+        self.search = Gtk.Entry()
+        self.search.set_size_request(390, -1)
+        self.search.connect("changed", self.search_changed)
+        self.search.connect("activate", lambda _entry: self.search_or_apply())
+        self.spinner = Gtk.Spinner()
+        self.spinner.set_halign(Gtk.Align.START)
+        self.spinner.set_visible(False)
+        root.put(header, 0, 0)
+        root.put(self.hint, 0, 27)
+        root.put(self.search, 0, 51)
+        root.put(self.spinner, 0, 94)
+
+        self.previous, self.previous_image, self.previous_label = self.card("previous", 300, 128, "side-card")
+        self.selected, self.selected_image, self.selected_label = self.card("selected", 350, 300, "focus-card")
+        self.next, self.next_image, self.next_label = self.card("next", 300, 128, "side-card")
+        root.put(self.previous, 0, 116)
+        root.put(self.next, 0, 554)
+        root.put(self.selected, 38, 228)
+        self.card_slots = {
+            "top": (0, 116, 300, 128),
+            "center": (38, 228, 350, 300),
+            "bottom": (0, 554, 300, 128),
+        }
+
+        self.counter = Gtk.Label(xalign=.5)
+        self.counter.add_css_class("counter")
+        root.put(self.counter, 150, 732)
+        self.window.set_child(root)
+
+        keys = Gtk.EventControllerKey()
+        keys.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+        keys.connect("key-pressed", self.key_pressed)
+        keys.connect("key-released", self.key_released)
+        self.window.add_controller(keys)
+        scroll = Gtk.EventControllerScroll.new(Gtk.EventControllerScrollFlags.VERTICAL)
+        scroll.connect("scroll", self.scrolled)
+        self.window.add_controller(scroll)
+        self.window.connect("close-request", lambda *_: self.quit() or False)
+        self.refresh()
+        self.window.present()
+        GLib.timeout_add(250, self.watch_palette)
+
+    def quit(self):
+        self.loop.quit()
+
+    def key_pressed(self, _controller, keyval, _keycode, _state):
+        if self.applying:
+            return True
+        if self.search.has_focus() and Gdk.keyval_to_unicode(keyval):
+            return False
+        if keyval == Gdk.KEY_f and _state & Gdk.ModifierType.CONTROL_MASK:
+            self.search_mode = True
+            self.search.set_focusable(True)
+            self.search.grab_focus()
+            self.search.select_region(0, -1)
+            self.hint.set_text("Wallhaven · escribe otra búsqueda y pulsa Enter")
+        elif keyval in (Gdk.KEY_Tab, Gdk.KEY_ISO_Left_Tab):
+            self.toggle_source()
+        elif keyval in (Gdk.KEY_Escape,):
+            self.quit()
+        elif keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter):
+            self.search_or_apply()
+        elif keyval in (Gdk.KEY_Delete,):
+            self.delete_selected()
+        elif keyval in (Gdk.KEY_Up, Gdk.KEY_Left):
+            if keyval not in self.held_navigation:
+                self.held_navigation.add(keyval)
+                self.rotate(-1)
+        elif keyval in (Gdk.KEY_Down, Gdk.KEY_Right):
+            if keyval not in self.held_navigation:
+                self.held_navigation.add(keyval)
+                self.rotate(1)
+        else:
+            return False
+        return True
+
+    def key_released(self, _controller, keyval, _keycode, _state):
+        self.held_navigation.discard(keyval)
+
+    def scrolled(self, _controller, _dx, dy):
+        if dy < 0:
+            self.rotate(-1)
+        elif dy > 0:
+            self.rotate(1)
+        return True
+
+    def rotate(self, direction: int):
+        items = self.active_items()
+        if self.applying or not items:
+            return
+        self.pending_rotation += direction
+        if not self.rotating:
+            self.start_next_rotation()
+
+    def start_next_rotation(self):
+        if not self.pending_rotation:
+            return
+        direction = 1 if self.pending_rotation > 0 else -1
+        self.pending_rotation -= direction
+        self.rotating = True
+        self.motion_direction = direction
+        self.motion_roles = (
+            (self.previous, self.previous_image, "top", "bottom" if direction > 0 else "center"),
+            (self.selected, self.selected_image, "center", "top" if direction > 0 else "bottom"),
+            (self.next, self.next_image, "bottom", "center" if direction > 0 else "top"),
+        )
+        self.motion_tick(0)
+
+    def motion_tick(self, step):
+        progress = step / 12
+        eased = progress * progress * (3 - 2 * progress)
+        for widget, picture, start, end in self.motion_roles:
+            sx, sy, sw, sh = self.card_slots[start]
+            ex, ey, ew, eh = self.card_slots[end]
+            self.root.move(widget, round(sx + (ex - sx) * eased), round(sy + (ey - sy) * eased))
+            picture.set_size_request(round(sw + (ew - sw) * eased), round(sh + (eh - sh) * eased))
+        if step < 12:
+            GLib.timeout_add(16, self.motion_tick, step + 1)
+            return False
+        old_previous = (self.previous, self.previous_image, self.previous_label)
+        old_selected = (self.selected, self.selected_image, self.selected_label)
+        old_next = (self.next, self.next_image, self.next_label)
+        if self.motion_direction > 0:
+            self.previous, self.previous_image, self.previous_label = old_selected
+            self.selected, self.selected_image, self.selected_label = old_next
+            self.next, self.next_image, self.next_label = old_previous
+        else:
+            self.previous, self.previous_image, self.previous_label = old_next
+            self.selected, self.selected_image, self.selected_label = old_previous
+            self.next, self.next_image, self.next_label = old_selected
+        for widget in (self.previous, self.next):
+            widget.remove_css_class("focus-card")
+            widget.add_css_class("side-card")
+        self.selected.remove_css_class("side-card")
+        self.selected.add_css_class("focus-card")
+        for widget, picture, slot in ((self.previous, self.previous_image, "top"), (self.selected, self.selected_image, "center"), (self.next, self.next_image, "bottom")):
+            x, y, width, height = self.card_slots[slot]
+            self.root.move(widget, x, y)
+            picture.set_size_request(width, height)
+        self.index = (self.index + self.motion_direction) % len(self.active_items())
+        self.refresh()
+        self.rotating = False
+        self.start_next_rotation()
+        return False
+
+    def search_changed(self, entry):
+        if self.source == "web":
+            self.search_mode = True
+            self.hint.set_text("Wallhaven · Enter: buscar · Tab: Local")
+            return
+        query = entry.get_text().strip().casefold()
+        self.files = [path for path in self.all_files if query in path.name.casefold()]
+        if not self.files:
+            self.previous.set_visible(False)
+            self.selected.set_visible(False)
+            self.next.set_visible(False)
+            self.counter.set_text("Sin resultados")
+            self.hint.set_text("No se encontraron wallpapers.")
+            return
+        self.previous.set_visible(True)
+        self.selected.set_visible(True)
+        self.next.set_visible(True)
+        self.index = self.files.index(self.current) if self.current in self.files else 0
+        self.refresh()
+
+    def active_items(self):
+        return self.files if self.source == "local" else self.web_items
+
+    def toggle_source(self):
+        self.source = "web" if self.source == "local" else "local"
+        self.index = 0
+        self.search_mode = self.source == "web"
+        self.search.set_focusable(True)
+        self.search.set_text("")
+        self.search.grab_focus()
+        if self.source == "local":
+            self.set_loading(False)
+            self.search_changed(self.search)
+        elif self.web_items:
+            self.refresh()
+        else:
+            self.show_empty("Wallhaven · escribe una búsqueda y pulsa Enter")
+
+    def search_or_apply(self):
+        if self.source == "web" and (self.search_mode or not self.web_items):
+            self.search_wallhaven()
+        else:
+            self.apply()
+
+    def show_empty(self, message):
+        self.previous.set_visible(False)
+        self.selected.set_visible(False)
+        self.next.set_visible(False)
+        self.counter.set_text("")
+        self.hint.set_text(message)
+
+    def set_loading(self, active):
+        self.spinner.set_visible(active)
+        if active:
+            self.spinner.start()
+        else:
+            self.spinner.stop()
+
+    def set_card(self, picture, label, path: Path):
+        thumbnail = self.thumbnail(path)
+        picture.set_filename(str(thumbnail) if thumbnail else None)
+        name = path.stem.replace("wallhaven-", "")
+        label.set_text(name if thumbnail else f"󰋩 Cargando · {name}")
+        label.set_tooltip_text(path.name)
+
+    def thumbnail(self, path: Path):
+        signature = f"v2:{path.resolve()}:{path.stat().st_mtime_ns}".encode()
+        target = CACHE / f"{hashlib.sha1(signature).hexdigest()}.jpg"
+        if target.is_file() and target.stat().st_size > 0:
+            return target
+        if path not in self.thumbnail_jobs:
+            self.thumbnail_jobs.add(path)
+            threading.Thread(target=self.create_thumbnail, args=(path, target), daemon=True).start()
+        return None
+
+    def create_thumbnail(self, path: Path, target: Path):
+        temporary = target.with_suffix(".part.jpg")
+        try:
+            subprocess.run([
+                "magick", str(path), "-thumbnail", f"{THUMB_WIDTH}x{THUMB_HEIGHT}^", "-gravity", "center",
+                "-extent", f"{THUMB_WIDTH}x{THUMB_HEIGHT}", "-strip", "-quality", "82", str(temporary)
+            ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            temporary.replace(target)
+        except (OSError, subprocess.CalledProcessError):
+            temporary.unlink(missing_ok=True)
+        finally:
+            self.thumbnail_jobs.discard(path)
+            GLib.idle_add(self.refresh)
+
+    def search_wallhaven(self):
+        query = self.search.get_text().strip()
+        if not query:
+            self.show_empty("Wallhaven · escribe una búsqueda y pulsa Enter")
+            return
+        self.web_query = query
+        self.search_mode = True
+        self.web_items = []
+        self.web_total = 0
+        self.web_next_page = 1
+        self.web_last_page = 0
+        self.index = 0
+        self.search.set_focusable(True)
+        self.set_loading(True)
+        self.show_empty("Wallhaven · buscando…")
+        self.load_web_page(1)
+
+    def load_web_page(self, page):
+        token = (self.web_query, page)
+        if token in self.web_loading_pages or (self.web_last_page and page > self.web_last_page):
+            return
+        query = self.web_query
+        self.web_loading_pages.add(token)
+        threading.Thread(target=self.fetch_web_page, args=(query, page), daemon=True).start()
+
+    def fetch_web_page(self, query, page):
+        try:
+            output = subprocess.check_output([
+                "curl", "--fail", "--silent", "--show-error", "--get", API,
+                "--connect-timeout", "6", "--max-time", "30",
+                "--data-urlencode", f"q={query}",
+                "--data-urlencode", "categories=110",
+                "--data-urlencode", "purity=100",
+                "--data-urlencode", "sorting=relevance",
+                "--data-urlencode", f"page={page}",
+            ], text=True)
+            payload = json.loads(output)
+            items = [{
+                "id": item["id"], "thumb": item["thumbs"]["small"],
+                "resolution": item["resolution"], "category": item["category"],
+                "path": item["path"],
+            } for item in payload.get("data", [])]
+            meta = payload["meta"]
+            GLib.idle_add(self.receive_web_page, query, page, items, meta["total"], meta["last_page"])
+        except (KeyError, ValueError, subprocess.CalledProcessError):
+            GLib.idle_add(self.web_error, query, page)
+
+    def receive_web_page(self, query, page, items, total, last_page):
+        self.web_loading_pages.discard((query, page))
+        if query != self.web_query:
+            return False
+        known = {item["id"] for item in self.web_items}
+        self.web_items.extend(item for item in items if item["id"] not in known)
+        self.web_total = total
+        self.web_last_page = last_page
+        self.web_next_page = max(self.web_next_page, page + 1)
+        if self.web_items:
+            self.set_loading(False)
+            self.search.set_focusable(False)
+            self.search_mode = False
+            self.index %= len(self.web_items)
+            self.refresh()
+        else:
+            self.show_empty("Wallhaven · sin resultados")
+        return False
+
+    def web_error(self, query, page):
+        self.web_loading_pages.discard((query, page))
+        if query == self.web_query and not self.web_items:
+            self.set_loading(False)
+            self.show_empty("Wallhaven · no se pudo cargar la búsqueda")
+        return False
+
+    def set_web_card(self, picture, label, item):
+        thumbnail = self.web_thumbnail(item)
+        picture.set_filename(str(thumbnail) if thumbnail else None)
+        text = f"{item['id']} · {item['resolution']}"
+        label.set_text(text if thumbnail else f"󰋩 Cargando · {text}")
+        label.set_tooltip_text(f"{item['category']} · {item['resolution']}")
+
+    def web_thumbnail(self, item):
+        target = WEB_CACHE / f"{item['id']}-v2.jpg"
+        if target.is_file() and target.stat().st_size > 0:
+            return target
+        if item["id"] in self.web_thumbnail_failures:
+            return None
+        if item["id"] not in self.web_thumbnail_jobs:
+            self.web_thumbnail_jobs.add(item["id"])
+            threading.Thread(target=self.download_web_thumbnail, args=(item, target), daemon=True).start()
+        return None
+
+    def download_web_thumbnail(self, item, target):
+        source = target.with_suffix(".source")
+        temporary = target.with_suffix(".part.jpg")
+        try:
+            subprocess.run(["curl", "--fail", "--silent", "--show-error", "--location", item["thumb"], "--output", str(source)], check=True)
+            subprocess.run(["magick", str(source), "-thumbnail", f"{THUMB_WIDTH}x{THUMB_HEIGHT}^", "-gravity", "center", "-extent", f"{THUMB_WIDTH}x{THUMB_HEIGHT}", "-strip", "-quality", "82", str(temporary)], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            temporary.replace(target)
+        except (OSError, subprocess.CalledProcessError):
+            temporary.unlink(missing_ok=True)
+            self.web_thumbnail_failures.add(item["id"])
+        finally:
+            source.unlink(missing_ok=True)
+            self.web_thumbnail_jobs.discard(item["id"])
+            GLib.idle_add(self.refresh)
+
+    def refresh(self):
+        items = self.active_items()
+        if not items:
+            self.show_empty("Wallhaven · sin resultados" if self.source == "web" else "No se encontraron wallpapers.")
+            return
+        self.previous.set_visible(True)
+        self.selected.set_visible(True)
+        self.next.set_visible(True)
+        self.index %= len(items)
+        if self.source == "web":
+            self.set_web_card(self.previous_image, self.previous_label, items[(self.index - 1) % len(items)])
+            self.set_web_card(self.selected_image, self.selected_label, items[self.index])
+            self.set_web_card(self.next_image, self.next_label, items[(self.index + 1) % len(items)])
+            self.selected.remove_css_class("current-card")
+            self.counter.set_text(f"{self.index + 1} / {self.web_total or len(items)}")
+            self.hint.set_text("Wallhaven · Enter: descargar y aplicar · Tab: Local")
+            if self.index >= len(items) - 3 and self.web_next_page <= self.web_last_page:
+                self.load_web_page(self.web_next_page)
+            return
+        self.set_card(self.previous_image, self.previous_label, items[(self.index - 1) % len(items)])
+        self.set_card(self.selected_image, self.selected_label, items[self.index])
+        self.set_card(self.next_image, self.next_label, items[(self.index + 1) % len(items)])
+        self.counter.set_text(f"{self.index + 1} / {len(items)}")
+        is_current = self.current is not None and items[self.index].resolve() == self.current.resolve()
+        if is_current:
+            self.selected.add_css_class("current-card")
+            self.selected_label.set_text(f"󰄬 ACTUAL · {items[self.index].stem.replace('wallhaven-', '')}")
+            self.hint.set_text("󰄬 Fondo activo · Enter no lo reaplica · Supr: Papelera · Tab: Wallhaven")
+        else:
+            self.selected.remove_css_class("current-card")
+            self.hint.set_text("Local · Tab: Wallhaven · Enter: aplicar · Supr: Papelera")
+
+    def delete_selected(self):
+        items = self.active_items()
+        if not items:
+            return
+        if self.source == "web":
+            self.web_items.pop(self.index)
+            if self.web_items:
+                self.index %= len(self.web_items)
+                self.refresh()
+                self.hint.set_text("󰆴 Resultado ocultado durante esta sesión.")
+            else:
+                self.show_empty("Wallhaven · sin resultados")
+            return
+        target = self.files[self.index]
+        if self.current is not None and target.resolve() == self.current.resolve():
+            self.hint.set_text("󰄬 No se puede borrar el fondo activo.")
+            return
+        try:
+            subprocess.run(["gio", "trash", str(target)], check=True,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except (OSError, subprocess.CalledProcessError):
+            self.hint.set_text("No se pudo enviar el fondo a la Papelera.")
+            return
+        self.files.pop(self.index)
+        self.all_files.remove(target)
+        if not self.files:
+            self.quit()
+            return
+        self.index %= len(self.files)
+        self.refresh()
+        self.hint.set_text("󰆴 Fondo enviado a la Papelera.")
+
+    def apply(self):
+        items = self.active_items()
+        if not items:
+            return
+        if self.source == "web":
+            self.download_web_wallpaper(items[self.index])
+            return
+        self.apply_local_path(items[self.index])
+
+    def apply_local_path(self, target):
+        if self.current is not None and target.resolve() == self.current.resolve():
+            self.hint.set_text("󰄬 Este ya es el fondo activo; no se volvió a aplicar.")
+            return
+        self.start_transition(target)
+
+    def start_transition(self, target):
+        self.generation += 1
+        GENERATION.parent.mkdir(parents=True, exist_ok=True)
+        generation_file = GENERATION.with_suffix(".tmp")
+        generation_file.write_text(str(self.generation))
+        generation_file.replace(GENERATION)
+        self.current = target
+        current_file = CURRENT.with_suffix(".tmp")
+        current_file.write_text(f"{target.resolve()}\n")
+        current_file.replace(CURRENT)
+        self.refresh()
+        self.hint.set_text("↑↓ / rueda: navegar · Enter: aplicar · Supr: Papelera")
+        try:
+            transition = random.choice(("left", "right", "top", "bottom"))
+            subprocess.Popen([str(Path.home() / ".local/bin/haku-wallpaper-render"), str(target), transition],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             start_new_session=True)
+            subprocess.Popen([str(SYNC), str(target), str(self.generation)],
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             start_new_session=True)
+        except OSError:
+            self.hint.set_text("No se pudo enviar el fondo al renderer.")
+
+    def download_web_wallpaper(self, item):
+        if self.applying:
+            return
+        self.applying = True
+        self.hint.set_text("Wallhaven · descargando fondo…")
+        threading.Thread(target=self.fetch_web_wallpaper, args=(item,), daemon=True).start()
+
+    def fetch_web_wallpaper(self, item):
+        extension = item["path"].rsplit(".", 1)[-1].lower()
+        target = WALLPAPERS / f"wallhaven-{item['id']}.{extension}"
+        temporary = target.with_suffix(f"{target.suffix}.part")
+        try:
+            if not target.is_file() or target.stat().st_size == 0:
+                temporary.unlink(missing_ok=True)
+                subprocess.run(["curl", "--fail", "--silent", "--show-error", "--location", item["path"], "--output", str(temporary)], check=True)
+                temporary.replace(target)
+            GLib.idle_add(self.web_wallpaper_ready, target)
+        except (OSError, subprocess.CalledProcessError):
+            temporary.unlink(missing_ok=True)
+            GLib.idle_add(self.web_wallpaper_failed)
+
+    def web_wallpaper_ready(self, target):
+        self.applying = False
+        if target not in self.all_files:
+            self.all_files.append(target)
+            self.all_files.sort(key=lambda path: path.name.lower())
+        self.apply_local_path(target)
+        return False
+
+    def web_wallpaper_failed(self):
+        self.applying = False
+        self.hint.set_text("Wallhaven · no se pudo descargar el fondo.")
+        return False
+
+
+app = Carousel()
+app.on_activate(None)
+if app.window is not None:
+    app.loop.run()
