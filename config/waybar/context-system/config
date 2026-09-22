@@ -1,0 +1,11 @@
+{
+  "include": ["$HOME/.config/waybar/module/monitor_module"],
+  "layer": "top", "position": "top", "height": 42,
+  "margin-top": 2, "margin-bottom": 0, "spacing": 0,
+  "tooltip": false, "reload_style_on_change": true,
+  "modules-center": ["group/context-system"],
+  "group/context-system": {"orientation": "horizontal", "modules": ["custom/context-system", "cpu", "memory", "temperature", "battery", "network"]},
+  "custom/context-system": {"format": "󰍛", "on-click": "$HOME/.local/bin/waybar_manager.sh --context-next", "tooltip": false},
+  "battery": {"format": "{icon} {capacity}%", "format-icons": {"default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"], "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"], "plugged": [""]}, "tooltip": false},
+  "network": {"format-wifi": "󰖩 {signalStrength}%", "format-ethernet": "󰈀 {ipaddr}", "format-disconnected": "󰖪", "tooltip": false, "on-click": "noctalia msg panel-toggle control-center"}
+}

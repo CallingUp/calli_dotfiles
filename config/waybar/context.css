@@ -1,0 +1,24 @@
+/* Shared style for the three compact contextual profiles. */
+@import url("/home/calli/.local/state/haku_theme/colors.css");
+@import url("/home/calli/.local/state/haku_theme/fonts.css");
+
+* { font-weight: bold; transition: color 140ms ease, background-color 140ms ease, opacity 140ms ease; }
+window#waybar { background: transparent; }
+.modules-left, .modules-right { padding: 0; margin: 0; }
+.modules-center { padding: 3px 0; margin: 0; }
+#context-media, #context-system, #context-actions {
+  background: #000; color: @accent_color; border-radius: 14px; padding: 4px 9px;
+  margin: 0; min-height: 28px; box-shadow: 0 0 6px #000; text-shadow: 0 0 6px @accent_color;
+}
+#context-media #mpris { min-width: 210px; padding: 0 8px; }
+#context-media #cava { padding: 0 4px; }
+#custom-context-media, #custom-context-system, #custom-context-actions { padding: 0 8px 0 2px; color: @accent_color; }
+#context-system #cpu, #context-system #memory, #context-system #temperature, #context-system #battery, #context-system #network,
+#context-actions #custom-logo, #context-actions #custom-settings, #context-actions #custom-notification, #context-actions #pulseaudio, #context-actions #backlight, #context-actions #custom-session {
+  background: transparent; box-shadow: none; border-radius: 7px; min-height: 0; min-width: 0; margin: 0; padding: 0 8px; color: @accent_color;
+}
+#context-actions #custom-logo, #context-actions #custom-notification, #context-actions #custom-session { font-size: 15px; }
+#context-media #custom-media-prev, #context-media #custom-media-next { padding: 0 6px; }
+#context-media #custom-media-prev:active, #context-media #custom-media-next:active, #context-media #custom-context-media:active,
+#context-system #custom-context-system:active, #context-actions #custom-context-actions:active,
+#context-actions #custom-logo:active, #context-actions #custom-notification:active { color: #000; background: @accent_color; text-shadow: none; }

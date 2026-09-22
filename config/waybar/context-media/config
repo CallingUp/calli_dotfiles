@@ -1,0 +1,11 @@
+{
+  "include": ["$HOME/.config/waybar/module/music_module"],
+  "layer": "top", "position": "top", "height": 42,
+  "margin-top": 2, "margin-bottom": 0, "spacing": 0,
+  "tooltip": false, "reload_style_on_change": true,
+  "modules-center": ["group/context-media"],
+  "group/context-media": {"orientation": "horizontal", "modules": ["custom/context-media", "custom/media-prev", "mpris", "cava", "custom/media-next"]},
+  "custom/context-media": {"format": "󰎈", "on-click": "$HOME/.local/bin/waybar_manager.sh --context-next", "tooltip": false},
+  "custom/media-prev": {"format": "󰒮", "on-click": "noctalia msg media previous", "tooltip": false},
+  "custom/media-next": {"format": "󰒭", "on-click": "noctalia msg media next", "tooltip": false}
+}

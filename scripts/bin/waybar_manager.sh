@@ -13,6 +13,7 @@ WAYBAR_MODES_DEAULT=("top" "neon" "island" "coredge" "full" "minimal" "left")
 
 # WAYBAR_MODES_DEAULT + WAYBAR_MODE_USER
 WAYBAR_MODES=("${WAYBAR_MODES_DEAULT[@]}" "${WAYBAR_MODE_USER[@]}")
+CONTEXT_MODES=("context-media" "context-system" "context-actions")
 
 # Init state file if missing
 if [[ -f "$STATE_FILE" ]]; then
@@ -49,6 +50,14 @@ restart_waybar() {
         fi
     fi
 
+    # When the packaged user service owns Waybar, restart it there. Killing its
+    # process and starting a detached replacement races systemd and can create
+    # two bars.
+    if systemctl --user is-active --quiet waybar.service 2>/dev/null; then
+        systemctl --user restart waybar.service
+        return
+    fi
+
     if pgrep -fx waybar >/dev/null; then
         pkill -fx waybar
         sleep 0.2
@@ -56,6 +65,47 @@ restart_waybar() {
 
     waybar &
 }
+
+# Contextual Haku bar: one centered visual bar, with three intentionally small
+# profiles.  The selected profile remains a normal Waybar mode, so the original
+# modes (neon, top, minimal, ...) are never altered.
+select_context_mode() {
+    local requested="$1"
+    local selected=""
+
+    case "$requested" in
+        next)
+            local index=0
+            for i in "${!CONTEXT_MODES[@]}"; do
+                if [[ "${CONTEXT_MODES[$i]}" == "$CURRENT_STATE" ]]; then
+                    index=$(( (i + 1) % ${#CONTEXT_MODES[@]} ))
+                    selected="${CONTEXT_MODES[$index]}"
+                    break
+                fi
+            done
+            [[ -n "$selected" ]] || selected="${CONTEXT_MODES[0]}"
+            ;;
+        media) selected="context-media" ;;
+        system) selected="context-system" ;;
+        actions) selected="context-actions" ;;
+        *)
+            notify-send "Waybar" "Perfil contextual desconocido: $requested"
+            exit 2
+            ;;
+    esac
+
+    if [[ "$selected" != "$CURRENT_STATE" ]]; then
+        link_mode "$selected"
+        restart_waybar
+    fi
+}
+
+case "$1" in
+    --context-next) select_context_mode next; exit 0 ;;
+    --context-media) select_context_mode media; exit 0 ;;
+    --context-system) select_context_mode system; exit 0 ;;
+    --context-actions) select_context_mode actions; exit 0 ;;
+esac
 
 # Handle --cycle argument to toggle through the MODES array
 if [[ "$1" == "--cycle" ]]; then
