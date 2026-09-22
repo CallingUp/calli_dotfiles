@@ -1,0 +1,11 @@
+{
+    "custom/notification": {
+        "tooltip": true,
+        "format": "{text}",
+        "return-type": "json",
+        "exec": "$HOME/.local/bin/noctalia-notification-status",
+        "interval": 5,
+        "on-click": "noctalia msg panel-toggle control-center notifications",
+        "on-click-right": "noctalia msg notification-dnd-toggle"
+    }
+}

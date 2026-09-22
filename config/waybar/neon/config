@@ -195,8 +195,6 @@
         "tooltip-format": "Centro de control",
         "tooltip": false,
         "on-click": "$HOME/.local/bin/haku-panel-hover waybar-toggle control-center control-center",
-        "on-mouse-enter": "$HOME/.local/bin/haku-panel-hover waybar-enter control-center control-center",
-        "on-mouse-leave": "$HOME/.local/bin/haku-panel-hover waybar-leave",
         "on-click-right": "noctalia msg settings-toggle"
     },
 
@@ -204,9 +202,7 @@
         "format": "",
         "tooltip-format": "Monitor del sistema",
         "tooltip": false,
-        "on-click": "$HOME/.local/bin/haku-panel-hover waybar-toggle control-center control-center system",
-        "on-mouse-enter": "$HOME/.local/bin/haku-panel-hover waybar-enter control-center control-center system",
-        "on-mouse-leave": "$HOME/.local/bin/haku-panel-hover waybar-leave"
+        "on-click": "$HOME/.local/bin/haku-panel-hover waybar-toggle control-center control-center system"
     },
 
     "custom/session": {
@@ -220,8 +216,6 @@
         "format": "󰮯",
         "tooltip-format": "Abrir launcher",
         "tooltip": false,
-        "on-mouse-enter": "$HOME/.local/bin/haku-panel-hover waybar-enter launcher launcher",
-        "on-mouse-leave": "$HOME/.local/bin/haku-panel-hover waybar-leave",
         "on-click": "$HOME/.local/bin/haku-panel-hover waybar-toggle launcher launcher"
     }
 }

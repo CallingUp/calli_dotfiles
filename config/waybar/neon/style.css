@@ -85,41 +85,43 @@ window#waybar {
 }
 
 #workspaces {
-    padding: 6px;
+    padding: 5px 6px;
 }
 
 #workspaces button {
-    background-color: @accent_color;
-    border-radius: 8px; 
-    padding: 0 8px;
-    margin: 0 3px;
-    min-width: 15px;
+    background-color: transparent;
+    background-image: radial-gradient(ellipse closest-side at center, @accent_color 96%, transparent 100%);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 9px 9px;
+    border-radius: 999px;
+    padding: 0;
+    margin: 0 4px;
+    min-width: 9px;
     min-height: 0;
-    opacity: 0.6;
-    transition: min-width 170ms ease, opacity 140ms ease, background-color 140ms ease;
+    font-size: 0;
+    opacity: 0.38;
+    transition: min-width 180ms ease, opacity 150ms ease;
 }
 
 #workspaces button.active {
-    background-color: @accent_color; 
-    min-width: 40px;
     opacity: 1;
 }
 
 #workspaces button.empty {
-    background-color: @accent_color;
-    opacity: 0.2; 
-    min-width: 15px;
+    opacity: 0.26;
+    min-width: 9px;
 }
 
 #workspaces button.empty.active {
-    background-color: @accent_color;
-    opacity: 0.6;
-    min-width: 40px;
+    opacity: 1;
 }
 
 #workspaces button.overview {
-    background-color: rgba(255, 255, 255, 0.1);
-    min-width: 40px;
+    background-color: transparent;
+    background-size: 9px 9px;
+    min-width: 9px;
+    opacity: 0.6;
 }
 
 /* MODULES INSIDE GROUPS                                                          */
@@ -146,8 +148,8 @@ window#waybar {
     font-size: 17px;
 }
 
-#custom-logo:hover,
-#custom-notification:hover {
+#custom-logo:active,
+#custom-notification:active {
     color: #000000;
     background-color: @accent_color;
     border-radius: 8px;
@@ -250,9 +252,9 @@ tooltip label {
     padding: 0 7px;
 }
 
-#custom-media-prev:hover,
-#custom-media-play:hover,
-#custom-media-next:hover {
+#custom-media-prev:active,
+#custom-media-play:active,
+#custom-media-next:active {
     opacity: 0.65;
 }
 

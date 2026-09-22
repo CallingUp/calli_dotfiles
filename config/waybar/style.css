@@ -1,0 +1,263 @@
+/* GLOBAL STYLES                                                                  */
+@import url("../../.local/state/haku_theme/colors.css");
+@import url("../../.local/state/haku_theme/fonts.css");
+
+* {
+    font-weight: bold;
+    transition: color 140ms ease, background-color 140ms ease, opacity 140ms ease, box-shadow 140ms ease;
+}
+
+window#waybar {
+    background-color: transparent;
+    border-radius: 0;
+}
+
+.modules-left,
+.modules-center,
+.modules-right {
+    padding: 6px 4px;
+    margin: 0;
+}
+
+.modules-left {
+    padding-left: 6px;
+}
+
+.modules-right {
+    padding-right: 8px;
+}
+
+/* SOLID BLACK BLOCKS WITH GLOWING ACCENT TEXT                                    */
+#workspaces,
+#clock,
+#custom-logo,
+#custom-recorder,
+#custom-notification,
+#custom-session,
+#monitor,
+#settings,
+#media,
+#player {
+    background-color: #000000; 
+    border-radius: 10px;
+    padding: 2px 12px;
+    margin: 2px 6px;
+    color: @accent_color;
+    text-shadow: 0px 0px 6px @accent_color; 
+    box-shadow: 0 0 4px #000000;
+}
+
+#custom-logo {
+    padding: 6px 20px;
+}
+
+#custom-notification,
+#custom-session {
+    min-width: 24px;
+    min-height: 26px;
+    padding: 4px 14px;
+    margin: 3px 7px;
+    font-size: 16px;
+}
+
+#monitor,
+#settings {
+    min-height: 26px;
+    padding: 4px 10px;
+    margin: 3px 7px;
+    border-radius: 12px;
+}
+
+#clock {
+    min-height: 30px;
+    padding: 5px 20px;
+    margin: 3px 6px;
+    border-radius: 13px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+/* WORKSPACES                                                                     */
+#hworkspaces {
+    margin: 0;
+    padding: 0;
+    background-color: transparent;
+}
+
+#workspaces {
+    padding: 5px 6px;
+}
+
+#workspaces button {
+    background-color: transparent;
+    background-image: radial-gradient(ellipse closest-side at center, @accent_color 96%, transparent 100%);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 9px 9px;
+    border-radius: 999px;
+    padding: 0;
+    margin: 0 4px;
+    min-width: 9px;
+    min-height: 0;
+    font-size: 0;
+    opacity: 0.38;
+    transition: min-width 180ms ease, opacity 150ms ease;
+}
+
+#workspaces button.active {
+    opacity: 1;
+}
+
+#workspaces button.empty {
+    opacity: 0.26;
+    min-width: 9px;
+}
+
+#workspaces button.empty.active {
+    opacity: 1;
+}
+
+#workspaces button.overview {
+    background-color: transparent;
+    background-size: 9px 9px;
+    min-width: 9px;
+    opacity: 0.6;
+}
+
+/* MODULES INSIDE GROUPS                                                          */
+#custom-monitor,
+#custom-settings,
+#cpu,
+#memory,
+#temperature,
+#battery,
+#power-profiles-daemon,
+#tray,
+#pulseaudio,
+#backlight {
+    background-color: transparent;
+    color: @accent_color;
+    margin: 0;
+    padding: 0 7px;
+    min-width: 18px;
+    text-shadow: 0px 0px 6px @accent_color;
+}
+
+#custom-monitor,
+#custom-settings {
+    font-size: 17px;
+}
+
+#custom-logo:active,
+#custom-notification:active {
+    color: #000000;
+    background-color: @accent_color;
+    border-radius: 8px;
+    text-shadow: none;
+    box-shadow: 0 0 8px @accent_color;
+}
+
+#custom-recorder {
+    animation: blink 1s infinite;
+}
+
+/* SLIDERS                                                                        */
+#backlight-slider slider,
+#pulseaudio-slider slider {
+    opacity: 0;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    background: none;
+}
+
+#backlight-slider trough,
+#pulseaudio-slider trough {
+    min-width: 55px;
+    min-height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 4px;
+}
+
+#backlight-slider highlight,
+#pulseaudio-slider highlight {
+    min-width: 8px;
+    border-radius: 4px;
+    background: @accent_color;
+    box-shadow: 0 0 8px @accent_color;
+}
+
+/* TOOLTIPS                                                                       */
+tooltip {
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+tooltip label {
+    color: @accent_color;
+    text-shadow: 0px 0px 4px @accent_color;
+}
+
+/* ANIMATIONS                                                                     */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+
+/*MPRIS*/
+
+#player {
+    background: #000000;
+    color: @accent_color;
+    border-radius: 12px;
+    margin: 3px 6px;
+    padding: 4px 8px;
+    min-height: 26px;
+    box-shadow: 0 0 4px #000000;
+}
+
+#mpris {
+    background: transparent;
+    color: @accent_color;
+    border-radius: 0;
+    margin: 0;
+    padding: 0 12px;
+    min-width: 220px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+
+#mpris.paused {
+    opacity: 0.75;
+}
+
+#mpris.stopped {
+    opacity: 0;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+}
+
+#custom-media-prev,
+#custom-media-play,
+#custom-media-next,
+#cava {
+    background: transparent;
+    color: @accent_color;
+    border-radius: 0;
+    padding: 0 7px;
+}
+
+#custom-media-prev:active,
+#custom-media-play:active,
+#custom-media-next:active {
+    opacity: 0.65;
+}
+
+#cava {
+    padding-right: 8px;
+}
