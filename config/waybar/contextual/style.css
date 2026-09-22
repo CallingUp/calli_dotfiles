@@ -15,6 +15,9 @@ window#waybar { background: transparent; }
 #workspaces button.empty.active { opacity: 1; }
 #workspaces button.overview { background-color: transparent; background-size: 9px 9px; min-width: 9px; opacity: .6; }
 #clock { background-color: #000000; color: @accent_color; min-height: 30px; padding: 5px 20px; margin: 3px 6px; border-radius: 13px; font-size: 15px; font-weight: 700; text-shadow: 0 0 6px @accent_color; box-shadow: 0 0 4px #000000; }
+#taskbar { background: transparent; margin: 0 1px 0 0; padding: 0; }
+#taskbar button { background: #000000; border: 1px solid transparent; border-radius: 10px; min-width: 26px; min-height: 26px; margin: 3px 2px; padding: 3px 6px; box-shadow: 0 0 4px #000000; }
+#taskbar button.active { border-color: @accent_color; box-shadow: 0 0 5px @accent_color; }
 #custom-session { background-color: #000000; color: @accent_color; border-radius: 10px; min-width: 24px; min-height: 26px; padding: 4px 14px; margin: 3px 7px; font-size: 16px; text-shadow: 0 0 6px @accent_color; box-shadow: 0 0 4px #000000; }
 #mpris { background: transparent; color: @accent_color; border-radius: 0; margin: 0; padding: 0 12px; min-width: 220px; font-weight: 600; transition: all .25s ease; }
 #mpris.paused { opacity: .75; }
