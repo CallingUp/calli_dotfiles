@@ -1,0 +1,32 @@
+{
+  "include": [
+    "$HOME/.config/waybar/module/workspace_module",
+    "$HOME/.config/waybar/module/notification_module",
+    "$HOME/.config/waybar/module/music_module",
+    "$HOME/.config/waybar/module/monitor_module"
+  ],
+  "layer": "top", "position": "top", "height": 42,
+  "fixed-center": true,
+  "on-sigusr1": "SHOW", "on-sigusr2": "HIDE",
+  "margin-top": 2, "margin-bottom": 0, "spacing": 0,
+  "tooltip": false, "reload_style_on_change": true,
+  "modules-left": ["group/hworkspaces", "clock"],
+  "modules-center": ["group/context-shell"],
+  "modules-right": ["custom/session"],
+  "group/hworkspaces": {"orientation": "horizontal", "modules": ["ext/workspaces"]},
+  "clock": {"format": " {:%H:%M:%S, %d %B %Y} ", "format-alt": " {:%A, %d %B %Y} ", "interval": 1, "tooltip": false},
+  "group/context-shell": {"orientation": "horizontal", "modules": ["group/context-media", "group/context-system", "group/context-actions"]},
+
+  "group/context-media": {"orientation": "horizontal", "signal": 8, "signal-command": "test \"$(cat $HOME/.local/state/haku_theme/waybar_current_mode 2>/dev/null)\" = context-media", "drawer": {"transition-duration": 260, "click-to-reveal": false, "children-class": "context-child"}, "modules": ["mpris", "cava"]},
+  "mpris": {"format": "{artist}::{title}", "format-paused": "{artist}::{title}", "format-stopped": "", "artist-len": 18, "title-len": 28, "dynamic-len": 45, "on-click": "$HOME/.local/bin/haku-panel-hover waybar-toggle control-center control-center media", "on-click-middle": "noctalia msg media play-pause", "on-click-right": "noctalia msg media next", "on-scroll-up": "noctalia msg media next", "on-scroll-down": "noctalia msg media previous", "tooltip": false},
+
+  "group/context-system": {"orientation": "horizontal", "signal": 8, "signal-command": "test \"$(cat $HOME/.local/state/haku_theme/waybar_current_mode 2>/dev/null)\" = context-system", "drawer": {"transition-duration": 260, "click-to-reveal": false, "children-class": "context-child"}, "modules": ["cpu", "memory", "temperature", "battery", "network"]},
+  "battery": {"format": "{icon} {capacity}%", "format-icons": {"default": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"], "charging": ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"], "plugged": [""]}, "tooltip": false},
+  "network": {"format-wifi": "󰖩 {signalStrength}%", "format-ethernet": "󰈀 {ipaddr}", "format-disconnected": "󰖪", "tooltip": false, "on-click": "noctalia msg panel-toggle control-center"},
+
+  "group/context-actions": {"orientation": "horizontal", "signal": 8, "signal-command": "test \"$(cat $HOME/.local/state/haku_theme/waybar_current_mode 2>/dev/null)\" = context-actions", "drawer": {"transition-duration": 260, "click-to-reveal": false, "children-class": "context-child"}, "modules": ["custom/settings", "pulseaudio", "backlight"]},
+  "custom/settings": {"format": "", "on-click": "$HOME/.local/bin/haku-panel-hover waybar-toggle control-center control-center", "tooltip": false},
+  "custom/session": {"format": "", "on-click": "$HOME/.local/bin/haku-panel-hover waybar-toggle session session", "tooltip": false},
+  "pulseaudio": {"format": "{icon} {volume}%", "format-muted": "󰝟", "format-icons": {"headphone": "󰋋", "default": ["", "", ""]}, "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle", "on-click-right": "pavucontrol", "tooltip": false},
+  "backlight": {"format": "{icon} {percent}%", "format-icons": ["", "", "", "", "", "", "", "", ""], "on-scroll-up": "brightnessctl set 1%+", "on-scroll-down": "brightnessctl set 1%-", "on-click": "$HOME/.local/bin/nightlight_toggle.sh", "tooltip": false}
+}

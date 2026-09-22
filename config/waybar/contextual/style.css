@@ -1,0 +1,24 @@
+@import url("/home/calli/.local/state/haku_theme/colors.css");
+@import url("/home/calli/.local/state/haku_theme/fonts.css");
+@import url("/home/calli/.config/waybar/contextual/visibility.css");
+
+* { font-weight: bold; transition: color 140ms ease, background-color 140ms ease, margin-top 280ms cubic-bezier(.22,.75,.25,1); }
+window#waybar { background: transparent; }
+.modules-center { padding: 3px 0; margin: 0; }
+#hworkspaces { margin: 0; padding: 0; background: transparent; }
+#context-shell { background: #000000; color: @accent_color; border-radius: 12px; margin: 3px 6px; padding: 4px 8px; min-height: 26px; box-shadow: 0 0 4px #000000; text-shadow: 0 0 6px @accent_color; }
+#context-media, #context-system, #context-actions, #context-media-content, #context-system-content, #context-actions-content { background: transparent; margin: 0; padding: 0; box-shadow: none; border-radius: 0; }
+#workspaces { background-color: #000000; border-radius: 10px; padding: 5px 6px; margin: 2px 6px; color: @accent_color; text-shadow: 0 0 6px @accent_color; box-shadow: 0 0 4px #000000; }
+#workspaces button { background-color: transparent; background-image: radial-gradient(ellipse closest-side at center, @accent_color 96%, transparent 100%); background-position: center; background-repeat: no-repeat; background-size: 9px 9px; border-radius: 999px; padding: 0; margin: 0 4px; min-width: 9px; min-height: 0; font-size: 0; opacity: .38; transition: min-width 180ms ease, opacity 150ms ease; }
+#workspaces button.active { opacity: 1; }
+#workspaces button.empty { opacity: .26; min-width: 9px; }
+#workspaces button.empty.active { opacity: 1; }
+#workspaces button.overview { background-color: transparent; background-size: 9px 9px; min-width: 9px; opacity: .6; }
+#clock { background-color: #000000; color: @accent_color; min-height: 30px; padding: 5px 20px; margin: 3px 6px; border-radius: 13px; font-size: 15px; font-weight: 700; text-shadow: 0 0 6px @accent_color; box-shadow: 0 0 4px #000000; }
+#custom-session { background-color: #000000; color: @accent_color; border-radius: 10px; min-width: 24px; min-height: 26px; padding: 4px 14px; margin: 3px 7px; font-size: 16px; text-shadow: 0 0 6px @accent_color; box-shadow: 0 0 4px #000000; }
+#mpris { background: transparent; color: @accent_color; border-radius: 0; margin: 0; padding: 0 12px; min-width: 220px; font-weight: 600; transition: all .25s ease; }
+#mpris.paused { opacity: .75; }
+#mpris.stopped { opacity: 0; min-width: 0; padding: 0; margin: 0; }
+#context-media #cava, #context-media #custom-media-prev, #context-media #custom-media-next { background: transparent; color: @accent_color; border-radius: 0; padding: 0 7px; }
+#context-system #cpu, #context-system #memory, #context-system #temperature, #context-system #battery, #context-system #network, #context-actions #custom-logo, #context-actions #custom-settings, #context-actions #custom-notification, #context-actions #pulseaudio, #context-actions #backlight, #context-actions #custom-session { background: transparent; box-shadow: none; min-height: 0; min-width: 0; margin: 0; padding: 0 8px; color: @accent_color; }
+#context-media #custom-media-prev:active, #context-media #custom-media-next:active, #context-media #custom-context-media:active, #context-system #custom-context-system:active, #context-actions #custom-context-actions:active, #context-actions #custom-logo:active, #context-actions #custom-notification:active { color: #000; background: @accent_color; text-shadow: none; }
