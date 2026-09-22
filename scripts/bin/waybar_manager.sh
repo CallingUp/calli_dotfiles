@@ -28,7 +28,9 @@ link_mode() {
     local mode="$1"
     local target_dir=""
 
-    if [[ -d "$WAYBAR_DIR/$mode" ]]; then
+    if [[ "$mode" == context-* ]] && [[ -d "$WAYBAR_DIR/contextual" ]]; then
+        target_dir="$WAYBAR_DIR/contextual"
+    elif [[ -d "$WAYBAR_DIR/$mode" ]]; then
         target_dir="$WAYBAR_DIR/$mode"
     elif [[ -d "$USER_WAYBAR_DIR/$mode" ]]; then
         target_dir="$USER_WAYBAR_DIR/$mode"
@@ -85,6 +87,17 @@ select_context_mode() {
             done
             [[ -n "$selected" ]] || selected="${CONTEXT_MODES[0]}"
             ;;
+        prev)
+            local index=0
+            for i in "${!CONTEXT_MODES[@]}"; do
+                if [[ "${CONTEXT_MODES[$i]}" == "$CURRENT_STATE" ]]; then
+                    index=$(( (i - 1 + ${#CONTEXT_MODES[@]}) % ${#CONTEXT_MODES[@]} ))
+                    selected="${CONTEXT_MODES[$index]}"
+                    break
+                fi
+            done
+            [[ -n "$selected" ]] || selected="${CONTEXT_MODES[0]}"
+            ;;
         media) selected="context-media" ;;
         system) selected="context-system" ;;
         actions) selected="context-actions" ;;
@@ -94,14 +107,33 @@ select_context_mode() {
             ;;
     esac
 
-    if [[ "$selected" != "$CURRENT_STATE" ]]; then
+    # A panel opened for the old profile must never survive into the next one:
+    # otherwise, for example, Media remains open after switching to System.
+    close_context_panel() {
+        local hover_dir="/tmp/haku-panel-hover-$UID"
+        local active_panel=""
+        [[ -f "$hover_dir/active" ]] && active_panel=$(<"$hover_dir/active")
+        [[ -n "$active_panel" ]] && noctalia msg panel-close "$active_panel" >/dev/null 2>&1 || true
+        rm -f "$hover_dir/active" "$hover_dir/opened" "$hover_dir/waybar" "$hover_dir/panel"
+    }
+
+    # The contextual configuration stays loaded. Only the state file changes;
+    # SIGRTMIN+8 lets its three Gtk::Revealers animate without a Waybar reload.
+    if [[ "$(readlink -f "$WAYBAR_DIR/config" 2>/dev/null)" != "$WAYBAR_DIR/contextual/config" ]]; then
+        close_context_panel
         link_mode "$selected"
         restart_waybar
+    elif [[ "$selected" != "$CURRENT_STATE" ]]; then
+        close_context_panel
+        printf '%s\n' "$selected" > "$STATE_FILE"
+        CURRENT_STATE="$selected"
+        pkill -RTMIN+8 -x waybar 2>/dev/null || true
     fi
 }
 
 case "$1" in
     --context-next) select_context_mode next; exit 0 ;;
+    --context-prev) select_context_mode prev; exit 0 ;;
     --context-media) select_context_mode media; exit 0 ;;
     --context-system) select_context_mode system; exit 0 ;;
     --context-actions) select_context_mode actions; exit 0 ;;
