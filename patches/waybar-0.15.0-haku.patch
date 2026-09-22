@@ -1,54 +1,39 @@
 diff --git a/src/AModule.cpp b/src/AModule.cpp
-index c6fdff3..71a594d 100644
+index c6fdff3..f4a1489 100644
 --- a/src/AModule.cpp
 +++ b/src/AModule.cpp
-@@ -124,6 +124,10 @@ void AModule::setCursor(Gdk::CursorType const& c) {
+@@ -124,26 +124,16 @@ void AModule::setCursor(Gdk::CursorType const& c) {
  }
  
  bool AModule::handleMouseEnter(GdkEventCrossing* const& e) {
+-  if (auto* module = event_box_.get_child(); module != nullptr) {
+-    module->set_state_flags(Gtk::StateFlags::STATE_FLAG_PRELIGHT);
+-  }
+-
+-  // Default behavior indicating event availability
+-  if (hasUserEvents_ && !config_.isMember("cursor")) {
+-    setCursor(Gdk::HAND2);
 +  if (e->mode != GDK_CROSSING_NORMAL || e->detail == GDK_NOTIFY_INFERIOR) {
 +    return false;
-+  }
-+
-   if (auto* module = event_box_.get_child(); module != nullptr) {
-     module->set_state_flags(Gtk::StateFlags::STATE_FLAG_PRELIGHT);
-   }
-@@ -133,10 +137,23 @@ bool AModule::handleMouseEnter(GdkEventCrossing* const& e) {
-     setCursor(Gdk::HAND2);
    }
  
-+  if (config_["on-mouse-enter"].isString()) {
-+    const auto allocation = event_box_.get_allocation();
-+    const auto center_x = e->x_root - e->x + allocation.get_width() / 2.0;
-+    const auto center_y = e->y_root - e->y + allocation.get_height() / 2.0;
-+    const auto command = fmt::format("HAKU_HOVER_X={:.0f} HAKU_HOVER_Y={:.0f} {}", center_x, center_y,
-+                                     config_["on-mouse-enter"].asString());
-+    pid_children_.push_back(util::command::forkExec(command));
-+  }
-+
    return false;
  }
  
  bool AModule::handleMouseLeave(GdkEventCrossing* const& e) {
+-  if (auto* module = event_box_.get_child(); module != nullptr) {
+-    module->unset_state_flags(Gtk::StateFlags::STATE_FLAG_PRELIGHT);
+-  }
+-
+-  // Default behavior indicating event availability
+-  if (hasUserEvents_ && !config_.isMember("cursor")) {
+-    setCursor(Gdk::ARROW);
 +  if (e->mode != GDK_CROSSING_NORMAL || e->detail == GDK_NOTIFY_INFERIOR) {
 +    return false;
-+  }
-+
-   if (auto* module = event_box_.get_child(); module != nullptr) {
-     module->unset_state_flags(Gtk::StateFlags::STATE_FLAG_PRELIGHT);
-   }
-@@ -146,6 +163,10 @@ bool AModule::handleMouseLeave(GdkEventCrossing* const& e) {
-     setCursor(Gdk::ARROW);
    }
  
-+  if (config_["on-mouse-leave"].isString()) {
-+    pid_children_.push_back(util::command::forkExec(config_["on-mouse-leave"].asString()));
-+  }
-+
    return false;
- }
- 
-@@ -186,7 +207,11 @@ bool AModule::handleUserEvent(GdkEventButton* const& e) {
+@@ -186,7 +176,11 @@ bool AModule::handleUserEvent(GdkEventButton* const& e) {
        format.clear();
    }
    if (!format.empty()) {

@@ -1,0 +1,38 @@
+{
+    "mpris": {
+        "format": " 󰎈  {artist} — {title} ",
+        "format-paused": " 󰎈  {artist} — {title} ",
+        "format-stopped": "",
+        "artist-len": 18,
+        "title-len": 28,
+        "dynamic-len": 45,
+
+        "status-icons": {
+            "playing": "󰐊",
+            "paused": "󰏤",
+            "stopped": "󰓛"
+        },
+
+        "player-icons": {
+            "default": "󰎈",
+            "chromium": ""
+        },
+
+        "on-click": "$HOME/.local/bin/haku-panel-hover waybar-toggle control-center control-center media",
+        "on-click-middle": "noctalia msg media play-pause",
+        "on-click-right": "noctalia msg media next",
+        "on-scroll-up": "noctalia msg media next",
+        "on-scroll-down": "noctalia msg media previous",
+
+        "tooltip": false
+    },
+
+    "cava": {
+        "cava_config": "$HOME/.config/cava/config_waybar",
+        "input_delay": 0,
+        "sleep_timer": 5,
+        "hide_on_silence": true,
+        "bar_delimiter": 0,
+        "format-icons": ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"]
+    }
+}
