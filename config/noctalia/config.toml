@@ -41,7 +41,7 @@ settings_show_advanced = true
     control_center_placement = "floating"
     # The contextual Waybar capsule is centered; opening at the pointer makes
     # the panel look offset whenever the trigger is clicked near an edge.
-    control_center_position = "center"
+    control_center_position = "top_center"
     open_near_click_control_center = false
     open_near_click_launcher = true
     session_placement = "floating"
