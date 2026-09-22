@@ -1,0 +1,14 @@
+{
+  "include": ["$HOME/.config/waybar/module/notification_module"],
+  "layer": "top", "position": "top", "height": 42,
+  "margin-top": 2, "margin-bottom": 0, "spacing": 0,
+  "tooltip": false, "reload_style_on_change": true,
+  "modules-center": ["group/context-actions"],
+  "group/context-actions": {"orientation": "horizontal", "modules": ["custom/context-actions", "custom/logo", "custom/settings", "custom/notification", "pulseaudio", "backlight", "custom/session"]},
+  "custom/context-actions": {"format": "󰀻", "on-click": "$HOME/.local/bin/waybar_manager.sh --context-next", "tooltip": false},
+  "custom/logo": {"format": "󰮯", "on-click": "$HOME/.local/bin/haku-panel-hover waybar-toggle launcher launcher", "tooltip": false},
+  "custom/settings": {"format": "", "on-click": "$HOME/.local/bin/haku-panel-hover waybar-toggle control-center control-center", "tooltip": false},
+  "custom/session": {"format": "", "on-click": "noctalia msg panel-toggle session", "tooltip": false},
+  "pulseaudio": {"format": "{icon} {volume}%", "format-muted": "󰝟", "format-icons": {"headphone": "󰋋", "default": ["", "", ""]}, "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle", "on-click-right": "pavucontrol", "tooltip": false},
+  "backlight": {"format": "{icon} {percent}%", "format-icons": ["", "", "", "", "", "", "", "", ""], "on-scroll-up": "brightnessctl set 1%+", "on-scroll-down": "brightnessctl set 1%-", "on-click": "$HOME/.local/bin/nightlight_toggle.sh", "tooltip": false}
+}

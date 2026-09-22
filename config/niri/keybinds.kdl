@@ -56,6 +56,26 @@ binds {
         spawn-sh "noctalia msg settings-toggle"
     }
 
+    // --------------------------------------------------------
+    // Contextual Waybar — one centered profile at a time
+    // --------------------------------------------------------
+
+    Mod+Ctrl+Space hotkey-overlay-title="Waybar: siguiente perfil" {
+        spawn "/home/calli/.local/bin/waybar_manager.sh" "--context-next"
+    }
+
+    Mod+Ctrl+M hotkey-overlay-title="Waybar: Media" {
+        spawn "/home/calli/.local/bin/waybar_manager.sh" "--context-media"
+    }
+
+    Mod+Ctrl+I hotkey-overlay-title="Waybar: Sistema" {
+        spawn "/home/calli/.local/bin/waybar_manager.sh" "--context-system"
+    }
+
+    Mod+Ctrl+P hotkey-overlay-title="Waybar: Acciones" {
+        spawn "/home/calli/.local/bin/waybar_manager.sh" "--context-actions"
+    }
+
     Alt+Tab {
         spawn-sh "noctalia msg window-switcher"
     }
