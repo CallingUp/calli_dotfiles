@@ -29,30 +29,19 @@ clipboard_image_action_command = "satty -f -"
 launch_apps_as_systemd_services = true
 polkit_agent = true
 settings_show_advanced = true
-# A transparent 10px Noctalia bar is kept exactly behind the bottom edge of
-# Waybar. It exists only as the native anchor for the control-center reveal.
-panel_anchor_bar = "default"
 
     [shell.greeter_sync]
     auto_sync = false
 
-    [shell.animation]
-    enabled = true
-    # Keep panel movement intentional and continuous with the Waybar capsule.
-    speed = 0.85
-
     [shell.panel]
-    # Waybar is the visual header: remove the panel's own outline and shadow so
-    # both surfaces read as one continuous capsule.
-    borders = false
-    shadow = false
-    floating_offset = 0
+    borders = true
+    floating_offset = 8
     launcher_placement = "floating"
     launcher_position = "auto"
-    control_center_placement = "attached"
+    control_center_placement = "floating"
     # The contextual Waybar capsule is centered; opening at the pointer makes
     # the panel look offset whenever the trigger is clicked near an edge.
-    control_center_position = "auto"
+    control_center_position = "top_center"
     open_near_click_control_center = false
     open_near_click_launcher = true
     session_placement = "floating"
@@ -174,24 +163,7 @@ pill_scale = 0.80
 show_labels = false
 
 [bar.default.monitor.eDP-1]
-# The attached panel applies the bar margin itself; keep the invisible anchor at
-# the top edge so its reveal begins directly under Waybar.
-enabled = true
-layer = "overlay"
-reserve_space = false
-background_opacity = 0.0
-thickness = 10
-margin_edge = 0
-margin_ends = 0
-padding = 0
-start = []
-center = []
-end = []
-shadow = false
-contact_shadow = false
-# Let the panel overlap the transparent anchor enough to erase the seam with
-# Waybar while keeping both surfaces input-safe.
-panel_overlap = 20
+enabled = false
 
 [wallpaper]
 enabled = false
