@@ -39,10 +39,8 @@ open_later() {
     shift
     context="$*"
     token=$(bump)
-    # The control center belongs to the centered media/system/actions capsule.
-    # Do not use the raw pointer coordinate for it: a click near either edge of
-    # the capsule made the whole panel appear visibly off-center. Session stays
-    # pointer-anchored at the right as intended.
+    # The control center has a fixed top-center anchor below Waybar. Session
+    # remains pointer-anchored at the right as intended.
     anchor=""
     if [ "$panel_id" != "control-center" ] && [ -n "$HAKU_HOVER_X" ] && [ -n "$HAKU_HOVER_Y" ]; then
         anchor="@anchor=$HAKU_HOVER_X,$HAKU_HOVER_Y"
@@ -81,8 +79,7 @@ case "$1" in
         panel_id="$3"
         shift 3
         context="$*"
-        # Keep central panels centered even when their trigger was clicked at
-        # the far left or right of the Waybar capsule.
+        # Control-center must remain vertically attached below the top bar.
         anchor=""
         if [ "$panel_id" != "control-center" ] && [ -n "$HAKU_HOVER_X" ] && [ -n "$HAKU_HOVER_Y" ]; then
             anchor="@anchor=$HAKU_HOVER_X,$HAKU_HOVER_Y"
