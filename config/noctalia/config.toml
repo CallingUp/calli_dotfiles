@@ -29,8 +29,8 @@ clipboard_image_action_command = "satty -f -"
 launch_apps_as_systemd_services = true
 polkit_agent = true
 settings_show_advanced = true
-# A transparent 1px Noctalia bar is kept behind Waybar solely as the native
-# anchor for the control-center reveal. It prevents a visible second band.
+# A transparent 10px Noctalia bar is kept exactly behind the bottom edge of
+# Waybar. It exists only as the native anchor for the control-center reveal.
 panel_anchor_bar = "default"
 
     [shell.greeter_sync]
@@ -180,7 +180,7 @@ enabled = true
 layer = "overlay"
 reserve_space = false
 background_opacity = 0.0
-thickness = 1
+thickness = 10
 margin_edge = 0
 margin_ends = 0
 padding = 0
@@ -191,7 +191,7 @@ shadow = false
 contact_shadow = false
 # Let the panel overlap the transparent anchor enough to erase the seam with
 # Waybar while keeping both surfaces input-safe.
-panel_overlap = 0
+panel_overlap = 20
 
 [wallpaper]
 enabled = false

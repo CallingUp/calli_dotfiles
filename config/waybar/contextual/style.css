@@ -3,16 +3,7 @@
 @import url("/home/calli/.config/waybar/contextual/visibility.css");
 
 * { font-weight: bold; transition: color 140ms ease, background-color 140ms ease, margin-top 280ms cubic-bezier(.22,.75,.25,1); }
-/* Waybar keeps GTK container backgrounds even when its toplevel is transparent.
- * Clear every structural layer so only the intentional Haku capsules are drawn. */
-window#waybar,
-window#waybar > box,
-window#waybar > box > box {
-  background-color: transparent;
-  background-image: none;
-  border: none;
-  box-shadow: none;
-}
+window#waybar { background: transparent; }
 .modules-center { padding: 3px 0; margin: 0; }
 #hworkspaces { margin: 0; padding: 0; background: transparent; }
 #context-shell { background: #000000; color: @accent_color; border-radius: 12px; margin: 3px 6px; padding: 4px 8px; min-height: 26px; box-shadow: 0 0 4px #000000; text-shadow: 0 0 6px @accent_color; }
