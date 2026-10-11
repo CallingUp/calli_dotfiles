@@ -17,7 +17,7 @@ IslandBackground {
     readonly property bool hasPlayingMedia: MprisService.activePlayer !== null && (((MprisService.activePlayer.trackTitle || "").trim() !== "") || ((MprisService.activePlayer.trackArtist || "").trim() !== ""))
     readonly property bool showMedia: islandBar ? islandBar.showMediaOnRight : ((SettingsService.islandRightMode === "music") || (SettingsService.islandRightMode === "auto" && hasPlayingMedia))
     readonly property bool isMusicActive: showMedia && MprisService.isPlaying
-    readonly property real targetIdleW: isMusicActive ? Constants.size5Xl + 10 : Constants.size3Xl
+    readonly property real targetIdleW: mediaContent.implicitWidth
     property real smoothIdleW: targetIdleW
     readonly property real idleW: smoothIdleW
     readonly property real idleH: Constants.size3Xl
@@ -48,6 +48,7 @@ IslandBackground {
     }
 
     IslandMediaArt {
+        id: mediaContent
         anchors.fill: parent
         opacity: Math.min(1, Math.max(0, 1 - root.openProgress / 0.15))
         visible: opacity > 0.001

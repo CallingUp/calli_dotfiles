@@ -11,6 +11,7 @@ import qs.Modules.Bar.Components
 ShellRoot {
     id: root
     property bool barVisible: true
+    onBarVisibleChanged: CavaService.barEnabled = barVisible
     property int cycleIndex: 0
     readonly property var islandPanels: ["music", "controlCenter", "powerMenu"]
     function dismissIsland() { island.pendingPanel = ""; island.close(); }

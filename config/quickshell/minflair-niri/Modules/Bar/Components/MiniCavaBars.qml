@@ -32,7 +32,7 @@ Row {
         }
         let count = end - start;
         let avg = count > 0 ? (sum / count) : 0;
-        return Math.round(maxVal * 0.7 + avg * 0.3);
+        return Math.min(100, Math.max(0, avg));
     }
 
     spacing: 2

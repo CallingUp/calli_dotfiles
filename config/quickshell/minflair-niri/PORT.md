@@ -52,3 +52,15 @@ updated as well as the repository copy.
 Fullscreen state comes from Wayland ToplevelManager, not a nonexistent
 is_fullscreen field in this Niri version's focused-window JSON.
 Workspace updates use Niri event-stream with a three-second recovery poll.
+
+## Compact information
+
+The left island displays CPU usage, memory percentage, CPU temperature,
+output volume/mute, and brightness. CPU/RAM/temperature reuse SystemStats;
+volume uses PipeWire notifications, and brightness is queried every 2s.
+
+The right island uses artist :: title, capped at 300px of text, plus a separate
+12-band stereo Cava area. It has no album/music icon or playback buttons in
+the compact state. Its width follows the text and retains the upstream morph.
+Cava uses 30fps and bucket averages instead of peak-biased aggregation;
+capture stops when paused, hidden or fullscreen.
