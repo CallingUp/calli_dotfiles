@@ -1,0 +1,13 @@
+[Unit]
+Description=Haku Quickshell bar and media island
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/quickshell -p /home/calli/haku_shell/config/quickshell/haku-media-island
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
