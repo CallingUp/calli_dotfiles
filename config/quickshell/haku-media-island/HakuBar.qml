@@ -17,6 +17,7 @@ PanelWindow {
     property var players: []
     property int activeWorkspace: 1
     property var activePlayer: null
+    property string systemSummary: "󰕾 --  󰃠 --"
     signal mediaRequested()
 
     anchors { top: true; left: true; right: true }
@@ -52,6 +53,15 @@ PanelWindow {
 
     Process { id: focusWorkspaceProcess }
     Process {
+        id: systemProcess
+        command: ["sh", "-c", "v=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{printf \"%d%%\", $2 * 100}'); b=$(brightnessctl -m 2>/dev/null | awk -F, '{print $4}'); printf '󰕾 %s  󰃠 %s' \"${v:---}\" \"${b:---}\""]
+        stdout: StdioCollector { id: systemOutput }
+        onExited: (code) => {
+            if (code === 0 && systemOutput.text.trim() !== "")
+                root.systemSummary = systemOutput.text.trim();
+        }
+    }
+    Process {
         id: workspaceProcess
         command: ["niri", "msg", "-j", "workspaces"]
         stdout: StdioCollector { id: workspaceOutput }
@@ -85,9 +95,9 @@ PanelWindow {
 
     Timer {
         interval: 1000; running: root.visible; repeat: true
-        onTriggered: { workspaceProcess.running = true; root.syncAccent(); root.choosePlayer(); }
+        onTriggered: { workspaceProcess.running = true; systemProcess.running = true; root.syncAccent(); root.choosePlayer(); }
     }
-    Component.onCompleted: { workspaceProcess.running = true; syncAccent(); choosePlayer(); }
+    Component.onCompleted: { workspaceProcess.running = true; systemProcess.running = true; syncAccent(); choosePlayer(); }
 
     Item {
         anchors.fill: parent
@@ -101,7 +111,7 @@ PanelWindow {
 
             Rectangle {
                 width: 76; height: 40; radius: 15
-                color: "#06070aff"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+                color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
                 Row {
                     anchors.centerIn: parent; spacing: 7
                     Repeater {
@@ -120,7 +130,7 @@ PanelWindow {
 
             Rectangle {
                 width: clockText.implicitWidth + 28; height: 40; radius: 15
-                color: "#06070aff"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+                color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
                 Text {
                     id: clockText
                     anchors.centerIn: parent
@@ -137,7 +147,7 @@ PanelWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
             width: Math.min(540, Math.max(320, mediaText.implicitWidth + 74)); height: 40; radius: 15
-            color: "#06070aff"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+            color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
             Text { anchors.left: parent.left; anchors.leftMargin: 15; anchors.verticalCenter: parent.verticalCenter; text: "♫"; color: root.accentHex; font.pixelSize: 16 }
             Text {
                 id: mediaText
@@ -151,23 +161,37 @@ PanelWindow {
         Row {
             anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; spacing: 8
             Rectangle {
+                width: systemLabel.implicitWidth + 24; height: 40; radius: 15
+                color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+                Text {
+                    id: systemLabel; anchors.centerIn: parent; text: root.systemSummary
+                    color: "#e8edf4"; font.family: "CommitMono Nerd Font"; font.pixelSize: 12; font.bold: true
+                }
+                MouseArea { anchors.fill: parent; onClicked: controlCenterProcess.running = true }
+            }
+            Rectangle {
                 width: trayRow.implicitWidth > 0 ? trayRow.implicitWidth + 16 : 0; height: 40; radius: 15
-                visible: width > 0; color: "#06070aff"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+                visible: width > 0; color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
                 Row {
                     id: trayRow; anchors.centerIn: parent; spacing: 7
                     Repeater {
                         model: SystemTray.items
                         delegate: Item {
                             required property var modelData
-                            width: 20; height: 20
-                            Image { anchors.fill: parent; source: modelData.iconName ? "image://icon/" + modelData.iconName : ""; asynchronous: true }
+                            property string iconSource: {
+                                if (modelData.iconName)
+                                    return Quickshell.iconPath(modelData.iconName, "");
+                                return modelData.icon ? modelData.icon.toString() : "";
+                            }
+                            width: iconSource === "" ? 0 : 20; height: 20
+                            Image { anchors.fill: parent; source: parent.iconSource; asynchronous: true }
                             MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton; onClicked: (mouse) => { if (mouse.button === Qt.LeftButton && !modelData.onlyMenu) modelData.activate(); else modelData.secondaryActivate(); } }
                         }
                     }
                 }
             }
             Rectangle {
-                width: 48; height: 40; radius: 15; color: "#06070aff"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+                width: 48; height: 40; radius: 15; color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
                 Text { anchors.centerIn: parent; text: ""; color: root.accentHex; font.family: "CommitMono Nerd Font"; font.pixelSize: 16 }
                 MouseArea { anchors.fill: parent; onClicked: powerProcess.running = true }
             }
@@ -175,4 +199,5 @@ PanelWindow {
     }
 
     Process { id: powerProcess; command: ["noctalia", "msg", "panel-toggle", "session"] }
+    Process { id: controlCenterProcess; command: ["noctalia", "msg", "panel-toggle", "control-center"] }
 }
