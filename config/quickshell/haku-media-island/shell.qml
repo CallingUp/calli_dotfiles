@@ -9,6 +9,7 @@ ShellRoot {
     // It starts visible when launched as the future bar service. Keeping it
     // here also makes a reload deterministic while Waybar is still staged.
     property bool barVisible: true
+    readonly property bool islandOverlayActive: island.visible || systemIsland.visible
 
     IpcHandler {
         target: "haku-media"
@@ -30,8 +31,10 @@ ShellRoot {
         id: hakuBar
         barVisible: root.barVisible
         mediaIslandOpen: island.visible
+        systemIslandOpen: systemIsland.visible
         onMediaRequested: island.open = !island.open
-        onFullscreenChanged: if (fullscreen) island.open = false
+        onSystemRequested: systemIsland.open = !systemIsland.open
+        onFullscreenChanged: if (fullscreen) { island.open = false; systemIsland.open = false; }
     }
 
     PanelWindow {
@@ -48,7 +51,7 @@ ShellRoot {
         focusable: false
         // Only rise above the compact Waybar trigger while the island is
         // actually animating. When closed it renders nothing at all.
-        WlrLayershell.layer: island.visible ? WlrLayer.Overlay : WlrLayer.Top
+        WlrLayershell.layer: root.islandOverlayActive ? WlrLayer.Overlay : WlrLayer.Top
         WlrLayershell.exclusionMode: ExclusionMode.Ignore
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
@@ -61,15 +64,15 @@ ShellRoot {
                 // normal pointer access everywhere.
                 x: 0
                 y: 0
-                width: island.visible ? surface.width : 0
-                height: island.visible ? surface.height : 0
+                width: root.islandOverlayActive ? surface.width : 0
+                height: root.islandOverlayActive ? surface.height : 0
             }
         }
 
         MouseArea {
             anchors.fill: parent
-            enabled: island.visible
-            onClicked: island.open = false
+            enabled: root.islandOverlayActive
+            onClicked: { island.open = false; systemIsland.open = false; }
         }
 
         MediaIsland {
@@ -78,6 +81,15 @@ ShellRoot {
             anchors.top: parent.top
             anchors.topMargin: 7
             collapsedWidth: hakuBar.mediaCapsuleWidth
+        }
+
+        SystemIsland {
+            id: systemIsland
+            x: hakuBar.systemCapsuleX
+            y: 7
+            collapsedWidth: hakuBar.systemCapsuleWidth
+            accentHex: hakuBar.accentHex
+            summary: hakuBar.systemSummary
         }
     }
 }

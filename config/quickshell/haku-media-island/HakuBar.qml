@@ -22,8 +22,12 @@ PanelWindow {
     // The overlay owns this exact geometry while it is expanded. This is the
     // handoff that makes the center pill behave like Minflair's island.
     property bool mediaIslandOpen: false
+    property bool systemIslandOpen: false
     readonly property real mediaCapsuleWidth: mediaCapsule.width
+    readonly property real systemCapsuleWidth: systemCapsule.width
+    readonly property real systemCapsuleX: rightGroup.x + systemCapsule.x
     signal mediaRequested()
+    signal systemRequested()
 
     anchors { top: true; left: true; right: true }
     implicitHeight: barVisible ? 54 : 0
@@ -199,15 +203,18 @@ PanelWindow {
         }
 
         Row {
+            id: rightGroup
             anchors.right: parent.right; anchors.rightMargin: 8; anchors.verticalCenter: parent.verticalCenter; spacing: 8
             Rectangle {
+                id: systemCapsule
                 width: systemLabel.implicitWidth + 24; height: 40; radius: 15
                 color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+                opacity: root.systemIslandOpen ? 0 : 1
                 Text {
                     id: systemLabel; anchors.centerIn: parent; text: root.systemSummary
                     color: "#e8edf4"; font.family: "CommitMono Nerd Font"; font.pixelSize: 12; font.bold: true
                 }
-                MouseArea { anchors.fill: parent; onClicked: controlCenterProcess.running = true }
+                MouseArea { anchors.fill: parent; enabled: !root.systemIslandOpen; onClicked: root.systemRequested() }
             }
             Rectangle {
                 width: trayRow.implicitWidth > 0 ? trayRow.implicitWidth + 16 : 0; height: 40; radius: 15
@@ -239,5 +246,4 @@ PanelWindow {
     }
 
     Process { id: powerProcess; command: ["noctalia", "msg", "panel-toggle", "session"] }
-    Process { id: controlCenterProcess; command: ["noctalia", "msg", "panel-toggle", "control-center"] }
 }
