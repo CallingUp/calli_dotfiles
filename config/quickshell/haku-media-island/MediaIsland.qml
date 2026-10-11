@@ -14,8 +14,10 @@ Rectangle {
     readonly property color accent: accentHex
     readonly property color background: "#080a0f"
     readonly property color borderColor: Qt.darker(accent, 1.9)
-    readonly property real collapsedWidth: 450
-    readonly property real collapsedHeight: 42
+    // Supplied by HakuBar so this is literally the same capsule, not a
+    // similarly-looking popup placed over it.
+    property real collapsedWidth: 450
+    property real collapsedHeight: 40
     readonly property real expandedWidth: 560
     readonly property real expandedHeight: 286
 
@@ -35,9 +37,9 @@ Rectangle {
 
     width: collapsedWidth + (expandedWidth - collapsedWidth) * progress
     height: collapsedHeight + (expandedHeight - collapsedHeight) * progress
-    radius: 21 - 7 * progress
-    // Waybar owns the compact capsule. Quickshell exists visually only while
-    // it morphs into or out of the expanded island.
+    radius: 15 - 3 * progress
+    // The native Quickshell bar owns idle state. This surface becomes the
+    // central pill for the whole open/close animation.
     visible: open || progress > 0.001
     color: background
     border.width: 1
@@ -103,8 +105,17 @@ Rectangle {
         visible: opacity > 0
 
         Text {
+            anchors.left: parent.left
+            anchors.leftMargin: 15
+            anchors.verticalCenter: parent.verticalCenter
+            text: "♫"
+            color: root.accent
+            font.pixelSize: 16
+        }
+
+        Text {
             anchors.centerIn: parent
-            width: parent.width - 42
+            width: parent.width - 68
             text: root.activePlayer ? ((root.activePlayer.trackArtist || "") + " :: " + (root.activePlayer.trackTitle || "Sin reproducción")) : "Sin reproducción"
             color: "#d9e6ff"
             font.family: "CommitMono Nerd Font"

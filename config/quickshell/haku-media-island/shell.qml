@@ -29,7 +29,9 @@ ShellRoot {
     HakuBar {
         id: hakuBar
         barVisible: root.barVisible
+        mediaIslandOpen: island.visible
         onMediaRequested: island.open = !island.open
+        onFullscreenChanged: if (fullscreen) island.open = false
     }
 
     PanelWindow {
@@ -74,7 +76,8 @@ ShellRoot {
             id: island
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
-            anchors.topMargin: 5
+            anchors.topMargin: 7
+            collapsedWidth: hakuBar.mediaCapsuleWidth
         }
     }
 }
