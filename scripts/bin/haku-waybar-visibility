@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# Hide and show Waybar with its configured signals, while also closing the
+# optional Quickshell media island so no layer surface remains above games.
+set -euo pipefail
+
+state_dir="${XDG_RUNTIME_DIR:-/tmp}/haku-waybar"
+hidden_state="$state_dir/hidden"
+
+mkdir -p "$state_dir"
+
+close_media_island() {
+    quickshell ipc -p "$HOME/haku_shell/config/quickshell/haku-media-island" \
+        call haku-media close >/dev/null 2>&1 || true
+}
+
+case "${1:-}" in
+    show)
+        if [ -e "$hidden_state" ]; then
+            pkill -USR1 -x waybar 2>/dev/null || true
+            rm -f "$hidden_state"
+        fi
+        ;;
+    hide)
+        [ -e "$hidden_state" ] && exit 0
+        close_media_island
+        pkill -USR2 -x waybar 2>/dev/null || true
+        : > "$hidden_state"
+        ;;
+    *)
+        printf 'Uso: %s {show|hide}\n' "$0" >&2
+        exit 2
+        ;;
+esac

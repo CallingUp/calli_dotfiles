@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+
+# The media island is intentionally a tiny, standalone Quickshell surface.
+# It starts on demand, so it consumes nothing until the media capsule is clicked.
+config="$HOME/haku_shell/config/quickshell/haku-media-island"
+
+# A media panel has no place over a fullscreen game/video. Niri omits the
+# field unless fullscreen is active, so this remains compatible with older
+# versions too.
+if niri msg -j focused-window 2>/dev/null | jq -e '.is_fullscreen == true' >/dev/null 2>&1; then
+    exit 0
+fi
+
+# Keep the compact Waybar trigger and the expanded island in the same media
+# context, so a subsequent click always returns to the same capsule.
+"$HOME/.local/bin/waybar_manager.sh" --context-media >/dev/null 2>&1
+
+if ! quickshell ipc -p "$config" call haku-media toggle 2>/dev/null; then
+    quickshell -p "$config" --no-duplicate --daemonize
+    sleep 0.18
+    quickshell ipc -p "$config" call haku-media toggle
+fi
