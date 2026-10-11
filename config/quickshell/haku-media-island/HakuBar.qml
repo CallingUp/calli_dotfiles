@@ -19,6 +19,10 @@ PanelWindow {
     property var activePlayer: null
     property string systemSummary: "󰕾 --  󰃠 --  󰘚 --  󰁹 --  󰖩"
     property bool fullscreen: false
+    // The overlay owns this exact geometry while it is expanded. This is the
+    // handoff that makes the center pill behave like Minflair's island.
+    property bool mediaIslandOpen: false
+    readonly property real mediaCapsuleWidth: mediaCapsule.width
     signal mediaRequested()
 
     anchors { top: true; left: true; right: true }
@@ -183,6 +187,7 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
             width: Math.min(540, Math.max(320, mediaText.implicitWidth + 74)); height: 40; radius: 15
             color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+            visible: !root.mediaIslandOpen
             Text { anchors.left: parent.left; anchors.leftMargin: 15; anchors.verticalCenter: parent.verticalCenter; text: "♫"; color: root.accentHex; font.pixelSize: 16 }
             Text {
                 id: mediaText
