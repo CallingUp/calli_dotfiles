@@ -59,8 +59,8 @@ The left island displays CPU usage, memory percentage, CPU temperature,
 output volume/mute, and brightness. CPU/RAM/temperature reuse SystemStats;
 volume uses PipeWire notifications, and brightness is queried every 2s.
 
-The right island uses artist :: title, capped at 300px of text, plus a separate
-12-band stereo Cava area. It has no album/music icon or playback buttons in
-the compact state. Its width follows the text and retains the upstream morph.
+The right island keeps the original Minflair compact player: album thumbnail
+and four Cava bands, without artist/title text. While paused it shrinks to the
+thumbnail; clicking opens the full player with the upstream morph animation.
 Cava uses 30fps and bucket averages instead of peak-biased aggregation;
 capture stops when paused, hidden or fullscreen.
