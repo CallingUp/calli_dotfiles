@@ -14,8 +14,8 @@ spawn-at-startup "haku-wallpaper-renderer"
 spawn-at-startup "awww-daemon" "-n" "awww-daemon-backdrop"
 spawn-sh-at-startup "sleep 1 && haku-wallpaper-restore"
 
-// Waybar
-spawn-at-startup "waybar"
+// Waybar lo gestiona exclusivamente waybar.service.
+// No iniciarlo aquí: hacerlo duplicaría la barra tras cada sesión.
 
 // Clipboard history
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"

@@ -3,7 +3,7 @@
 * {
     background-color: transparent;
     text-color: @accent;
-    font: "Iosevka Nerd Font 14";
+    font: "0xProto Nerd Font 14";
     margin: 0;
     padding: 0;
     spacing: 0;
