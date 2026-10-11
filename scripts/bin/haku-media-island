@@ -2,7 +2,7 @@
 
 # The media island is intentionally a tiny, standalone Quickshell surface.
 # It starts on demand, so it consumes nothing until the media capsule is clicked.
-config="$HOME/haku_shell/config/quickshell/haku-media-island"
+config="$HOME/haku_shell/config/quickshell/minflair-niri/niri-preview.qml"
 
 # A media panel has no place over a fullscreen game/video. Niri omits the
 # field unless fullscreen is active, so this remains compatible with older

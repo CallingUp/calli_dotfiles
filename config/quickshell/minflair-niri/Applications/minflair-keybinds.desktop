@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Minflair Keybinds
+Comment=Cheat sheet for system keybindings
+Exec=sh -c $HOME/.config/quickshell/Modules/KeybindsCheatSheet/scripts/toggle_minflair_keybinds.sh
+Icon=$HOME/.config/quickshell/assets/keybinds-icon.svg
+Terminal=false
+Categories=Utility;
