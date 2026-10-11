@@ -17,6 +17,7 @@ PanelWindow {
     property var players: []
     property int activeWorkspace: 1
     property var activePlayer: null
+    property var cavaLevels: []
     property string systemSummary: "--%   --%   --°C   --% 󰁹  󰖩"
     property bool fullscreen: false
     // The overlay owns this exact geometry while it is expanded. This is the
@@ -206,11 +207,9 @@ PanelWindow {
                 id: mediaCava
                 anchors.right: parent.right; anchors.rightMargin: 15; anchors.verticalCenter: parent.verticalCenter
                 // Waybar's cava reflected every PipeWire stream, not just
-                // MPRIS players. Keep that behavior: a browser/live stream
-                // still animates even when it exposes no "playing" state.
-                // The expanding island owns the same visualizer while open;
-                // avoid two concurrent PipeWire readers during the handoff.
+                // MPRIS players. Keep that behavior for browser/live audio.
                 active: root.barVisible && !root.fullscreen && !root.mediaIslandOpen
+                levels: root.cavaLevels
                 barColor: root.accentHex
             }
             MouseArea { anchors.fill: parent; onClicked: root.mediaRequested() }

@@ -30,11 +30,17 @@ ShellRoot {
     HakuBar {
         id: hakuBar
         barVisible: root.barVisible
+        cavaLevels: cavaSource.levels
         mediaIslandOpen: island.visible
         systemIslandOpen: systemIsland.visible
         onMediaRequested: island.open = !island.open
         onSystemRequested: systemIsland.open = !systemIsland.open
         onFullscreenChanged: if (fullscreen) { island.open = false; systemIsland.open = false; }
+    }
+
+    CavaSource {
+        id: cavaSource
+        active: root.barVisible && !hakuBar.fullscreen
     }
 
     PanelWindow {
@@ -81,6 +87,7 @@ ShellRoot {
             anchors.top: parent.top
             anchors.topMargin: 7
             collapsedWidth: hakuBar.mediaCapsuleWidth
+            cavaLevels: cavaSource.levels
         }
 
         SystemIsland {
