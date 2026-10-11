@@ -17,7 +17,7 @@ PanelWindow {
     property var players: []
     property int activeWorkspace: 1
     property var activePlayer: null
-    property string systemSummary: "󰕾 --  󰃠 --  󰘚 --  󰁹 --  󰖩"
+    property string systemSummary: "--%   --%   --°C   --% 󰁹  󰖩"
     property bool fullscreen: false
     // The overlay owns this exact geometry while it is expanded. This is the
     // handoff that makes the center pill behave like Minflair's island.
@@ -95,7 +95,7 @@ PanelWindow {
     }
     Process {
         id: systemProcess
-        command: ["sh", "-c", "v=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{printf \"%d%%\", $2 * 100}'); b=$(brightnessctl -m 2>/dev/null | awk -F, '{print $4}'); c=$(top -bn1 2>/dev/null | awk -F, '/Cpu/ {gsub(/[^0-9.]/, \"\", $4); printf \"%.0f%%\", 100-$4; exit}'); m=$(free 2>/dev/null | awk '/Mem:/ {printf \"%.0f%%\", $3 * 100 / $2}'); t=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null | awk '{printf \"%d°C\", $1/1000}'); bat=$(cat /sys/class/power_supply/BAT1/capacity 2>/dev/null | awk '{printf \"%s%%\", $1}'); net=$(cat /sys/class/net/wlan0/operstate 2>/dev/null); [ \"$net\" = up ] && net=󰖩 || net=󰖪; printf '󰍛 %s/%s  󰘚 %s  󰁹 %s  %s' \"${c:---}\" \"${m:---}\" \"${t:---}\" \"${bat:---}\" \"$net\""]
+        command: ["sh", "-c", "c=$(top -bn1 2>/dev/null | awk -F, '/Cpu/ {gsub(/[^0-9.]/, \"\", $4); printf \"%.0f%%\", 100-$4; exit}'); m=$(free 2>/dev/null | awk '/Mem:/ {printf \"%.0f%%\", $3 * 100 / $2}'); t=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null | awk '{printf \"%d°C\", $1/1000}'); bat=$(cat /sys/class/power_supply/BAT1/capacity 2>/dev/null | awk '{printf \"%s%%\", $1}'); net=$(cat /sys/class/net/wlan0/operstate 2>/dev/null); [ \"$net\" = up ] && net=󰖩 || net=󰖪; printf '%s   %s   %s   %s 󰁹  %s' \"${c:---}\" \"${m:---}\" \"${t:---}\" \"${bat:---}\" \"$net\""]
         stdout: StdioCollector { id: systemOutput }
         onExited: (code) => {
             if (code === 0 && systemOutput.text.trim() !== "")
@@ -152,7 +152,7 @@ PanelWindow {
 
             Rectangle {
                 width: workspaceDots.implicitWidth + 22; height: 40; radius: 15
-                color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+                color: "#ff000000"; border.width: 0
                 Row {
                     id: workspaceDots
                     anchors.centerIn: parent; spacing: 7
@@ -162,8 +162,8 @@ PanelWindow {
                             required property int index
                             width: index + 1 === root.activeWorkspace ? 15 : 8
                             height: 8; radius: 4
-                            color: index + 1 === root.activeWorkspace ? root.accentHex : (root.workspaceOccupied(index + 1) ? "#a6b4c9" : "#586174")
-                            opacity: root.workspaceExists(index + 1) || index + 1 === root.activeWorkspace ? 1 : 0.55
+                            color: root.accentHex
+                            opacity: index + 1 === root.activeWorkspace ? 1 : (root.workspaceOccupied(index + 1) ? 0.38 : 0.26)
                             Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                             MouseArea { anchors.fill: parent; onClicked: root.focusWorkspace(index + 1) }
                         }
@@ -173,13 +173,13 @@ PanelWindow {
 
             Rectangle {
                 width: clockText.implicitWidth + 28; height: 40; radius: 15
-                color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+                color: "#ff000000"; border.width: 0
                 Text {
                     id: clockText
                     anchors.centerIn: parent
                     property date now: new Date()
                     text: Qt.formatDateTime(now, "HH:mm:ss, dd MMMM yyyy")
-                    color: "#e8edf4"; font.family: "CommitMono Nerd Font"; font.pixelSize: 13; font.bold: true
+                    color: root.accentHex; font.family: "CommitMono Nerd Font"; font.pixelSize: 13; font.bold: true
                 }
                 Timer { interval: 1000; running: true; repeat: true; onTriggered: clockText.now = new Date() }
             }
@@ -189,15 +189,23 @@ PanelWindow {
             id: mediaCapsule
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
-            width: Math.min(540, Math.max(320, mediaText.implicitWidth + 74)); height: 40; radius: 15
-            color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+            width: Math.min(540, Math.max(320, mediaText.implicitWidth + 116)); height: 40; radius: 15
+            color: "#ff000000"; border.width: 0
             visible: !root.mediaIslandOpen
             Text { anchors.left: parent.left; anchors.leftMargin: 15; anchors.verticalCenter: parent.verticalCenter; text: "♫"; color: root.accentHex; font.pixelSize: 16 }
             Text {
                 id: mediaText
-                anchors.centerIn: parent; width: parent.width - 68
+                anchors.centerIn: parent; width: parent.width - 116
                 text: root.activePlayer ? ((root.activePlayer.trackArtist || "") + " :: " + (root.activePlayer.trackTitle || "Sin reproducción")) : "Sin reproducción"
-                color: "#dbe7ff"; font.family: "CommitMono Nerd Font"; font.pixelSize: 13; elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter
+                color: root.accentHex; font.family: "CommitMono Nerd Font"; font.pixelSize: 13; elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter
+            }
+            HakuCava {
+                anchors.right: parent.right; anchors.rightMargin: 15; anchors.verticalCenter: parent.verticalCenter
+                // Waybar's cava reflected every PipeWire stream, not just
+                // MPRIS players. Keep that behavior: a browser/live stream
+                // still animates even when it exposes no "playing" state.
+                active: root.barVisible && !root.fullscreen
+                barColor: root.accentHex
             }
             MouseArea { anchors.fill: parent; onClicked: root.mediaRequested() }
         }
@@ -208,17 +216,17 @@ PanelWindow {
             Rectangle {
                 id: systemCapsule
                 width: systemLabel.implicitWidth + 24; height: 40; radius: 15
-                color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+                color: "#ff000000"; border.width: 0
                 opacity: root.systemIslandOpen ? 0 : 1
                 Text {
                     id: systemLabel; anchors.centerIn: parent; text: root.systemSummary
-                    color: "#e8edf4"; font.family: "CommitMono Nerd Font"; font.pixelSize: 12; font.bold: true
+                    color: root.accentHex; font.family: "CommitMono Nerd Font"; font.pixelSize: 12; font.bold: true
                 }
                 MouseArea { anchors.fill: parent; enabled: !root.systemIslandOpen; onClicked: root.systemRequested() }
             }
             Rectangle {
                 width: trayRow.implicitWidth > 0 ? trayRow.implicitWidth + 16 : 0; height: 40; radius: 15
-                visible: width > 0; color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+                visible: width > 0; color: "#ff000000"; border.width: 0
                 Row {
                     id: trayRow; anchors.centerIn: parent; spacing: 7
                     Repeater {
@@ -230,15 +238,15 @@ PanelWindow {
                                     return Quickshell.iconPath(modelData.iconName, "");
                                 return modelData.icon ? modelData.icon.toString() : "";
                             }
-                            width: iconSource === "" ? 0 : 20; height: 20
-                            Image { anchors.fill: parent; source: parent.iconSource; asynchronous: true }
+                            width: trayIcon.status === Image.Ready ? 20 : 0; height: 20
+                            Image { id: trayIcon; anchors.fill: parent; source: parent.iconSource; asynchronous: true }
                             MouseArea { anchors.fill: parent; acceptedButtons: Qt.LeftButton | Qt.RightButton; onClicked: (mouse) => { if (mouse.button === Qt.LeftButton && !modelData.onlyMenu) modelData.activate(); else modelData.secondaryActivate(); } }
                         }
                     }
                 }
             }
             Rectangle {
-                width: 48; height: 40; radius: 15; color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
+                width: 48; height: 40; radius: 15; color: "#ff000000"; border.width: 0
                 Text { anchors.centerIn: parent; text: ""; color: root.accentHex; font.family: "CommitMono Nerd Font"; font.pixelSize: 16 }
                 MouseArea { anchors.fill: parent; onClicked: powerProcess.running = true }
             }
