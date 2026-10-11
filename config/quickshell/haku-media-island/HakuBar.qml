@@ -17,13 +17,16 @@ PanelWindow {
     property var players: []
     property int activeWorkspace: 1
     property var activePlayer: null
-    property string systemSummary: "󰕾 --  󰃠 --"
+    property string systemSummary: "󰕾 --  󰃠 --  󰘚 --  󰁹 --  󰖩"
+    property bool fullscreen: false
     signal mediaRequested()
 
     anchors { top: true; left: true; right: true }
     implicitHeight: barVisible ? 54 : 0
     color: "transparent"
-    visible: barVisible
+    // Layer surfaces do not need to exist above a game. Keep the service and
+    // polling alive so the bar returns immediately once fullscreen ends.
+    visible: barVisible && !fullscreen
     WlrLayershell.layer: WlrLayer.Top
     WlrLayershell.exclusionMode: ExclusionMode.Auto
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -44,6 +47,24 @@ PanelWindow {
         focusWorkspaceProcess.running = true;
     }
 
+    function workspaceExists(index) {
+        return workspaces.some(ws => ws.idx === index);
+    }
+
+    function workspaceOccupied(index) {
+        return workspaces.some(ws => ws.idx === index && ws.active_window_id !== null);
+    }
+
+    function workspaceCount() {
+        let highest = 4;
+        for (let i = 0; i < workspaces.length; ++i) {
+            const ws = workspaces[i];
+            if (ws.active_window_id !== null || ws.is_focused)
+                highest = Math.max(highest, ws.idx);
+        }
+        return Math.min(9, highest);
+    }
+
     FileView { id: themeFile; path: "/home/calli/.local/state/haku_theme/colors.css"; preload: true }
 
     function syncAccent() {
@@ -53,8 +74,20 @@ PanelWindow {
 
     Process { id: focusWorkspaceProcess }
     Process {
+        id: focusedWindowProcess
+        command: ["niri", "msg", "-j", "focused-window"]
+        stdout: StdioCollector { id: focusedWindowOutput }
+        onExited: (code) => {
+            if (code !== 0) { root.fullscreen = false; return; }
+            try {
+                const window = JSON.parse(focusedWindowOutput.text.trim());
+                root.fullscreen = window && window.is_fullscreen === true;
+            } catch (error) { root.fullscreen = false; }
+        }
+    }
+    Process {
         id: systemProcess
-        command: ["sh", "-c", "v=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{printf \"%d%%\", $2 * 100}'); b=$(brightnessctl -m 2>/dev/null | awk -F, '{print $4}'); printf '󰕾 %s  󰃠 %s' \"${v:---}\" \"${b:---}\""]
+        command: ["sh", "-c", "v=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{printf \"%d%%\", $2 * 100}'); b=$(brightnessctl -m 2>/dev/null | awk -F, '{print $4}'); c=$(top -bn1 2>/dev/null | awk -F, '/Cpu/ {gsub(/[^0-9.]/, \"\", $4); printf \"%.0f%%\", 100-$4; exit}'); m=$(free 2>/dev/null | awk '/Mem:/ {printf \"%.0f%%\", $3 * 100 / $2}'); t=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null | awk '{printf \"%d°C\", $1/1000}'); bat=$(cat /sys/class/power_supply/BAT1/capacity 2>/dev/null | awk '{printf \"%s%%\", $1}'); net=$(cat /sys/class/net/wlan0/operstate 2>/dev/null); [ \"$net\" = up ] && net=󰖩 || net=󰖪; printf '󰍛 %s/%s  󰘚 %s  󰁹 %s  %s' \"${c:---}\" \"${m:---}\" \"${t:---}\" \"${bat:---}\" \"$net\""]
         stdout: StdioCollector { id: systemOutput }
         onExited: (code) => {
             if (code === 0 && systemOutput.text.trim() !== "")
@@ -94,10 +127,10 @@ PanelWindow {
     }
 
     Timer {
-        interval: 1000; running: root.visible; repeat: true
-        onTriggered: { workspaceProcess.running = true; systemProcess.running = true; root.syncAccent(); root.choosePlayer(); }
+        interval: 1000; running: root.barVisible; repeat: true
+        onTriggered: { workspaceProcess.running = true; systemProcess.running = true; focusedWindowProcess.running = true; root.syncAccent(); root.choosePlayer(); }
     }
-    Component.onCompleted: { workspaceProcess.running = true; systemProcess.running = true; syncAccent(); choosePlayer(); }
+    Component.onCompleted: { workspaceProcess.running = true; systemProcess.running = true; focusedWindowProcess.running = true; syncAccent(); choosePlayer(); }
 
     Item {
         anchors.fill: parent
@@ -110,17 +143,19 @@ PanelWindow {
             spacing: 10
 
             Rectangle {
-                width: 76; height: 40; radius: 15
+                width: workspaceDots.implicitWidth + 22; height: 40; radius: 15
                 color: "#ff06070a"; border.width: 1; border.color: Qt.darker(root.accentHex, 1.9)
                 Row {
+                    id: workspaceDots
                     anchors.centerIn: parent; spacing: 7
                     Repeater {
-                        model: 4
+                        model: root.workspaceCount()
                         delegate: Rectangle {
                             required property int index
                             width: index + 1 === root.activeWorkspace ? 15 : 8
                             height: 8; radius: 4
-                            color: index + 1 === root.activeWorkspace ? root.accentHex : "#586174"
+                            color: index + 1 === root.activeWorkspace ? root.accentHex : (root.workspaceOccupied(index + 1) ? "#a6b4c9" : "#586174")
+                            opacity: root.workspaceExists(index + 1) || index + 1 === root.activeWorkspace ? 1 : 0.55
                             Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                             MouseArea { anchors.fill: parent; onClicked: root.focusWorkspace(index + 1) }
                         }
