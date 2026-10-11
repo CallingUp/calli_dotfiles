@@ -106,22 +106,26 @@ Rectangle {
 
         Text {
             anchors.left: parent.left
-            anchors.leftMargin: 15
+            anchors.leftMargin: 16
+            anchors.right: compactCava.left
+            anchors.rightMargin: 13
             anchors.verticalCenter: parent.verticalCenter
-            text: "♫"
-            color: root.accent
-            font.pixelSize: 16
-        }
-
-        Text {
-            anchors.centerIn: parent
-            width: parent.width - 68
             text: root.activePlayer ? ((root.activePlayer.trackArtist || "") + " :: " + (root.activePlayer.trackTitle || "Sin reproducción")) : "Sin reproducción"
-            color: "#d9e6ff"
+            color: root.accent
             font.family: "CommitMono Nerd Font"
             font.pixelSize: 13
             elide: Text.ElideRight
             horizontalAlignment: Text.AlignHCenter
+        }
+        HakuCava {
+            id: compactCava
+            anchors.right: parent.right
+            anchors.rightMargin: 15
+            anchors.verticalCenter: parent.verticalCenter
+            // This short-lived instance is only active during the geometric
+            // handoff; the bar process is stopped at the same moment.
+            active: root.visible && root.progress < 0.22
+            barColor: root.accent
         }
     }
 

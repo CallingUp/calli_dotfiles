@@ -208,7 +208,9 @@ PanelWindow {
                 // Waybar's cava reflected every PipeWire stream, not just
                 // MPRIS players. Keep that behavior: a browser/live stream
                 // still animates even when it exposes no "playing" state.
-                active: root.barVisible && !root.fullscreen
+                // The expanding island owns the same visualizer while open;
+                // avoid two concurrent PipeWire readers during the handoff.
+                active: root.barVisible && !root.fullscreen && !root.mediaIslandOpen
                 barColor: root.accentHex
             }
             MouseArea { anchors.fill: parent; onClicked: root.mediaRequested() }
