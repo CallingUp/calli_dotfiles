@@ -61,7 +61,7 @@ power_buttons_position = "bottom-right"
 scheme_selector_position = "hidden"
 theme_mode = "dark"
 corner_radius_scale = 1.15
-font_family = "Iosevka Nerd Font"
+font_family = "0xProto Nerd Font"
 
 [appearance.palette]
 primary = "$ACCENT"

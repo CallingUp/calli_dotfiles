@@ -89,7 +89,7 @@ class Carousel:
 
     def palette_css(self):
         return f"""
-            window {{ background: transparent; font-family: Iosevka Nerd Font; }}
+            window {{ background: transparent; font-family: 0xProto Nerd Font; }}
             .carousel {{ background: transparent; padding: 0; }}
             .title {{ color: {accent()}; font-size: 16px; font-weight: bold; text-shadow: 0 2px 8px rgba(0,0,0,.95); }}
             .hint, .caption, .counter {{ color: rgba(232, 237, 244, .78); font-size: 12px; text-shadow: 0 2px 8px rgba(0,0,0,.95); }}

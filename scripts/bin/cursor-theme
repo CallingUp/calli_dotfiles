@@ -71,6 +71,20 @@ update_gtk() {
 update_gtk "$HOME/.config/gtk-3.0/settings.ini"
 update_gtk "$HOME/.config/gtk-4.0/settings.ini"
 
+mkdir -p "$HOME/.icons/default"
+printf '[Icon Theme]\nName=Default\nComment=Default Cursor Theme\nInherits=%s\n' "$theme" > "$HOME/.icons/default/index.theme"
+
+update_niri_environment() {
+    local file="$HOME/.config/niri/environment.kdl"
+    if grep -q '^    XCURSOR_THEME ' "$file"; then
+        sed -i -E "s|^    XCURSOR_THEME \"[^\"]*\"|    XCURSOR_THEME \"$theme\"|; s|^    XCURSOR_SIZE \"[0-9]+\"|    XCURSOR_SIZE \"$size\"|" "$file"
+    else
+        sed -i "/^environment {/a\\    XCURSOR_THEME \"$theme\"\n    XCURSOR_SIZE \"$size\"" "$file"
+    fi
+}
+
+update_niri_environment
+
 mkdir -p "$HOME/.config/environment.d" "$HOME/.local/state/haku_theme"
 printf 'XCURSOR_THEME=%s\nXCURSOR_SIZE=%s\n' "$theme" "$size" > "$HOME/.config/environment.d/10-haku-cursor.conf"
 printf '%s\n' "$theme" > "$HOME/.local/state/haku_theme/cursor-theme"

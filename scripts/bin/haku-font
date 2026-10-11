@@ -44,20 +44,22 @@ GENERAL="${!general_var}"
 KITTY="${!kitty_var}"
 SHELL="${!shell_var}"
 
-sed -i -E "s/^(font_size[[:space:]]+).*/\\1$KITTY/" "$HOME/.config/kitty/kitty.conf"
+sed -i -E "s/^font_family[[:space:]]+.*/font_family      $FONT_MONO/; s/^(font_size[[:space:]]+).*/\\1$KITTY/" "$HOME/.config/kitty/kitty.conf"
 sed -i -E "s/(font-size:[[:space:]]*)[0-9]+px/\\1${SHELL}px/" "$HOME/.local/state/haku_theme/fonts.css"
-if grep -q 'font: "Iosevka Nerd Font ' "$HOME/.local/state/haku_theme/rofi-style.rasi"; then
-    sed -i -E "s/(font:[[:space:]]*\"Iosevka Nerd Font )[0-9]+/\\1$SHELL/" "$HOME/.local/state/haku_theme/rofi-style.rasi"
+if grep -q 'font: "' "$HOME/.local/state/haku_theme/rofi-style.rasi"; then
+    sed -i -E "s/(font:[[:space:]]*\")[^\"]*[[:space:]][0-9]+/\\1$FONT_FAMILY $SHELL/" "$HOME/.local/state/haku_theme/rofi-style.rasi"
 else
-    sed -i "/^\* {/a\\    font: \"Iosevka Nerd Font $SHELL\";" "$HOME/.local/state/haku_theme/rofi-style.rasi"
+    sed -i "/^\* {/a\\    font: \"$FONT_FAMILY $SHELL\";" "$HOME/.local/state/haku_theme/rofi-style.rasi"
 fi
-sed -i -E "s/(font:[[:space:]]*\"Iosevka Nerd Font )[0-9]+/\\1$SHELL/" "$HOME/.config/rofi/clipboard.rasi"
-sed -i -E "s/^(gtk-font-name=Iosevka Nerd Font )[0-9]+/\\1$GENERAL/" "$HOME/.config/gtk-3.0/settings.ini"
-sed -i -E "s/^(gtk-font-name=Iosevka Nerd Font )[0-9]+/\\1$GENERAL/" "$HOME/.config/gtk-4.0/settings.ini"
-sed -i -E "s|^fixed=.*|fixed=\"Iosevka Nerd Font Mono,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,\"|; s|^general=.*|general=\"Iosevka Nerd Font,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,\"|" "$HOME/.config/qt5ct/qt5ct.conf"
-sed -i -E "s|^fixed=.*|fixed=\"Iosevka Nerd Font Mono,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0\"|; s|^general=.*|general=\"Iosevka Nerd Font,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0\"|" "$HOME/.config/qt6ct/qt6ct.conf"
+sed -i -E "s/(font:[[:space:]]*\")[^\"]*[[:space:]][0-9]+/\\1$FONT_FAMILY $SHELL/" "$HOME/.config/rofi/clipboard.rasi"
+sed -i -E "s|^gtk-font-name=.*|gtk-font-name=$FONT_FAMILY $GENERAL|" "$HOME/.config/gtk-3.0/settings.ini"
+sed -i -E "s|^gtk-font-name=.*|gtk-font-name=$FONT_FAMILY $GENERAL|" "$HOME/.config/gtk-4.0/settings.ini"
+sed -i -E "s|^fixed=.*|fixed=\"$FONT_MONO,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,\"|; s|^general=.*|general=\"$FONT_FAMILY,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,\"|" "$HOME/.config/qt5ct/qt5ct.conf"
+sed -i -E "s|^fixed=.*|fixed=\"$FONT_MONO,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0\"|; s|^general=.*|general=\"$FONT_FAMILY,$GENERAL,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0\"|" "$HOME/.config/qt6ct/qt6ct.conf"
 sed -i -E "s/^CURRENT=.*/CURRENT=\"$PRESET\"/" "$CONFIG"
 
 gsettings set org.gnome.desktop.interface font-name "$FONT_FAMILY $GENERAL" 2>/dev/null || true
 gsettings set org.gnome.desktop.interface document-font-name "$FONT_FAMILY $GENERAL" 2>/dev/null || true
 gsettings set org.gnome.desktop.interface monospace-font-name "$FONT_MONO $GENERAL" 2>/dev/null || true
+"$HOME/.local/bin/gen_style.sh" --font "$FONT_FAMILY"
+systemctl --user restart waybar.service 2>/dev/null || true

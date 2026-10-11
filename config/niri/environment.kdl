@@ -5,6 +5,9 @@
 //     /_____/_/ /_/|___/_/_/   \____/_/ /_/_/ /_/ /_/\___/_/ /_/\__/
 
 environment {
+    XCURSOR_THEME "Bibata-Modern-Ice"
+    XCURSOR_SIZE "24"
+
     // Wayland
     GDK_BACKEND "wayland"
     QT_QPA_PLATFORM "wayland;xcb"
