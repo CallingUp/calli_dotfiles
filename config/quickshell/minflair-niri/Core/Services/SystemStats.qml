@@ -13,7 +13,7 @@ Item {
     property string hostname: "Loading..."
     property string username: "Loading..."
     property string shell: "Loading..."
-    property string wm: "Hyprland (Wayland)"
+    property string wm: "Niri (Wayland)"
     property string packages: "Loading..."
     property string display: "Loading..."
     property string cpuModel: "Loading..."
@@ -24,6 +24,8 @@ Item {
     property bool hasGpu: false
     property real cpuUsage: 0
     property real memUsed: 0
+    property real memPercent: 0
+    property string cpuTemperature: "--°C"
     property string uptime: ""
 
     Component.onCompleted: {
@@ -62,7 +64,7 @@ Item {
                     root.hostname = info.hostname || "";
                     root.username = info.username || "";
                     root.shell = info.shell || "";
-                    root.wm = info.wm || "Hyprland (Wayland)";
+                    root.wm = "Niri (Wayland)";
                     root.packages = info.packages || "";
                     root.display = info.display || "";
                     root.cpuModel = info.cpu_model || "";
@@ -103,6 +105,8 @@ Item {
                         let sys = parsedData.system;
                         root.cpuUsage = (sys.cpu_usage !== undefined) ? sys.cpu_usage : 0;
                         root.memUsed = (sys.mem_used_gb !== undefined) ? sys.mem_used_gb : 0;
+                        root.memPercent = sys.mem_usage || 0;
+                        root.cpuTemperature = sys.cpu_temp || "--°C";
                         root.uptime = sys.uptime || "";
                     }
                 } catch (e) {

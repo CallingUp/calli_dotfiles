@@ -13,7 +13,7 @@ IslandBackground {
     readonly property bool isTarget: islandBar.activeIslandTarget === "left" && (islandBar.isOpen || islandBar.isRemoving)
     readonly property bool isHovered: leftHover.hovered && !islandBar.isOpen && openProgress === 0
     readonly property bool isTranslated: isHovered || isTarget || openProgress > 0
-    readonly property real idleW: Constants.size3Xl
+    readonly property real idleW: compactStatus.implicitWidth
     readonly property real idleH: Constants.size3Xl
     readonly property real idleR: Constants.sizeLg
     readonly property real panelW: isTarget ? islandComponents.getTargetWidth("dashboard", leftLoader.item, 0) : idleW
@@ -47,9 +47,9 @@ IslandBackground {
         visible: opacity > 0.001
         clip: true
 
-        AnimatedMinflair {
-            anchors.centerIn: parent
-            iconSize: Constants.sizeXl
+        CompactStatus {
+            id: compactStatus
+            anchors.fill: parent
         }
 
         MouseArea {
