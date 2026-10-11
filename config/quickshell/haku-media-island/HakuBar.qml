@@ -189,7 +189,9 @@ PanelWindow {
             id: mediaCapsule
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
-            width: Math.min(540, Math.max(320, mediaText.implicitWidth + 78)); height: 40; radius: 15
+            // Title-driven width: only reserve the fixed space needed by the
+            // compact Cava, rather than keeping the former 320px Waybar pill.
+            width: Math.min(540, Math.max(155, mediaText.implicitWidth + 78)); height: 40; radius: 15
             color: "#ff000000"; border.width: 0
             visible: !root.mediaIslandOpen
             Text {
