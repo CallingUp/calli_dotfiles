@@ -5,15 +5,19 @@
 # migration and makes rolling back to Waybar trivial.
 set -euo pipefail
 
+config="$HOME/haku_shell/config/quickshell/minflair-niri/niri-preview.qml"
 case "${1:-}" in
     show)
-        # Quickshell 0.3.2's IPC introspection works here, but its calls do
-        # not reliably flip a PanelWindow after it has been unmapped. Starting
-        # the user unit is deterministic and re-creates the reserved surface.
-        systemctl --user restart haku-quickshell.service
+        # Keep the running shell and its media state instead of restarting it.
+        if ! quickshell ipc -p "$config" call haku-bar revealBar; then
+            systemctl --user start haku-quickshell.service
+        fi
         ;;
     hide)
-        systemctl --user stop haku-quickshell.service
+        quickshell ipc -p "$config" call haku-bar hide
+        ;;
+    next|previous)
+        quickshell ipc -p "$config" call haku-bar "$1"
         ;;
     *)
         printf 'Uso: %s {show|hide}\n' "$0" >&2

@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
 import qs.Core
 
 // Compatibility API for upstream Minflair; never writes compositor preferences.
@@ -45,7 +46,7 @@ Item {
     property bool touchpadDisableWhileTyping: true
     property bool hyprPrefsLoaded: true
     property bool isSyncing: false
-    property bool isTrueFullscreen: false
+    readonly property bool isTrueFullscreen: ToplevelManager.activeToplevel ? ToplevelManager.activeToplevel.fullscreen : false
     property var workspaces: ({ values: [] })
     property var toplevels: ({ values: [] })
     property var focusedWorkspace: null
@@ -82,15 +83,14 @@ Item {
         }
     }
     Process {
-        id: windowQuery
-        command: ["niri", "msg", "-j", "focused-window"]
+        command: ["niri", "msg", "-j", "event-stream"]
         running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try { const window = JSON.parse(text); backend.isTrueFullscreen = !!window && window.is_fullscreen === true; }
-                catch (e) {}
+        stdout: SplitParser {
+            onRead: data => {
+                if (data.includes("Workspace") || data.includes("Window")) backend.refreshWorkspaces();
             }
         }
     }
-    Timer { interval: 700; running: true; repeat: true; onTriggered: { backend.refreshWorkspaces(); if (!windowQuery.running) windowQuery.running = true; } }
+    // Recovery if the event stream disconnects; normal updates are event-driven.
+    Timer { interval: 3000; running: true; repeat: true; onTriggered: backend.refreshWorkspaces() }
 }

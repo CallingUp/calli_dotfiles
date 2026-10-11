@@ -9,6 +9,7 @@ Item {
     id: root
 
     property bool enableShadow: true
+    property bool topAttached: true
     property real radius: height / 2
     default property alias content: contentSlot.data
 
@@ -29,6 +30,12 @@ Item {
         layer.enabled: true
         layer.smooth: true
         layer.samples: 4
+        Rectangle {
+            width: parent.width
+            height: Math.min(root.radius, parent.height / 2)
+            color: parent.color
+            visible: root.topAttached
+        }
 
         Behavior on color {
             ColorAnimation {

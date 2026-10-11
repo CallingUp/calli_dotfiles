@@ -64,6 +64,19 @@ binds {
         spawn "/home/calli/.local/bin/waybar_manager.sh" "--context-next"
     }
 
+    Mod+Left hotkey-overlay-title="Minflair: isla anterior" {
+        spawn "/home/calli/.local/bin/haku-waybar-visibility" "previous"
+    }
+    Mod+Right hotkey-overlay-title="Minflair: isla siguiente" {
+        spawn "/home/calli/.local/bin/haku-waybar-visibility" "next"
+    }
+    Mod+Up hotkey-overlay-title="Minflair: ocultar" {
+        spawn "/home/calli/.local/bin/haku-waybar-visibility" "hide"
+    }
+    Mod+Down hotkey-overlay-title="Minflair: mostrar" {
+        spawn "/home/calli/.local/bin/haku-waybar-visibility" "show"
+    }
+
     Mod+Ctrl+M hotkey-overlay-title="Waybar: Media" {
         spawn "/home/calli/.local/bin/waybar_manager.sh" "--context-media"
     }
