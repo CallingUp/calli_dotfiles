@@ -1,11 +1,11 @@
 [Unit]
-Description=Haku Quickshell bar and media island
+Description=Minflair Dynamic Island port for Niri
 PartOf=graphical-session.target
 After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/quickshell -p /home/calli/haku_shell/config/quickshell/haku-media-island
+ExecStart=/usr/bin/quickshell -p /home/calli/haku_shell/config/quickshell/minflair-niri/niri-preview.qml
 Restart=on-failure
 RestartSec=2
 
