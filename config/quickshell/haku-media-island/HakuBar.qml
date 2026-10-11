@@ -189,17 +189,19 @@ PanelWindow {
             id: mediaCapsule
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
-            width: Math.min(540, Math.max(320, mediaText.implicitWidth + 116)); height: 40; radius: 15
+            width: Math.min(540, Math.max(320, mediaText.implicitWidth + 78)); height: 40; radius: 15
             color: "#ff000000"; border.width: 0
             visible: !root.mediaIslandOpen
-            Text { anchors.left: parent.left; anchors.leftMargin: 15; anchors.verticalCenter: parent.verticalCenter; text: "♫"; color: root.accentHex; font.pixelSize: 16 }
             Text {
                 id: mediaText
-                anchors.centerIn: parent; width: parent.width - 116
+                anchors.left: parent.left; anchors.leftMargin: 16
+                anchors.right: mediaCava.left; anchors.rightMargin: 13
+                anchors.verticalCenter: parent.verticalCenter
                 text: root.activePlayer ? ((root.activePlayer.trackArtist || "") + " :: " + (root.activePlayer.trackTitle || "Sin reproducción")) : "Sin reproducción"
                 color: root.accentHex; font.family: "CommitMono Nerd Font"; font.pixelSize: 13; elide: Text.ElideRight; horizontalAlignment: Text.AlignHCenter
             }
             HakuCava {
+                id: mediaCava
                 anchors.right: parent.right; anchors.rightMargin: 15; anchors.verticalCenter: parent.verticalCenter
                 // Waybar's cava reflected every PipeWire stream, not just
                 // MPRIS players. Keep that behavior: a browser/live stream
