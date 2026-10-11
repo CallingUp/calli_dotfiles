@@ -8,6 +8,7 @@ Rectangle {
     property bool open: false
     property real progress: open ? 1 : 0
     property var activePlayer: null
+    property var cavaLevels: []
     property var controls: ["⏮", "▶", "⏭"]
 
     property string accentHex: "#d9d8d9"
@@ -125,6 +126,7 @@ Rectangle {
             // This short-lived instance is only active during the geometric
             // handoff; the bar process is stopped at the same moment.
             active: root.visible && root.progress < 0.22
+            levels: root.cavaLevels
             barColor: root.accent
         }
     }
