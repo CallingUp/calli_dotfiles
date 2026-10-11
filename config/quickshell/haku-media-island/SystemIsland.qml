@@ -10,15 +10,16 @@ Rectangle {
     property real progress: open ? 1 : 0
     property real collapsedWidth: 190
     property real collapsedHeight: 40
+    property real expandedWidth: 344
+    property real expandedHeight: 242
     property string accentHex: "#d9d8d9"
     property string summary: "Sistema"
 
-    width: collapsedWidth + (344 - collapsedWidth) * progress
-    height: collapsedHeight + (242 - collapsedHeight) * progress
+    width: collapsedWidth + (expandedWidth - collapsedWidth) * progress
+    height: collapsedHeight + (expandedHeight - collapsedHeight) * progress
     radius: 15 - 3 * progress
-    color: "#ff06070a"
-    border.width: 1
-    border.color: Qt.darker(accentHex, 1.9)
+    color: "#ff000000"
+    border.width: 0
     clip: true
     visible: open || progress > 0.001
 
@@ -41,7 +42,7 @@ Rectangle {
         Text {
             anchors.centerIn: parent
             text: root.summary
-            color: "#e8edf4"
+            color: root.accentHex
             font.family: "CommitMono Nerd Font"
             font.pixelSize: 12
             font.bold: true

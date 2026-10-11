@@ -85,7 +85,9 @@ ShellRoot {
 
         SystemIsland {
             id: systemIsland
-            x: hakuBar.systemCapsuleX
+            // Preserve its right edge as it expands, like a native right
+            // island. That keeps it inside the screen beside tray/power.
+            x: hakuBar.systemCapsuleX - (systemIsland.expandedWidth - hakuBar.systemCapsuleWidth) * systemIsland.progress
             y: 7
             collapsedWidth: hakuBar.systemCapsuleWidth
             accentHex: hakuBar.accentHex
