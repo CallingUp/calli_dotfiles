@@ -36,3 +36,19 @@ Hyprland compositor settings are not supported by the compatibility backend.
 Previous bar backup:
 ~/.local/state/haku-backups/minflair-before-port/haku-media-island
 Previous bar source is also retained at ../haku-media-island.
+
+## Attached islands and navigation
+
+Islands now start at y=0 with square top corners and rounded bottom corners.
+Expansion preserves that attachment instead of translating the card down.
+Panel changes close the old content before opening the most recent request,
+so rapid key presses do not accumulate a queue.
+
+Mod+Left/Right cycle music → control center → power actions.
+Mod+Up hides the bar; Mod+Down shows it without restarting the service.
+These bindings reuse haku-waybar-visibility; the live Niri binding file was
+updated as well as the repository copy.
+
+Fullscreen state comes from Wayland ToplevelManager, not a nonexistent
+is_fullscreen field in this Niri version's focused-window JSON.
+Workspace updates use Niri event-stream with a three-second recovery poll.

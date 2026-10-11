@@ -11,6 +11,25 @@ import qs.Modules.Bar.Components
 ShellRoot {
     id: root
     property bool barVisible: true
+    property int cycleIndex: 0
+    readonly property var islandPanels: ["music", "controlCenter", "powerMenu"]
+    function dismissIsland() { island.pendingPanel = ""; island.close(); }
+    function cycleIsland(delta) {
+        if (HyprlandService.isTrueFullscreen) return;
+        root.barVisible = true;
+        const current = islandPanels.indexOf(AppState.activeWidget);
+        cycleIndex = ((current >= 0 ? current : cycleIndex) + delta + islandPanels.length) % islandPanels.length;
+        AppState.openWidget(islandPanels[cycleIndex]);
+    }
+    Connections {
+        target: HyprlandService
+        function onIsTrueFullscreenChanged() {
+            if (HyprlandService.isTrueFullscreen) {
+                island.closeImmediately();
+                AppState.closeAllWidgets();
+            }
+        }
+    }
     Component.onCompleted: { SettingsService.barStyle = "island"; SettingsService.fontFamily = "CommitMono Nerd Font"; }
     Connections {
         target: SettingsService
@@ -38,18 +57,22 @@ ShellRoot {
         target: "haku-media"
         function toggle() { AppState.toggleWidget("music"); }
         function open() { AppState.openWidget("music"); }
-        function close() { island.close(); }
+        function close() { root.dismissIsland(); }
     }
     IpcHandler {
         target: "haku-bar"
         function show() { root.barVisible = true; }
-        function hide() { island.close(); root.barVisible = false; }
+        function revealBar() { root.barVisible = true; }
+        function hide() { island.closeImmediately(); AppState.closeAllWidgets(); root.barVisible = false; }
         function toggle() { if (root.barVisible) hide(); else show(); }
+        function next() { root.cycleIsland(1); }
+        function previous() { root.cycleIsland(-1); }
+        function status(): string { return JSON.stringify({visible: root.barVisible, fullscreen: HyprlandService.isTrueFullscreen, mapped: surface.visible, panel: island.effectivePanel, pending: island.pendingPanel, open: island.isOpen}); }
     }
     IpcHandler {
         target: "widgets"
         function toggle(widget: string) { AppState.toggleWidget(widget); }
-        function close() { island.close(); }
+        function close() { root.dismissIsland(); }
     }
     PanelWindow {
         visible: root.barVisible && !HyprlandService.isTrueFullscreen
@@ -75,10 +98,10 @@ ShellRoot {
             Region { x: power.x; y: 4; width: power.width; height: 36 }
             Region { x: tray.x; y: 4; width: tray.width; height: 36 }
         }
-        MouseArea { anchors.fill: parent; enabled: island.isOverlayActive; onClicked: island.close() }
+        MouseArea { anchors.fill: parent; enabled: island.isOverlayActive; onClicked: root.dismissIsland() }
         IslandBar {
             id: island
-            x: 0; y: 6; width: surface.width
+            x: 0; y: 0; width: surface.width
             notificationService: notifications
         }
         Workspaces { id: workspaces; x: 8; y: 10 }

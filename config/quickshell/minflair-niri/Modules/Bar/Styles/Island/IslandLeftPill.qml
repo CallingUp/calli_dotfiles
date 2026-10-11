@@ -94,7 +94,7 @@ IslandBackground {
 
     transform: Translate {
         x: root.isTranslated ? -4 : 0
-        y: root.isTranslated ? 4 : 0
+        y: 0 // Attached to the top edge, including during expansion.
 
         Behavior on x {
             enabled: HyprlandService.enableAnimations

@@ -12,9 +12,10 @@ Item {
     readonly property string currentPanel: AppState.activeWidget
     readonly property bool isHostPanel: SettingsService.barIslandMode && (currentPanel === "clock" || currentPanel === "dashboard" || currentPanel === "controlCenter" || currentPanel === "notificationsCenter" || currentPanel === "music" || currentPanel === "launcher" || currentPanel === "clipboard" || currentPanel === "wallpaper" || currentPanel === "screenshot" || currentPanel === "powerMenu")
     property string activePanelName: ""
-    readonly property string effectivePanel: (AppState.activeWidget !== "" && islandBar.isHostPanel) ? AppState.activeWidget : activePanelName
+    readonly property string effectivePanel: activePanelName
     property bool isOpen: false
     property bool isRemoving: false
+    property string pendingPanel: ""
     readonly property bool hasPlayingMedia: MprisService.activePlayer !== null && (((MprisService.activePlayer.trackTitle || "").trim() !== "") || ((MprisService.activePlayer.trackArtist || "").trim() !== ""))
     readonly property bool showMediaOnRight: (SettingsService.islandRightMode === "music") || (SettingsService.islandRightMode === "auto" && hasPlayingMedia)
     property string currentIslandTarget: ""
@@ -146,12 +147,18 @@ Item {
     }
 
     function updateContent(newPanel) {
+        if (newPanel !== "" && newPanel !== activePanelName && (isOpen || isRemoving)) {
+            pendingPanel = newPanel;
+            close();
+            return;
+        }
         if (!SettingsService.barIslandMode) {
             closeImmediately();
             return ;
         }
         let target = getTargetPill(newPanel);
         if (target === "") {
+            pendingPanel = "";
             if (isOpen || isRemoving)
                 close();
 
@@ -193,12 +200,16 @@ Item {
 
     function finishClosing() {
         if (isRemoving) {
+            const nextPanel = pendingPanel;
+            pendingPanel = "";
             isRemoving = false;
             currentIslandTarget = "";
             activePanelName = "";
             AppState.isIslandOpen = false;
-            if (AppState.activeWidget === effectivePanel || isHostPanel)
+            if (nextPanel === "" && isHostPanel)
                 AppState.activeWidget = "";
+            if (nextPanel !== "")
+                updateContent(nextPanel);
 
             if (hasActiveNotifications && !centerPill.isRemovingNotif)
                 centerPill.restartDisplayTimer();
@@ -207,6 +218,7 @@ Item {
     }
 
     function closeImmediately() {
+        pendingPanel = "";
         isRemoving = false;
         isOpen = false;
         currentIslandTarget = "";
