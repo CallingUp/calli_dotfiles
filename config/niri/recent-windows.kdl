@@ -1,0 +1,17 @@
+// Native Niri switcher: GPU-rendered previews, no screenshot polling.
+recent-windows {
+    on
+    open-delay-ms 80
+    highlight {
+        padding 12
+        corner-radius 14
+    }
+    previews {
+        max-height 280
+        max-scale 0.35
+    }
+    binds {
+        Mod+Tab { next-window; }
+        Mod+Shift+Tab { previous-window; }
+    }
+}

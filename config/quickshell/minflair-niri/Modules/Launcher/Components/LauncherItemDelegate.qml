@@ -16,7 +16,7 @@ Item {
     readonly property int actionCount: modelData.actions ? modelData.actions.length : 0
 
     signal toggleExpanded()
-    signal launchRequested(string exec, bool inTerminal)
+    signal launchRequested(var exec, bool inTerminal)
 
     onIsExpandedChanged: {
         if (!isExpanded)

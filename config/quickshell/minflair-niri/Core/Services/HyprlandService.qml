@@ -47,6 +47,8 @@ Item {
     property bool hyprPrefsLoaded: true
     property bool isSyncing: false
     readonly property bool isTrueFullscreen: ToplevelManager.activeToplevel ? ToplevelManager.activeToplevel.fullscreen : false
+    property var activeCasts: []
+    readonly property bool isScreencasting: activeCasts.length > 0
     property var workspaces: ({ values: [] })
     property var toplevels: ({ values: [] })
     property var focusedWorkspace: null
@@ -88,6 +90,17 @@ Item {
         stdout: SplitParser {
             onRead: data => {
                 if (data.includes("Workspace") || data.includes("Window")) backend.refreshWorkspaces();
+                if (data.includes("Cast")) {
+                    try {
+                        const event = JSON.parse(data);
+                        if (event.CastsChanged) backend.activeCasts = event.CastsChanged.casts;
+                        if (event.CastStartedOrChanged) {
+                            const cast = event.CastStartedOrChanged.cast;
+                            backend.activeCasts = backend.activeCasts.filter(c => c.stream_id !== cast.stream_id).concat([cast]);
+                        }
+                        if (event.CastStopped) backend.activeCasts = backend.activeCasts.filter(c => c.stream_id !== event.CastStopped.stream_id);
+                    } catch (error) { console.warn("Niri cast event:", error); }
+                }
             }
         }
     }

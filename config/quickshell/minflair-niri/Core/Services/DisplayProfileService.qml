@@ -13,50 +13,50 @@ Item {
     property bool gameModeActive: false
     property bool gameModeDaemonDetected: false
     property bool autoActivatedByDaemon: false
+    property string nightLightError: ""
+    property string caffeineError: ""
+    property string gameModeError: ""
+    property bool updatingState: false
+    property bool caffeineBeforeGame: false
+    readonly property bool gameModeBusy: gameModePwrProc.running
     readonly property string gameModeSubtitle: {
+        if (gameModeError) return gameModeError;
+        if (gameModePwrProc.running) return "Aplicando…";
         if (!gameModeActive)
             return "Off";
 
         if (gameModeDaemonDetected)
             return "Playing (gamemoded)";
 
-        return "Max Perf & Scanout";
+        return "Perfil de rendimiento";
     }
 
     function applyNightLight(state) {
+        nightLightError = "";
         if (state) {
-            nightLightProc.command = ["hyprsunset", "-t", displayProfileService.nightLightTemperature.toString()];
+            nightLightProc.command = ["gammastep", "-m", "wayland", "-O", displayProfileService.nightLightTemperature.toString()];
             nightLightProc.running = false;
             nightLightProc.running = true;
         } else {
             nightLightProc.running = false;
-            pkillSunsetProc.running = false;
-            pkillSunsetProc.running = true;
         }
     }
 
     function applyCaffeine(state) {
-        caffeineProc.running = false;
-        if (state)
-            caffeineProc.running = true;
+        caffeineError = "";
+        caffeineProc.running = state;
 
     }
 
     function applyGameMode(enable) {
+        if (gameModePwrProc.running) return;
+        gameModeError = "";
+        if (enable) caffeineBeforeGame = caffeineActive;
         gameModePwrProc.command = ["python3", Quickshell.shellDir + "/Core/Services/scripts/game_mode.py", enable ? "apply" : "revert"];
         gameModePwrProc.running = false;
         gameModePwrProc.running = true;
-        displayProfileService.caffeineActive = enable;
-        if (enable) {
-            let evalLua = "hl.config({ animations = { enabled = false }, decoration = { rounding = 0, blur = { enabled = false }, shadow = { enabled = false } }, render = { direct_scanout = 1 }, misc = { vrr = 1 } })";
-            hyprGameProc.command = ["hyprctl", "eval", evalLua];
-            hyprGameProc.running = false;
-            hyprGameProc.running = true;
-        } else {
-            hyprGameProc.command = ["hyprctl", "reload"];
-            hyprGameProc.running = false;
-            hyprGameProc.running = true;
-        }
+        displayProfileService.caffeineActive = enable ? true : caffeineBeforeGame;
+        // Niri effects and animations are deliberately left untouched.
     }
 
     Component.onCompleted: {
@@ -68,7 +68,7 @@ Item {
         if (SettingsService.settingsLoaded)
             SettingsService.saveSettings();
 
-        applyNightLight(nightLightActive);
+        if (!updatingState) applyNightLight(nightLightActive);
     }
     onNightLightTemperatureChanged: {
         if (SettingsService.settingsLoaded)
@@ -82,13 +82,13 @@ Item {
         if (SettingsService.settingsLoaded)
             SettingsService.saveSettings();
 
-        applyCaffeine(caffeineActive);
+        if (!updatingState) applyCaffeine(caffeineActive);
     }
     onGameModeActiveChanged: {
         if (SettingsService.settingsLoaded)
             SettingsService.saveSettings();
 
-        applyGameMode(gameModeActive);
+        if (!updatingState) applyGameMode(gameModeActive);
     }
 
     Timer {
@@ -119,7 +119,7 @@ Item {
                     let info = JSON.parse(data.trim());
                     if (info.gamemode_active) {
                         displayProfileService.gameModeDaemonDetected = true;
-                        if (!displayProfileService.gameModeActive) {
+                        if (!displayProfileService.gameModeActive && !displayProfileService.gameModeError) {
                             displayProfileService.autoActivatedByDaemon = true;
                             displayProfileService.gameModeActive = true;
                         }
@@ -139,32 +139,46 @@ Item {
 
     Process {
         id: gameModePwrProc
-    }
-
-    Process {
-        id: hyprGameProc
-
-        onExited: (code) => {
-            if (!displayProfileService.gameModeActive)
-                HyprlandService.reloadHyprPrefs();
-
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const result = JSON.parse(text);
+                    if (result.success === false) {
+                        displayProfileService.gameModeError = result.output;
+                        displayProfileService.updatingState = true;
+                        displayProfileService.gameModeActive = !displayProfileService.gameModeActive;
+                        displayProfileService.updatingState = false;
+                        displayProfileService.caffeineActive = displayProfileService.caffeineBeforeGame;
+                    }
+                } catch (error) { displayProfileService.gameModeError = "No se pudo comprobar el cambio"; }
+            }
         }
     }
 
     Process {
         id: nightLightProc
-    }
-
-    Process {
-        id: pkillSunsetProc
-
-        command: ["pkill", "hyprsunset"]
+        onExited: (code, status) => {
+            if (status === 0 && code !== 0 && displayProfileService.nightLightActive) {
+                displayProfileService.nightLightError = "No se pudo activar";
+                displayProfileService.updatingState = true;
+                displayProfileService.nightLightActive = false;
+                displayProfileService.updatingState = false;
+            }
+        }
     }
 
     Process {
         id: caffeineProc
 
         command: ["systemd-inhibit", "--what=idle", "--who=quickshell", "--why=Keep screen active", "--mode=block", "sleep", "infinity"]
+        onExited: (code, status) => {
+            if (status === 0 && displayProfileService.caffeineActive) {
+                displayProfileService.caffeineError = "Inhibidor no disponible";
+                displayProfileService.updatingState = true;
+                displayProfileService.caffeineActive = false;
+                displayProfileService.updatingState = false;
+            }
+        }
     }
 
 }

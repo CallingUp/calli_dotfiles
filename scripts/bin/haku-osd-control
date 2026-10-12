@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+case "${1:-}" in
+    volume-up) wpctl set-volume --limit 1.0 @DEFAULT_AUDIO_SINK@ 5%+ ;;
+    volume-down) wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- ;;
+    volume-mute) wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle ;;
+    brightness-up) brightnessctl --class=backlight --quiet set +5% ;;
+    brightness-down) brightnessctl --class=backlight --quiet set 5%- ;;
+    *) exit 2 ;;
+esac
+
+case "$1" in
+    volume-*)
+        volume_state=$(wpctl get-volume @DEFAULT_AUDIO_SINK@)
+        level=$(awk '{printf "%.0f", $2 * 100}' <<< "$volume_state")
+        label=Volume
+        icon=audio-volume-high
+        if [[ "$volume_state" == *MUTED* ]]; then
+            icon=audio-volume-muted
+            level="$level% · silenciado"
+        else
+            level="$level%"
+        fi
+        ;;
+    brightness-*)
+        level=$(brightnessctl --class=backlight --machine-readable info | cut -d, -f4)
+        label=Brightness
+        icon=display-brightness
+        ;;
+esac
+
+# Controls work even if the bar is stopped; never start a notification daemon.
+quickshell ipc -p /home/calli/haku_shell/config/quickshell/minflair-niri/niri-preview.qml \
+    call haku-osd displayOsd "$label" "$level" "$icon" >/dev/null 2>&1 || true

@@ -21,7 +21,7 @@ Item {
     required property var notificationService
 
     function getTargetPadding(panel) {
-        if (panel === "" || panel === "screenshot" || panel === "powerMenu")
+        if (panel === "" || panel === "stats" || panel === "screenshot" || panel === "powerMenu")
             return 0;
 
         return Constants.sizeLg;
@@ -55,6 +55,8 @@ Item {
     }
 
     function getTargetRadius(panel) {
+        if (panel === "stats")
+            return Constants.sizeLg;
         if (panel === "")
             return getTargetHeight("", null) / 2;
 
@@ -67,6 +69,8 @@ Item {
 
     function getComponent(panelName) {
         switch (panelName) {
+        case "stats":
+            return statsComp;
         case "clock":
             return clockComp;
         case "dashboard":
@@ -90,6 +94,11 @@ Item {
         default:
             return null;
         }
+    }
+
+    Component {
+        id: statsComp
+        CompactStatus { implicitHeight: 32; height: implicitHeight }
     }
 
     Component {

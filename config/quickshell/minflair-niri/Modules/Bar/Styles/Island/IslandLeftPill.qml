@@ -13,8 +13,9 @@ IslandBackground {
     readonly property bool isTarget: islandBar.activeIslandTarget === "left" && (islandBar.isOpen || islandBar.isRemoving)
     readonly property bool isHovered: leftHover.hovered && !islandBar.isOpen && openProgress === 0
     readonly property bool isTranslated: isHovered || isTarget || openProgress > 0
-    readonly property real idleW: compactStatus.implicitWidth
-    readonly property real idleH: Constants.size3Xl
+    visible: isTarget || openProgress > 0
+    readonly property real idleW: 0
+    readonly property real idleH: 0
     readonly property real idleR: Constants.sizeLg
     readonly property real panelW: isTarget ? islandComponents.getTargetWidth("dashboard", leftLoader.item, 0) : idleW
     readonly property real panelH: isTarget ? islandComponents.getTargetHeight("dashboard", leftLoader.item) : idleH
@@ -22,7 +23,7 @@ IslandBackground {
     readonly property alias activeItem: leftLoader.item
 
     z: isTarget ? 10 : 1
-    x: Math.max(16, centerPill.x - 10 - width)
+    x: centerPill.x - width
     y: 0
     width: idleW + (panelW - idleW) * openProgress
     height: idleH + (panelH - idleH) * openProgress
@@ -31,7 +32,7 @@ IslandBackground {
     HoverHandler {
         id: leftHover
 
-        enabled: !islandBar.isOpen && root.openProgress === 0
+        enabled: false
         margin: root.isHovered ? 8 : 0
     }
 
@@ -47,9 +48,9 @@ IslandBackground {
         visible: opacity > 0.001
         clip: true
 
-        CompactStatus {
-            id: compactStatus
-            anchors.fill: parent
+        AnimatedMinflair {
+            anchors.centerIn: parent
+            iconSize: Constants.sizeXl
         }
 
         MouseArea {
@@ -122,7 +123,7 @@ IslandBackground {
         enabled: HyprlandService.enableAnimations
 
         NumberAnimation {
-            duration: islandBar.isRemoving ? Constants.animNormal : Constants.animExpressive
+            duration: islandBar.isRemoving ? Constants.islandCloseDuration : Constants.islandOpenDuration
             easing.type: islandBar.isRemoving ? Easing.OutCubic : Easing.OutQuint
             onRunningChanged: {
                 if (!running && islandBar.isRemoving)

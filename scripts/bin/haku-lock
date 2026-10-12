@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+config="$HOME/haku_shell/config/quickshell/haku-lock/shell.qml"
+case "${1:-}" in
+    --preview)
+        export HAKU_LOCK_PREVIEW=1
+        exec quickshell --no-duplicate -p "$config"
+        ;;
+    ""|--suspend) ;;
+    *) printf 'Uso: haku-lock [--preview|--suspend]\n' >&2; exit 2 ;;
+esac
+
+# Never inherit preview mode into a real lock request.
+unset HAKU_LOCK_PREVIEW
+quickshell --no-duplicate --daemonize -p "$config"
+for ((attempt=0; attempt<50; attempt++)); do
+    if [[ "$(quickshell ipc -p "$config" call haku-lock status 2>/dev/null || true)" == "secure" ]]; then
+        if [[ "${1:-}" == "--suspend" ]]; then
+            systemctl suspend
+        fi
+        exit 0
+    fi
+    sleep 0.1
+done
+printf 'No se confirmó el bloqueo seguro; no se suspenderá el equipo.\n' >&2
+exit 1

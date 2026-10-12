@@ -11,6 +11,28 @@ IslandBackground {
     required property Item islandContainer
     required property var notificationService
     property real openProgress: 0
+    property string displayedPanel: islandBar.effectivePanel
+    property real contentOpacity: 1
+
+    Connections {
+        target: islandBar
+        function onEffectivePanelChanged() {
+            contentSwap.stop();
+            if (HyprlandService.enableAnimations && root.openProgress > 0.85 && root.isTarget) {
+                contentSwap.start();
+            } else {
+                root.displayedPanel = islandBar.effectivePanel;
+                root.contentOpacity = 1;
+            }
+        }
+    }
+
+    SequentialAnimation {
+        id: contentSwap
+        NumberAnimation { target: root; property: "contentOpacity"; to: 0; duration: Math.round(60 * Constants.durationFactor); easing.type: Easing.InOutSine }
+        ScriptAction { script: root.displayedPanel = islandBar.effectivePanel }
+        NumberAnimation { target: root; property: "contentOpacity"; to: 1; duration: Math.round(140 * Constants.durationFactor); easing.type: Easing.OutCubic }
+    }
     readonly property bool isTarget: islandBar.activeIslandTarget === "center" && (islandBar.isOpen || islandBar.isRemoving)
     readonly property bool hasActiveNotifications: notifLayer.hasActiveNotifications
     readonly property bool isRemovingNotif: notifLayer.isRemovingNotif
@@ -24,9 +46,9 @@ IslandBackground {
     readonly property real idleH: Constants.size3Xl
     readonly property real idleR: Constants.sizeLg
     property real smoothIdleW: idleW
-    readonly property real panelW: isTarget ? islandComponents.getTargetWidth(islandBar.effectivePanel, centerLoader.item, 0) : smoothIdleW
-    readonly property real panelH: isTarget ? islandComponents.getTargetHeight(islandBar.effectivePanel, centerLoader.item) : idleH
-    readonly property real panelR: isTarget ? islandComponents.getTargetRadius(islandBar.effectivePanel) : idleR
+    readonly property real panelW: isTarget ? islandComponents.getTargetWidth(displayedPanel, centerLoader.item, 0) : smoothIdleW
+    readonly property real panelH: isTarget ? islandComponents.getTargetHeight(displayedPanel, centerLoader.item) : idleH
+    readonly property real panelR: isTarget ? islandComponents.getTargetRadius(displayedPanel) : idleR
     readonly property real baseW: smoothIdleW + (notifW - smoothIdleW) * notifProgress
     readonly property real baseH: idleH + (notifH - idleH) * notifProgress
     readonly property real baseR: idleR + (notifR - idleR) * notifProgress
@@ -57,6 +79,7 @@ IslandBackground {
         anchors.fill: parent
         acceptedButtons: Qt.AllButtons
         enabled: root.openProgress > 0.05
+        onClicked: islandBar.dismiss()
     }
 
     IslandClock {
@@ -82,7 +105,7 @@ IslandBackground {
 
     Item {
         anchors.fill: parent
-        anchors.margins: islandComponents.getTargetPadding(islandBar.effectivePanel)
+        anchors.margins: islandComponents.getTargetPadding(root.displayedPanel)
         opacity: islandBar.isRemoving ? Math.min(1, Math.max(0, (root.openProgress - 0.4) / 0.6)) : Math.min(1, Math.max(0, (root.openProgress - 0.2) / 0.8))
         scale: islandBar.isRemoving ? (0.94 + 0.06 * Math.min(1, Math.max(0, (root.openProgress - 0.3) / 0.7))) : (0.94 + 0.06 * Math.min(1, Math.max(0, (root.openProgress - 0.15) / 0.85)))
         visible: opacity > 0.001
@@ -91,16 +114,17 @@ IslandBackground {
         Loader {
             id: centerLoader
 
-            property real targetW: islandComponents.getContentWidth(islandBar.effectivePanel, item)
-            property real targetH: islandComponents.getContentHeight(islandBar.effectivePanel, item)
+            property real targetW: islandComponents.getContentWidth(root.displayedPanel, item)
+            property real targetH: islandComponents.getContentHeight(root.displayedPanel, item)
 
             width: targetW > 0 ? targetW : parent.width
             height: targetH > 0 ? targetH : parent.height
             anchors.top: parent.top
             anchors.horizontalCenter: parent.horizontalCenter
             active: root.isTarget
-            sourceComponent: islandComponents.getComponent(islandBar.effectivePanel)
-            opacity: status === Loader.Ready ? 1 : 0
+            sourceComponent: islandComponents.getComponent(root.displayedPanel)
+            opacity: status === Loader.Ready ? root.contentOpacity : 0
+            enabled: root.contentOpacity > 0.95 && !contentSwap.running
             onStatusChanged: {
                 if (status === Loader.Ready && item) {
                     if (item.widget !== undefined)
@@ -108,14 +132,6 @@ IslandBackground {
 
                     islandBar.triggerFocus();
                 }
-            }
-
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: Constants.animFast
-                    easing.type: Easing.OutCubic
-                }
-
             }
 
         }
@@ -142,7 +158,7 @@ IslandBackground {
 
         NumberAnimation {
             duration: Constants.animNormal
-            easing.type: Easing.OutQuint
+            easing.type: Easing.InOutCubic
         }
 
     }
@@ -151,8 +167,8 @@ IslandBackground {
         enabled: HyprlandService.enableAnimations && root.openProgress >= 0.85
 
         NumberAnimation {
-            duration: Constants.animSlow
-            easing.type: Easing.OutQuint
+            duration: Constants.islandResizeDuration
+            easing.type: Easing.InOutCubic
         }
 
     }
@@ -161,8 +177,8 @@ IslandBackground {
         enabled: HyprlandService.enableAnimations && root.openProgress >= 0.85
 
         NumberAnimation {
-            duration: Constants.animSlow
-            easing.type: Easing.OutQuint
+            duration: Constants.islandResizeDuration
+            easing.type: Easing.InOutCubic
         }
 
     }
@@ -171,7 +187,7 @@ IslandBackground {
         enabled: HyprlandService.enableAnimations && root.openProgress >= 0.85
 
         NumberAnimation {
-            duration: Constants.animSlow
+            duration: Constants.islandResizeDuration
             easing.type: Easing.OutQuint
         }
 
@@ -197,7 +213,7 @@ IslandBackground {
         enabled: HyprlandService.enableAnimations
 
         NumberAnimation {
-            duration: islandBar.isRemoving ? Constants.animNormal : Constants.animExpressive
+            duration: islandBar.isRemoving ? Constants.islandCloseDuration : Constants.islandOpenDuration
             easing.type: islandBar.isRemoving ? Easing.OutCubic : Easing.OutQuint
             onRunningChanged: {
                 if (!running && islandBar.isRemoving)

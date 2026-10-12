@@ -38,7 +38,7 @@ fi
 
 chosen="$*"
 case "$chosen" in
-    *"App Menu"*) spawn rofi -show drun ;;
+    *"App Menu"*) spawn haku-qml-menu -show drun ;;
     *"Code Editor"*) spawn code ;;
     *"Browser"*) spawn firefox ;;
     *"Screen Record"*) spawn $HOME/.local/bin/record.sh ;;

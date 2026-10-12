@@ -132,7 +132,6 @@ cat > "$STATE_DIR/colors.css" <<EOF
 @define-color accent_color ${ACCENT_COLOR};
 EOF
 
-"$HOME/.local/bin/haku-noctalia-theme" "$ACCENT_COLOR"
 
 # Fonts (waybar, swaync)
 cat > "$STATE_DIR/fonts.css" <<EOF

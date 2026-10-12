@@ -19,8 +19,10 @@ Item {
     readonly property var currentNotifData: currentNotifItem ? currentNotifItem.notifData : null
     readonly property bool hasActiveNotifications: currentNotifData !== null
     property real notifProgress: 0
-    readonly property real notifW: 380 + (flareW * 2)
+    readonly property bool isCompactOsd: currentNotifData && (currentNotifData.summary === "Volume" || currentNotifData.summary === "Brightness")
+    readonly property real notifW: (isCompactOsd ? 240 : 380) + (flareW * 2)
     readonly property real notifH: {
+        if (isCompactOsd) return 32;
         let activeContent = activeSlot === "A" ? contentA : contentB;
         let h = activeContent ? activeContent.implicitHeight : 0;
         let extraH = isConvex ? 14 : 4;

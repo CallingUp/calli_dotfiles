@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""Private, on-demand clipboard UI and bounded preview/action worker."""
+import json
+import os
+from pathlib import Path
+import re
+import runpy
+import signal
+import subprocess
+import sys
+import tempfile
+
+BASE = Path.home() / 'haku_shell'
+MAX_BYTES = 16 * 1024 * 1024
+
+
+def classify(text):
+    if text.startswith('[[ binary data'):
+        return 'image' if re.search(r'\b(png|jpeg|jpg|gif|webp|bmp|image)\b', text, re.I) else 'binary'
+    if re.match(r'^https?://\S+', text):
+        return 'link'
+    return 'text'
+
+
+def entries():
+    proc = subprocess.run(['cliphist', 'list'], capture_output=True, text=True, check=True)
+    rows = []
+    for line in proc.stdout.split('\n'):
+        item_id, sep, text = line.partition('\t')
+        if sep and item_id.isdecimal():
+            rows.append({'id': item_id, 'label': text, 'kind': classify(text), 'index': len(rows)})
+    return rows
+
+
+def decode(item_id):
+    if not re.fullmatch(r'[0-9]+', item_id):
+        raise ValueError('Identificador inválido')
+    with subprocess.Popen(['cliphist', 'decode', item_id], stdout=subprocess.PIPE,
+                          stderr=subprocess.DEVNULL) as proc:
+        data = proc.stdout.read(MAX_BYTES + 1)
+        if len(data) > MAX_BYTES:
+            proc.kill()
+            raise ValueError('Entrada demasiado grande para la vista previa (16 MiB)')
+        if proc.wait() != 0:
+            raise ValueError('La entrada ya no está disponible')
+    return data
+
+
+def image_extension(data):
+    if data.startswith(b'\x89PNG\r\n\x1a\n'): return 'png'
+    if data.startswith(b'\xff\xd8\xff'): return 'jpg'
+    if data.startswith((b'GIF87a', b'GIF89a')): return 'gif'
+    if data[:4] == b'RIFF' and data[8:12] == b'WEBP': return 'webp'
+    if data.startswith(b'BM'): return 'bmp'
+    return ''
+
+
+def worker(args):
+    action = args[0]
+    if action == 'list': return {'ok': True, 'rows': entries()}
+    if action == 'wipe':
+        subprocess.run(['cliphist', 'wipe'], check=True, stdout=subprocess.DEVNULL)
+        return {'ok': True, 'rows': entries()}
+    item_id = args[1]
+    if not re.fullmatch(r'[0-9]+', item_id): raise ValueError('Identificador inválido')
+    if action == 'delete':
+        # Use the exact current list row, never interpolate clipboard text in a shell.
+        proc = subprocess.run(['cliphist', 'list'], capture_output=True, text=True, check=True)
+        line = next((line for line in proc.stdout.split('\n') if line.startswith(item_id + '\t')), None)
+        if line is None: raise ValueError('La entrada ya no está disponible')
+        subprocess.run(['cliphist', 'delete'], input=line + '\n', text=True, check=True, stdout=subprocess.DEVNULL)
+        return {'ok': True, 'rows': entries()}
+    if action == 'copy':
+        # Copy original bytes without the preview limit or loading them in RAM.
+        with tempfile.TemporaryFile() as original:
+            subprocess.run(['cliphist', 'decode', item_id], stdout=original,
+                           stderr=subprocess.DEVNULL, check=True)
+            original.seek(0)
+            subprocess.run(['wl-copy'], stdin=original, check=True)
+        return {'ok': True}
+    if action != 'preview': raise ValueError('Acción inválida')
+    data = decode(item_id)
+    extension = image_extension(data)
+    if extension:
+        cache = Path(args[2])
+        stat = cache.stat()
+        if stat.st_uid != os.getuid() or stat.st_mode & 0o077 or not cache.is_dir():
+            raise ValueError('Directorio de vista previa no privado')
+        target = cache / ('preview-' + item_id + '.' + extension)
+        target.write_bytes(data)
+        target.chmod(0o600)
+        return {'image': str(target), 'text': '', 'bytes': len(data)}
+    try:
+        text = data.decode('utf-8')
+    except UnicodeDecodeError:
+        return {'image': '', 'text': 'Contenido binario · ' + str(len(data)) + ' bytes', 'bytes': len(data)}
+    return {'image': '', 'text': text[:65536], 'truncated': len(text) > 65536, 'bytes': len(data)}
+
+
+def main(args):
+    if args:
+        try:
+            print(json.dumps(worker(args)))
+        except (OSError, ValueError, subprocess.SubprocessError, IndexError):
+            # Never echo clipboard data or subprocess stderr to shell logs.
+            print(json.dumps({'ok': False, 'error': 'No se pudo completar la operación'}))
+            return 1
+        return 0
+    bridge = runpy.run_path(str(BASE / 'scripts/bin/haku-qml-menu'))
+    bridge['select']({'title': 'Portapapeles', 'rows': entries()},
+                     config=BASE / 'config/quickshell/haku-clipboard/shell.qml')
+    return 0
+
+
+if __name__ == '__main__':
+    def terminate(signum, frame):
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, terminate)
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except (OSError, ValueError, subprocess.SubprocessError):
+        print('No se pudo abrir el portapapeles.', file=sys.stderr)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        sys.exit(0)

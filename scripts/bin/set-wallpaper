@@ -141,6 +141,10 @@ cat > "$NIRI_ACCENT" <<EOF
 // Dynamic accent
 // ============================================================
 
+recent-windows {
+    highlight { active-color "$ACCENT"; }
+}
+
 layout {
     border {
         on
@@ -222,12 +226,9 @@ fi
 "$HOME/.local/bin/haku-ytmd-theme"
 "$HOME/.local/bin/haku-pear-theme"
 
-"$HOME/.local/bin/haku-noctalia-theme" "$ACCENT"
-"$HOME/.local/bin/haku-greeter-sync" "$IMG" "$ACCENT" "$ACTIVE" "$INACTIVE" "$BACKDROP"
 if [[ "$SYNC_ONLY" != "1" ]] || generation_is_current; then
     wallpaper_path="$(realpath "$IMG")"
     printf '%s\n' "$wallpaper_path" > "$CURRENT_WALLPAPER"
-    "$HOME/.local/bin/haku-lock-background" "$wallpaper_path"
 fi
 
 

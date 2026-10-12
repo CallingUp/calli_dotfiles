@@ -4,3 +4,5 @@
 build/
 secrets/
 private/
+__pycache__/
+*.pyc

@@ -9,21 +9,29 @@ ShellRoot {
     // It starts visible when launched as the future bar service. Keeping it
     // here also makes a reload deterministic while Waybar is still staged.
     property bool barVisible: true
-    readonly property bool islandOverlayActive: island.visible || systemIsland.visible
+    readonly property bool islandOverlayActive: dynamicIsland.visible // Single shared Minflair-style island surface.
 
     IpcHandler {
         target: "haku-media"
 
-        function toggle() { island.open = !island.open; }
-        function open() { island.open = true; }
-        function close() { island.open = false; }
+        function toggle() { dynamicIsland.toggleTarget("media"); }
+        function open() { dynamicIsland.openTarget("media"); }
+        function close() { dynamicIsland.close(); }
+    }
+
+    IpcHandler {
+        target: "haku-island"
+        function toggleLeft() { dynamicIsland.toggleTarget("left"); }
+        function toggleMedia() { dynamicIsland.toggleTarget("media"); }
+        function toggleSystem() { dynamicIsland.toggleTarget("system"); }
+        function close() { dynamicIsland.close(); }
     }
 
     IpcHandler {
         target: "haku-bar"
 
         function show() { root.barVisible = true; }
-        function hide() { island.open = false; root.barVisible = false; }
+        function hide() { dynamicIsland.close(); root.barVisible = false; }
         function toggle() { if (root.barVisible) hide(); else show(); }
     }
 
@@ -31,11 +39,10 @@ ShellRoot {
         id: hakuBar
         barVisible: root.barVisible
         cavaLevels: cavaSource.levels
-        mediaIslandOpen: island.visible
-        systemIslandOpen: systemIsland.visible
-        onMediaRequested: island.open = !island.open
-        onSystemRequested: systemIsland.open = !systemIsland.open
-        onFullscreenChanged: if (fullscreen) { island.open = false; systemIsland.open = false; }
+        islandTarget: dynamicIsland.target
+        islandProgress: dynamicIsland.progress
+        onIslandRequested: dynamicIsland.toggleTarget(target)
+        onFullscreenChanged: if (fullscreen) dynamicIsland.close()
     }
 
     CavaSource {
@@ -78,27 +85,23 @@ ShellRoot {
         MouseArea {
             anchors.fill: parent
             enabled: root.islandOverlayActive
-            onClicked: { island.open = false; systemIsland.open = false; }
+            onClicked: dynamicIsland.close()
         }
 
-        MediaIsland {
-            id: island
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.topMargin: 7
-            collapsedWidth: hakuBar.mediaCapsuleWidth
-            cavaLevels: cavaSource.levels
-        }
-
-        SystemIsland {
-            id: systemIsland
-            // Preserve its right edge as it expands, like a native right
-            // island. That keeps it inside the screen beside tray/power.
-            x: hakuBar.systemCapsuleX - (systemIsland.expandedWidth - hakuBar.systemCapsuleWidth) * systemIsland.progress
-            y: 7
-            collapsedWidth: hakuBar.systemCapsuleWidth
+        HakuDynamicIsland {
+            id: dynamicIsland
             accentHex: hakuBar.accentHex
             summary: hakuBar.systemSummary
+            activePlayer: hakuBar.activePlayer
+            cavaLevels: cavaSource.levels
+            activeWorkspace: hakuBar.activeWorkspace
+            workspaceCount: hakuBar.workspaceCount()
+            mediaX: hakuBar.mediaCapsuleX
+            mediaWidth: hakuBar.mediaCapsuleWidth
+            systemRightX: hakuBar.systemCapsuleRightX
+            systemWidth: hakuBar.systemCapsuleWidth
+            leftX: hakuBar.leftCapsuleX
+            leftWidth: hakuBar.leftCapsuleWidth
         }
     }
 }

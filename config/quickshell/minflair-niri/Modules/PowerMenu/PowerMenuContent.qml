@@ -15,13 +15,13 @@ Item {
         "id": "lock",
         "label": "Lock",
         "icon": "lock",
-        "command": ["lock.sh"],
+        "command": ["haku-lock"],
         "confirm": false
     }, {
         "id": "suspend",
         "label": "Suspend",
         "icon": "moon",
-        "command": ["sh", "-c", "mpc -q pause; amixer set Master mute; systemctl suspend"],
+        "command": ["haku-lock", "--suspend"],
         "confirm": true
     }, {
         "id": "logout",

@@ -22,4 +22,7 @@ QtObject {
     property int animSlow: Math.round(350 * durationFactor)
     property int animUltraSlow: Math.round(400 * durationFactor)
     property int animExpressive: Math.round(500 * durationFactor)
+    property int islandOpenDuration: Math.round(280 * durationFactor)
+    property int islandCloseDuration: Math.round(160 * durationFactor)
+    property int islandResizeDuration: Math.round(220 * durationFactor)
 }

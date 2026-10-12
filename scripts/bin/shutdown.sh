@@ -9,7 +9,7 @@ options="󰤄 Hibernate
 󰩈 Exit"
 
 # Design rofi
-chosen=$(echo -e "$options" | rofi -dmenu -p "Shutdown" -i -theme-str 'window
+chosen=$(echo -e "$options" | haku-qml-menu -dmenu -p "Shutdown" -i -theme-str 'window
 {
     width: 30%;
     height: 50%;

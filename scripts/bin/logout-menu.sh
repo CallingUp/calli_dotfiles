@@ -15,7 +15,7 @@ choice="$(
         "$REBOOT" \
         "$SHUTDOWN" \
         "$CANCEL" |
-        rofi -dmenu \
+        haku-qml-menu -dmenu \
             -i \
             -p "Session"
 )"

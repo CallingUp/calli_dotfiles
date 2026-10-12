@@ -25,7 +25,7 @@ Item {
 
         anchors.fill: parent
         radius: root.radius
-        color: Theme.bg
+        color: "#000000"
         antialiasing: true
         layer.enabled: true
         layer.smooth: true

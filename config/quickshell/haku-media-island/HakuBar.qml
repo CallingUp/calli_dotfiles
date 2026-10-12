@@ -18,17 +18,21 @@ PanelWindow {
     property int activeWorkspace: 1
     property var activePlayer: null
     property var cavaLevels: []
+    property string islandTarget: ""
+    property real islandProgress: 0
     property string systemSummary: "--%   --%   --°C   --% 󰁹  󰖩"
     property bool fullscreen: false
     // The overlay owns this exact geometry while it is expanded. This is the
     // handoff that makes the center pill behave like Minflair's island.
-    property bool mediaIslandOpen: false
-    property bool systemIslandOpen: false
     readonly property real mediaCapsuleWidth: mediaCapsule.width
     readonly property real systemCapsuleWidth: systemCapsule.width
-    readonly property real systemCapsuleX: rightGroup.x + systemCapsule.x
-    signal mediaRequested()
-    signal systemRequested()
+    // The overlay PanelWindow uses output-local coordinates, so keep this in
+    // the bar's scene rather than mapToItem(null), which includes monitor offset.
+    readonly property real systemCapsuleRightX: rightGroup.x + systemCapsule.x + systemCapsule.width
+    readonly property real mediaCapsuleX: mediaCapsule.x
+    readonly property real leftCapsuleX: leftGroup.x
+    readonly property real leftCapsuleWidth: leftGroup.width
+    signal islandRequested(string target)
 
     anchors { top: true; left: true; right: true }
     implicitHeight: barVisible ? 54 : 0
@@ -150,6 +154,14 @@ PanelWindow {
             anchors.leftMargin: 8
             anchors.verticalCenter: parent.verticalCenter
             spacing: 10
+            opacity: root.islandTarget === "left" ? Math.max(0, 1 - root.islandProgress / 0.15) : 1
+            visible: root.islandTarget !== "left"
+            Behavior on opacity { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+            HoverHandler { id: leftHover; enabled: root.islandTarget === "" || root.islandTarget === "left" }
+            transform: Translate {
+                y: leftHover.hovered || root.islandTarget === "left" ? 4 : 0
+                Behavior on y { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
+            }
 
             Rectangle {
                 width: workspaceDots.implicitWidth + 22; height: 40; radius: 15
@@ -183,6 +195,7 @@ PanelWindow {
                     color: root.accentHex; font.family: "CommitMono Nerd Font"; font.pixelSize: 13; font.bold: true
                 }
                 Timer { interval: 1000; running: true; repeat: true; onTriggered: clockText.now = new Date() }
+                MouseArea { anchors.fill: parent; onClicked: root.islandRequested("left") }
             }
         }
 
@@ -194,7 +207,14 @@ PanelWindow {
             // compact Cava, rather than keeping the former 320px Waybar pill.
             width: Math.min(540, Math.max(155, mediaText.implicitWidth + 78)); height: 40; radius: 15
             color: "#ff000000"; border.width: 0
-            visible: !root.mediaIslandOpen
+            opacity: root.islandTarget === "media" ? Math.max(0, 1 - root.islandProgress / 0.15) : 1
+            visible: root.islandTarget !== "media"
+            Behavior on opacity { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+            HoverHandler { id: mediaHover; enabled: root.islandTarget === "" || root.islandTarget === "media" }
+            transform: Translate {
+                y: mediaHover.hovered || root.islandTarget === "media" ? 4 : 0
+                Behavior on y { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
+            }
             Text {
                 id: mediaText
                 anchors.left: parent.left; anchors.leftMargin: 16
@@ -208,11 +228,11 @@ PanelWindow {
                 anchors.right: parent.right; anchors.rightMargin: 15; anchors.verticalCenter: parent.verticalCenter
                 // Waybar's cava reflected every PipeWire stream, not just
                 // MPRIS players. Keep that behavior for browser/live audio.
-                active: root.barVisible && !root.fullscreen && !root.mediaIslandOpen
+                active: root.barVisible && !root.fullscreen && root.islandTarget !== "media"
                 levels: root.cavaLevels
                 barColor: root.accentHex
             }
-            MouseArea { anchors.fill: parent; onClicked: root.mediaRequested() }
+            MouseArea { anchors.fill: parent; onClicked: root.islandRequested("media") }
         }
 
         Row {
@@ -222,12 +242,21 @@ PanelWindow {
                 id: systemCapsule
                 width: systemLabel.implicitWidth + 24; height: 40; radius: 15
                 color: "#ff000000"; border.width: 0
-                opacity: root.systemIslandOpen ? 0 : 1
+                opacity: root.islandTarget === "system" ? Math.max(0, 1 - root.islandProgress / 0.15) : 1
+                // Keep its Row geometry stable while the overlay pill grows;
+                // hiding this child shifts the source point to the screen edge.
+                visible: true
+                Behavior on opacity { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                HoverHandler { id: systemHover; enabled: root.islandTarget === "" || root.islandTarget === "system" }
+                transform: Translate {
+                    y: systemHover.hovered || root.islandTarget === "system" ? 4 : 0
+                    Behavior on y { NumberAnimation { duration: 220; easing.type: Easing.OutQuint } }
+                }
                 Text {
                     id: systemLabel; anchors.centerIn: parent; text: root.systemSummary
                     color: root.accentHex; font.family: "CommitMono Nerd Font"; font.pixelSize: 12; font.bold: true
                 }
-                MouseArea { anchors.fill: parent; enabled: !root.systemIslandOpen; onClicked: root.systemRequested() }
+                MouseArea { anchors.fill: parent; enabled: root.islandTarget !== "system"; onClicked: root.islandRequested("system") }
             }
             Rectangle {
                 width: trayRow.implicitWidth > 0 ? trayRow.implicitWidth + 16 : 0; height: 40; radius: 15

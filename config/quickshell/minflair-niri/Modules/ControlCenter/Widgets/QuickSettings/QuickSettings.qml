@@ -164,18 +164,7 @@ Item {
                             Layout.fillWidth: true
                         }
 
-                        ThemedSlider {
-                            id: micSlider
-
-                            Layout.fillWidth: true
-                            enabled: !AudioService.micMuted
-                            value: AudioService.micVolume
-                            icon: AudioService.micMuted ? "microphone-off" : "microphone"
-                            onMoved: (val) => {
-                                AudioService.setMicVolume(val);
-                            }
-                            onIconClicked: AudioService.setMicMuted(!AudioService.micMuted)
-                        }
+                        AudioDevices { Layout.fillWidth: true }
 
                     }
 
@@ -255,6 +244,80 @@ Item {
                 }
             }
 
+            ColumnLayout {
+                Layout.fillWidth: true
+                visible: !!wifiControl.passwordSsid
+                spacing: Constants.sizeMd
+                ThemedText {
+                    text: wifiControl.passwordSsid
+                    font.bold: true
+                    Layout.fillWidth: true
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                TextField {
+                    id: wifiPassword
+                    property bool revealed: false
+                    Layout.fillWidth: true
+                    placeholderText: "Contraseña de Wi-Fi"
+                    echoMode: revealed ? TextInput.Normal : TextInput.Password
+                    enabled: !wifiControl.connecting
+                    color: Theme.accent
+                    selectionColor: Theme.accent
+                    selectedTextColor: Theme.bg
+                    placeholderTextColor: Theme.muted
+                    padding: 10
+                    font.family: Constants.fontFamily
+                    background: Rectangle {
+                        color: Theme.bgSecondary
+                        radius: Constants.sizeSm
+                        border.width: wifiPassword.activeFocus ? 1 : 0
+                        border.color: Theme.accent
+                    }
+                    onVisibleChanged: {
+                        text = "";
+                        revealed = false;
+                        if (visible) Qt.callLater(() => forceActiveFocus());
+                    }
+                    onAccepted: {
+                        wifiControl.submitPassword(text);
+                        text = "";
+                    }
+                }
+                SvgIconButton {
+                    icon: wifiPassword.revealed ? "eye-off" : "eye"
+                    flat: true
+                    onClicked: wifiPassword.revealed = !wifiPassword.revealed
+                }
+                }
+                ThemedText {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    visible: wifiControl.connecting || !!wifiControl.operationError
+                    text: wifiControl.connecting ? "Conectando…" : wifiControl.operationError
+                }
+                RowLayout {
+                    WifiActionButton {
+                        text: "Cancelar"
+                        enabled: !wifiControl.connecting
+                        onClicked: { wifiPassword.text = ""; wifiControl.clearPassword(); }
+                    }
+                    WifiActionButton {
+                        primary: true
+                        text: "Conectar"
+                        enabled: !!wifiPassword.text && !wifiControl.connecting
+                        onClicked: { wifiControl.submitPassword(wifiPassword.text); wifiPassword.text = ""; }
+                    }
+                }
+            }
+
+            ThemedText {
+                Layout.fillWidth: true
+                visible: !wifiControl.passwordSsid && !!wifiControl.operationError
+                text: wifiControl.operationError
+                wrapMode: Text.Wrap
+            }
+
             Behavior on x {
                 enabled: root.quickSettingsOpen
 
@@ -326,6 +389,78 @@ Item {
                 onRefreshRequested: {
                     btControl.scan();
                 }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                visible: btControl.pairing
+                spacing: Constants.sizeSm
+                ThemedText {
+                    text: btControl.pairingName
+                    font.bold: true
+                    Layout.fillWidth: true
+                }
+                ThemedText {
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    text: btControl.pairingKind === "confirm" ? "¿Coincide este código en el dispositivo?"
+                        : btControl.pairingKind === "display" ? "Escribe este código en el dispositivo"
+                        : btControl.pairingKind === "authorize" ? "¿Permitir el emparejamiento o servicio solicitado?"
+                        : btControl.pairingKind === "pin" || btControl.pairingKind === "passkey" ? "Introduce el PIN del dispositivo"
+                        : "Emparejando…"
+                }
+                ThemedText {
+                    visible: !!btControl.pairingCode
+                    text: btControl.pairingCode
+                    color: Theme.accent
+                    font.bold: true
+                    customSize: 24
+                    Layout.alignment: Qt.AlignHCenter
+                }
+                TextField {
+                    id: bluetoothPin
+                    Layout.fillWidth: true
+                    visible: btControl.pairingKind === "pin" || btControl.pairingKind === "passkey"
+                    maximumLength: btControl.pairingKind === "passkey" ? 6 : 16
+                    inputMethodHints: btControl.pairingKind === "passkey" ? Qt.ImhDigitsOnly : Qt.ImhNone
+                    placeholderText: "PIN"
+                    placeholderTextColor: Theme.muted
+                    color: Theme.accent
+                    selectionColor: Theme.accent
+                    selectedTextColor: Theme.bg
+                    font.family: Constants.fontFamily
+                    padding: 10
+                    background: Rectangle {
+                        radius: Constants.sizeSm
+                        color: Theme.bgSecondary
+                        border.width: bluetoothPin.activeFocus ? 1 : 0
+                        border.color: Theme.accent
+                    }
+                    onVisibleChanged: {
+                        text = "";
+                        if (visible) Qt.callLater(() => forceActiveFocus());
+                    }
+                    onAccepted: { btControl.answerPairing(true, text); text = ""; }
+                }
+                RowLayout {
+                    WifiActionButton {
+                        text: "Cancelar"
+                        onClicked: { bluetoothPin.text = ""; btControl.cancelPairing(); }
+                    }
+                    WifiActionButton {
+                        primary: true
+                        text: btControl.pairingKind === "confirm" || btControl.pairingKind === "authorize" ? "Confirmar" : "Enviar"
+                        visible: !!btControl.pairingKind && btControl.pairingKind !== "display"
+                        enabled: btControl.pairingKind !== "pin" && btControl.pairingKind !== "passkey" || !!bluetoothPin.text
+                        onClicked: { btControl.answerPairing(true, bluetoothPin.text); bluetoothPin.text = ""; }
+                    }
+                }
+            }
+            ThemedText {
+                Layout.fillWidth: true
+                visible: !!btControl.operationError
+                text: btControl.operationError
+                wrapMode: Text.Wrap
             }
 
             Behavior on x {

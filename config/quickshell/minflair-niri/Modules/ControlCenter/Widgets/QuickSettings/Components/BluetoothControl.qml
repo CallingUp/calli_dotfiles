@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Core
 import qs.Core.Components
+import qs.Core.Services
 
 QuickSettingsTile {
     id: root
@@ -14,6 +15,20 @@ QuickSettingsTile {
     property bool isScanning: btDiscoveryProc.running
     property var btList: []
     property bool isVisible: true
+    property string operationError: ""
+    property string pairingName: ""
+    property string pairingKind: ""
+    property string pairingCode: ""
+    readonly property bool pairing: pairingProc.running
+
+    function answerPairing(accept, value) {
+        pairingProc.write(JSON.stringify({accept: accept, value: value || ""}) + "\n");
+    }
+    function cancelPairing() {
+        if (pairingProc.running) pairingProc.write('{"cancel":true}\n');
+        pairingKind = "";
+        pairingCode = "";
+    }
 
     function toggle() {
         btSetProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth.py", "toggle-power"];
@@ -29,6 +44,17 @@ QuickSettingsTile {
     }
 
     function connect(mac) {
+        if (btConnectProc.running || pairingProc.running) return;
+        operationError = "";
+        const device = btList.find(item => item.mac === mac);
+        if (device && !device.paired && !device.connected) {
+            pairingName = device.name;
+            pairingKind = "";
+            pairingCode = "";
+            pairingProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth_pair.py", mac];
+            pairingProc.running = true;
+            return;
+        }
         btConnectProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth.py", "toggle-connect", mac];
         btConnectProc.running = true;
     }
@@ -37,6 +63,9 @@ QuickSettingsTile {
     icon: root.isActive ? "bluetooth" : "bluetooth-off"
     label: "Bluetooth"
     subtitle: {
+        if (root.operationError) return root.operationError;
+        if (pairingProc.running) return "Emparejando…";
+        if (btConnectProc.running) return "Conectando…";
         if (!isActive)
             return "Off";
 
@@ -51,8 +80,10 @@ QuickSettingsTile {
     onExpandedChanged: {
         if (expanded)
             scan();
-        else
+        else {
             btDiscoveryProc.running = false;
+            cancelPairing();
+        }
     }
     onIsActiveChanged: {
         if (!isActive) {
@@ -65,6 +96,7 @@ QuickSettingsTile {
         }
     }
     onIsVisibleChanged: {
+        if (!isVisible) cancelPairing();
         if (isVisible && isActive) {
             btGetProc.running = false;
             btGetProc.running = true;
@@ -149,11 +181,52 @@ QuickSettingsTile {
 
     Process {
         id: btConnectProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const result = JSON.parse(text);
+                    if (!result.success) root.operationError = result.output || "No se pudo conectar";
+                } catch (error) { root.operationError = "No se pudo conectar"; }
+            }
+        }
 
         onRunningChanged: {
             if (!running)
                 btGetProc.running = true;
 
+        }
+    }
+
+    Process {
+        id: pairingProc
+        stdinEnabled: true
+        stdout: SplitParser {
+            onRead: data => {
+                try {
+                    const result = JSON.parse(data);
+                    if (result.event === "prompt") {
+                        root.operationError = "";
+                        root.pairingKind = result.kind;
+                        root.pairingCode = result.code || "";
+                    } else if (result.event === "waiting") {
+                        root.pairingKind = "";
+                        root.pairingCode = "";
+                    } else if (result.event === "validation") {
+                        root.operationError = result.output;
+                    } else if (result.event === "result") {
+                        root.operationError = result.success ? "" : result.output;
+                        root.pairingKind = "";
+                        root.pairingCode = "";
+                    }
+                } catch (error) { root.operationError = "Respuesta Bluetooth no válida"; }
+            }
+        }
+        onExited: (exitCode, exitStatus) => {
+            root.pairingKind = "";
+            root.pairingCode = "";
+            root.pairingName = "";
+            if (exitCode !== 0 && !root.operationError) root.operationError = "El emparejamiento se interrumpió";
+            btGetProc.running = true;
         }
     }
 
