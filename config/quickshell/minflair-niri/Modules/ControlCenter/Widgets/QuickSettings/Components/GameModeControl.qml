@@ -6,6 +6,7 @@ import qs.Core.Services
 
 QuickSettingsTile {
     id: root
+    enabled: !DisplayProfileService.gameModeBusy
 
     isActive: DisplayProfileService.gameModeActive
     icon: isActive ? "gamepad-filled" : "gamepad"

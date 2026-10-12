@@ -9,6 +9,7 @@ Item {
 
     property var notifData
     property bool isConvex: false
+    readonly property bool isOsd: notifData && (notifData.summary === "Volume" || notifData.summary === "Brightness")
     readonly property var parsedNotif: {
         if (!notifData)
             return {
@@ -69,7 +70,7 @@ Item {
     }
     readonly property int calculatedIconSize: Math.max(Constants.sizeLg, Math.round(textContentHeight))
 
-    implicitHeight: layout.implicitHeight
+    implicitHeight: isOsd ? 16 : layout.implicitHeight
 
     RowLayout {
         id: layout
@@ -81,8 +82,8 @@ Item {
         NotificationIcon {
             id: iconContainer
 
-            Layout.alignment: iconContainer.isUrgencyIcon ? (Qt.AlignTop | Qt.AlignLeft) : Qt.AlignVCenter
-            Layout.topMargin: iconContainer.isUrgencyIcon ? Constants.size3Xs : 0
+            Layout.alignment: root.isOsd ? Qt.AlignVCenter : (iconContainer.isUrgencyIcon ? (Qt.AlignTop | Qt.AlignLeft) : Qt.AlignVCenter)
+            Layout.topMargin: !root.isOsd && iconContainer.isUrgencyIcon ? Constants.size3Xs : 0
             Layout.preferredWidth: iconContainer.isUrgencyIcon ? Constants.sizeLg : root.calculatedIconSize
             Layout.preferredHeight: iconContainer.isUrgencyIcon ? Constants.sizeLg : root.calculatedIconSize
             notifData: root.notifData
@@ -107,7 +108,7 @@ Item {
                 maximumLineCount: 1
                 elide: Text.ElideRight
                 wrapMode: Text.Wrap
-                visible: root.parsedNotif.title !== ""
+                visible: !root.isOsd && root.parsedNotif.title !== ""
             }
 
             ThemedText {
@@ -120,7 +121,7 @@ Item {
                 customSize: Constants.sizeXs + 2
                 maximumLineCount: 2
                 elide: Text.ElideRight
-                visible: root.parsedNotif.message !== ""
+                visible: !root.isOsd && root.parsedNotif.message !== ""
             }
 
             OsdProgressBar {

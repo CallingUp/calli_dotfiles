@@ -12,7 +12,10 @@ QuickSettingsTile {
     property bool isLimitActive: false
     property bool isVisible: true
     property bool disabled: false
+    property string operationError: ""
     readonly property string batteryStateText: {
+        if (operationError) return operationError;
+        if (disabled) return "Límite no disponible";
         if (!SystemInfoService.hasBattery)
             return "No battery";
 
@@ -29,8 +32,10 @@ QuickSettingsTile {
     subtitle: root.batteryStateText
     onMenuClicked: clicked()
     onClicked: {
-        if (!root.disabled)
+        if (!root.disabled && !toggleProcess.running) {
+            root.operationError = "";
             toggleProcess.running = true;
+        }
 
     }
 
@@ -76,7 +81,10 @@ QuickSettingsTile {
     Process {
         id: toggleProcess
 
-        command: ["sudo", Quickshell.shellDir + "/Scripts/system/toggle_battery_limit.sh", "toggle"]
+        command: ["bash", Quickshell.shellDir + "/Scripts/system/toggle_battery_limit.sh", "toggle"]
+        onExited: (code) => {
+            if (code !== 0) root.operationError = "No se pudo cambiar el límite de carga";
+        }
         onRunningChanged: {
             if (!running)
                 statusProcess.running = true;

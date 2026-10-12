@@ -159,9 +159,14 @@ def do_toggle_connect(mac):
     dev = next((d for d in data.get("devices", []) if d["mac"] == mac), None)
 
     if dev and dev["connected"]:
-        subprocess.run(["bluetoothctl", "disconnect", mac])
+        command = ["bluetoothctl", "--timeout", "20", "disconnect", mac]
     else:
-        subprocess.run(["bluetoothctl", "connect", mac])
+        command = ["bluetoothctl", "--timeout", "20", "connect", mac]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=25)
+        print(json.dumps({"success": result.returncode == 0, "output": result.stdout.strip() or result.stderr.strip()}))
+    except subprocess.TimeoutExpired:
+        print(json.dumps({"success": False, "output": "Se agotó el tiempo de conexión"}))
 
 
 if __name__ == "__main__":

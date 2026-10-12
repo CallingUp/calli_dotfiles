@@ -10,7 +10,7 @@ Item {
     required property var notificationService
     property var mainPanelWidget: null
     readonly property string currentPanel: AppState.activeWidget
-    readonly property bool isHostPanel: SettingsService.barIslandMode && (currentPanel === "clock" || currentPanel === "dashboard" || currentPanel === "controlCenter" || currentPanel === "notificationsCenter" || currentPanel === "music" || currentPanel === "launcher" || currentPanel === "clipboard" || currentPanel === "wallpaper" || currentPanel === "screenshot" || currentPanel === "powerMenu")
+    readonly property bool isHostPanel: SettingsService.barIslandMode && (currentPanel === "stats" || currentPanel === "clock" || currentPanel === "dashboard" || currentPanel === "controlCenter" || currentPanel === "launcher" || currentPanel === "clipboard" || currentPanel === "wallpaper" || currentPanel === "screenshot" || currentPanel === "powerMenu")
     property string activePanelName: ""
     readonly property string effectivePanel: activePanelName
     property bool isOpen: false
@@ -21,7 +21,7 @@ Item {
     property string currentIslandTarget: ""
     readonly property string activeIslandTarget: (isOpen || isRemoving) && currentIslandTarget !== "" ? currentIslandTarget : getTargetPill(effectivePanel)
     readonly property bool isOverlayActive: isOpen || (leftPill.openProgress > 0.001) || (centerPill.openProgress > 0.001) || (rightPill.openProgress > 0.001) || isRemoving
-    readonly property bool needsFocus: (effectivePanel === "launcher" || effectivePanel === "clipboard" || effectivePanel === "wallpaper" || effectivePanel === "powerMenu" || effectivePanel === "screenshot")
+    readonly property bool needsFocus: (effectivePanel === "launcher" || effectivePanel === "clipboard" || effectivePanel === "wallpaper" || effectivePanel === "powerMenu" || effectivePanel === "screenshot" || effectivePanel === "controlCenter")
     readonly property bool hasActiveNotifications: centerPill.hasActiveNotifications
     readonly property real notifProgress: centerPill.notifProgress
     readonly property bool isOccupied: isOverlayActive || hasActiveNotifications
@@ -37,8 +37,8 @@ Item {
     // Bar Style Interface
     readonly property real leftWidth: 0
     readonly property real rightWidth: 0
-    readonly property real centerX: leftPill ? leftPill.x : 0
-    readonly property real centerWidth: (leftPill && rightPill) ? Math.max(0, (rightPill.x + rightPill.width) - leftPill.x) : width
+    readonly property real centerX: leftPill.visible ? leftPill.x : centerPill.x
+    readonly property real centerWidth: (leftPill && rightPill) ? Math.max(0, (rightPill.x + rightPill.width) - centerX) : width
     readonly property bool isExpanded: false
     readonly property string activeBarStyle: "island"
     // Geometry exposed for popupSurface mask
@@ -79,9 +79,14 @@ Item {
         return centerPill.height;
     }
     readonly property real currentHeight: Math.max(leftPill.height + (leftPill.isTranslated ? 4 : 0), Math.max(centerPill.height + (centerPill.isTranslated ? 4 : 0), rightPill.height + (rightPill.isTranslated ? 4 : 0)))
-    readonly property real totalIdleWidth: (leftPill && rightPill) ? Math.max(0, (rightPill.x + rightPill.width) - leftPill.x) : 260
+    readonly property real totalIdleWidth: (leftPill && rightPill) ? Math.max(0, (rightPill.x + rightPill.width) - centerPill.x) : 260
 
     function getTargetPill(panel) {
+        // Both views now share the right-edge ActivityPanel, not a bar popup.
+        if (panel === "music" || panel === "notificationsCenter")
+            return "";
+        if (panel === "stats" || panel === "controlCenter")
+            return "center";
         if (panel === "dashboard")
             return "left";
 
@@ -147,6 +152,15 @@ Item {
     }
 
     function updateContent(newPanel) {
+        // Morph central panels directly instead of shrinking to the clock first.
+        if (newPanel !== "" && newPanel !== activePanelName && isOpen && !isRemoving
+                && currentIslandTarget === "center" && getTargetPill(newPanel) === "center"
+                && islandComponents.getComponent(newPanel)) {
+            pendingPanel = "";
+            activePanelName = newPanel;
+            triggerFocus();
+            return;
+        }
         if (newPanel !== "" && newPanel !== activePanelName && (isOpen || isRemoving)) {
             pendingPanel = newPanel;
             close();
@@ -176,6 +190,12 @@ Item {
         leftPill.openProgress = (target === "left") ? 1 : 0;
         centerPill.openProgress = (target === "center") ? 1 : 0;
         rightPill.openProgress = (target === "right") ? 1 : 0;
+    }
+
+    function dismiss() {
+        pendingPanel = "";
+        AppState.closeAllWidgets();
+        close();
     }
 
     function close() {
@@ -240,7 +260,7 @@ Item {
         return it.textField ? [it.textField, it] : [it];
     }
     Keys.enabled: isOpen && needsFocus
-    Keys.onEscapePressed: close()
+    Keys.onEscapePressed: dismiss()
     anchors.left: parent ? parent.left : undefined
     anchors.right: parent ? parent.right : undefined
     anchors.top: parent ? parent.top : undefined

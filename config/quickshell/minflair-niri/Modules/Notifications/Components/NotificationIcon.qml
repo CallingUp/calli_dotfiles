@@ -11,12 +11,16 @@ Item {
     property int iconSize: Constants.size3Xl
     property color iconColor: Theme.accent
     property color bgColor: Theme.bgSecondary
-    property bool hasAppIcon: (notifData && notifData.appIcon && notifData.appIcon !== "") || (notifData && notifData.image)
+    readonly property bool isOsd: notifData && (notifData.summary === "Volume" || notifData.summary === "Brightness")
+    property bool hasAppIcon: !isOsd && ((notifData && notifData.appIcon && notifData.appIcon !== "") || (notifData && notifData.image))
     property bool isUrgencyIcon: !hasAppIcon
 
     function getUrgencyIcon() {
         if (!notifData)
             return "info-filled";
+
+        if (notifData.summary === "Brightness") return "sun";
+        if (notifData.summary === "Volume") return notifData.appIcon === "audio-volume-muted" ? "volume-off" : "volume";
 
         if (notifData.urgency === 2)
             return "warning";
@@ -53,7 +57,7 @@ Item {
             fillMode: Image.PreserveAspectCrop
             horizontalAlignment: Image.AlignLeft
             source: {
-                if (!root.notifData)
+                if (!root.notifData || !root.hasAppIcon)
                     return "";
 
                 if (root.notifData.image)

@@ -15,8 +15,9 @@ Item {
 
     property var widget: null
     property var cavaData: CavaService.cavaData
-    readonly property real artSize: metadataColumn.implicitHeight
-    readonly property real playerWidth: 410
+    property bool prominentArt: false
+    readonly property real artSize: prominentArt ? Math.min(144, playerWidth * 0.35) : metadataColumn.implicitHeight
+    property real playerWidth: 410
     readonly property bool isVisibleOnScreen: widget !== null && widget.isOpen !== undefined ? widget.isOpen : true
 
     implicitWidth: playerWidth
@@ -97,42 +98,6 @@ Item {
                 Layout.fillWidth: true
                 spacing: Constants.size2Xs
 
-                RowLayout {
-                    Rectangle {
-                        visible: true
-                        color: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none") ? Theme.accent : Theme.bgSecondary
-                        radius: Constants.sizeSm
-                        Layout.preferredHeight: Constants.size2Xl
-                        Layout.preferredWidth: badgeLbl.implicitWidth + 24
-
-                        ThemedText {
-                            id: badgeLbl
-
-                            anchors.centerIn: parent
-                            text: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none") ? "Configure Player" : (MprisService.activePlayerName !== "" ? MprisService.activePlayerName : MprisService.getDisplayName(SettingsService.musicPlayer))
-                            customSize: Constants.sizeXs + 2
-                            font.bold: true
-                            color: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none") ? Theme.bg : Theme.fg
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            enabled: (!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none")
-                            onClicked: {
-                                AppState.pendingSettingsTab = 4;
-                                AppState.openWidget("minflair_settings");
-                            }
-                        }
-
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                    }
-
-                }
-
                 TypewriterText {
                     text: MprisService.activePlayer ? (MprisService.activePlayer.trackTitle || "Not Playing") : "No Music"
                     customSize: Constants.sizeMd
@@ -143,7 +108,7 @@ Item {
                 }
 
                 TypewriterText {
-                    text: MprisService.activePlayer ? (MprisService.activePlayer.trackArtist || "Unknown Artist") : ((!SettingsService.musicPlayer || SettingsService.musicPlayer === "" || SettingsService.musicPlayer === "none") ? "Click below to configure" : "Open a music player to get started")
+                    text: MprisService.activePlayer ? (MprisService.activePlayer.trackArtist || "Unknown Artist") : "Open a music player to get started"
                     customSize: Constants.sizeSm
                     color: Theme.accentComplementary
                     elide: Text.ElideRight

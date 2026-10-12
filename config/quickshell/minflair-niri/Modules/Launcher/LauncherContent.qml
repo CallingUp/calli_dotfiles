@@ -17,6 +17,12 @@ Item {
     property string searchText: ""
     property var allApps: []
     property var filteredApps: []
+    // Initial preferences are a ranking bonus, not fabricated usage history.
+    readonly property var preferredApps: ({zen: 70, steam: 60, vesktop: 50, limusic: 40, "android-studio": 30, alacritty: 20, kitty: 10})
+    function appRank(app) {
+        const id = app.id.replace(/\.desktop$/, "").toLowerCase();
+        return (Number(AppState.launcherUsage[app.id]) || 0) + (preferredApps[id] || 0);
+    }
     property alias initialFocusItem: searchField
     property int maxVisibleItems: 8
     readonly property bool isSearching: searchField.text.trim() !== ""
@@ -69,7 +75,10 @@ Item {
                 newFiltered.push(app);
 
         }
-        root.filteredApps = newFiltered;
+        root.filteredApps = newFiltered.sort((a, b) => {
+            const frequency = appRank(b) - appRank(a);
+            return frequency || a.name.localeCompare(b.name);
+        });
         if (appsView) {
             appsView.expandedIndex = -1;
             if (root.filteredApps.length > 0)
@@ -137,18 +146,15 @@ Item {
         if (!exec)
             return ;
 
-        let command = exec.split(' ').filter(function(arg) {
-            return !arg.startsWith('%');
-        });
-        command = command.map(function(arg) {
-            return arg.replace(/^"|"$/g, '');
-        });
-        if (terminal)
-            command = ["kitty", "-e"].concat(command);
-
-        appLauncher.running = false;
-        appLauncher.command = command;
-        appLauncher.startDetached();
+        if (terminal) {
+            appLauncher.command = ["kitty", "-e"].concat(Array.from(exec.command));
+            appLauncher.workingDirectory = exec.workingDirectory || "";
+            appLauncher.startDetached();
+        } else {
+            exec.execute();
+        }
+        const owner = root.allApps.find(app => app.exec === exec || app.actions.some(action => action.exec === exec));
+        if (owner) AppState.recordLauncherUse(owner.id);
         AppState.closeAllWidgets();
         if (root.widget && root.widget.close !== undefined)
             root.widget.close();
@@ -161,12 +167,18 @@ Item {
             appsView.expandedIndex = -1;
 
         searchField.text = "";
-        if (AppState.launcherApps && AppState.launcherApps.length > 0) {
-            root.allApps = AppState.launcherApps;
-            filterApps("");
-        } else {
-            loadAppsProc.running = true;
-        }
+        root.allApps = DesktopEntries.applications.values
+            .filter(entry => !entry.noDisplay)
+            .map(entry => ({
+                id: entry.id,
+                name: entry.name,
+                exec: entry,
+                icon: entry.icon,
+                terminal: entry.runInTerminal,
+                actions: Array.from(entry.actions).map(action => ({name: action.name, exec: action}))
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        filterApps("");
         searchField.forceActiveFocus();
     }
 
@@ -178,27 +190,9 @@ Item {
         resetLauncher();
     }
 
-    Process {
-        id: loadAppsProc
-
-        command: ["python3", Quickshell.shellDir + "/Modules/Launcher/scripts/get_apps.py"]
-        onExited: function(exitCode) {
-            if (exitCode === 0) {
-                try {
-                    let parsed = JSON.parse(appFetcherOutput.text);
-                    AppState.launcherApps = parsed;
-                    root.allApps = parsed;
-                    filterApps("");
-                } catch (e) {
-                    console.error("Error parsing apps JSON: " + e);
-                }
-            }
-        }
-
-        stdout: StdioCollector {
-            id: appFetcherOutput
-        }
-
+    Connections {
+        target: AppState
+        function onLauncherUsageChanged() { root.filterApps(searchField.text); }
     }
 
     ColumnLayout {

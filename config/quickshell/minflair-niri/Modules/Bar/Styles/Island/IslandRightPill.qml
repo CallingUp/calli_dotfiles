@@ -17,10 +17,12 @@ IslandBackground {
     readonly property bool hasPlayingMedia: MprisService.activePlayer !== null && (((MprisService.activePlayer.trackTitle || "").trim() !== "") || ((MprisService.activePlayer.trackArtist || "").trim() !== ""))
     readonly property bool showMedia: islandBar ? islandBar.showMediaOnRight : ((SettingsService.islandRightMode === "music") || (SettingsService.islandRightMode === "auto" && hasPlayingMedia))
     readonly property bool isMusicActive: showMedia && MprisService.isPlaying
-    readonly property real targetIdleW: mediaContent.implicitWidth
+    // Music now lives in the right activity panel (Mod+Period).
+    visible: isTarget || openProgress > 0
+    readonly property real targetIdleW: 0
     property real smoothIdleW: targetIdleW
     readonly property real idleW: smoothIdleW
-    readonly property real idleH: Constants.size3Xl
+    readonly property real idleH: 0
     readonly property real idleR: Constants.sizeLg
     readonly property real panelW: isTarget ? islandComponents.getTargetWidth(islandBar.effectivePanel, rightLoader.item, 0) : idleW
     readonly property real panelH: isTarget ? islandComponents.getTargetHeight(islandBar.effectivePanel, rightLoader.item) : idleH
@@ -28,7 +30,7 @@ IslandBackground {
     readonly property alias activeItem: rightLoader.item
 
     z: isTarget ? 10 : 1
-    x: Math.min(islandContainer.width - width - 16, centerPill.x + centerPill.width + 10)
+    x: Math.min(islandContainer.width - width - 16, centerPill.x + centerPill.width + (visible ? 10 : 0))
     y: 0
     width: idleW + (panelW - idleW) * openProgress
     height: idleH + (panelH - idleH) * openProgress
@@ -45,14 +47,15 @@ IslandBackground {
         anchors.fill: parent
         acceptedButtons: Qt.AllButtons
         enabled: root.openProgress > 0.05
+        onClicked: islandBar.dismiss()
     }
 
     IslandMediaArt {
         id: mediaContent
         anchors.fill: parent
         opacity: Math.min(1, Math.max(0, 1 - root.openProgress / 0.15))
-        visible: opacity > 0.001
-        clickable: !islandBar.isOpen
+        visible: false
+        clickable: root.openProgress < 0.05 && !islandBar.isRemoving
     }
 
     Item {
@@ -136,7 +139,7 @@ IslandBackground {
         enabled: HyprlandService.enableAnimations
 
         NumberAnimation {
-            duration: islandBar.isRemoving ? Constants.animNormal : Constants.animExpressive
+            duration: islandBar.isRemoving ? Constants.islandCloseDuration : Constants.islandOpenDuration
             easing.type: islandBar.isRemoving ? Easing.OutCubic : Easing.OutQuint
             onRunningChanged: {
                 if (!running && islandBar.isRemoving)

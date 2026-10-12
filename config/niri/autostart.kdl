@@ -4,8 +4,7 @@
 //       ___/ / /_/ /_/ / /  / /_
 //      /____/\__/\__,_/_/   \__/
 
-// Noctalia
-spawn-at-startup "noctalia"
+// Desktop UI runs through haku-quickshell.service; lock is on demand.
 spawn-at-startup "haku-keyring-unlock"
 spawn-sh-at-startup "sleep 2 && haku-ssh-unlock"
 

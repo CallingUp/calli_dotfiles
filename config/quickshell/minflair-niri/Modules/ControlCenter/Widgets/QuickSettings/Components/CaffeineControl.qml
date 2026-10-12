@@ -11,7 +11,7 @@ QuickSettingsTile {
     isActive: DisplayProfileService.caffeineActive
     icon: !isActive ? "coffee" : "coffee-filled"
     label: "Caffeine"
-    subtitle: isActive ? "Screen on" : "Off"
+    subtitle: DisplayProfileService.caffeineError || (isActive ? "Screen on" : "Off")
     onMenuClicked: clicked()
     onClicked: {
         DisplayProfileService.caffeineActive = !DisplayProfileService.caffeineActive;

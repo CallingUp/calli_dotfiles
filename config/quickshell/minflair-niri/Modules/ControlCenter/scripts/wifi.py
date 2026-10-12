@@ -5,6 +5,74 @@ sys.dont_write_bytecode = True
 
 import json
 import subprocess
+import time
+
+
+def connect_private(ssid):
+    request = json.loads(sys.stdin.readline())
+    password = request.get("password", "")
+    security = request.get("security", "")
+    if not password or "\n" in password or "\r" in password:
+        return {"success": False, "output": "Introduce una contraseña válida"}
+    if "EAP" in security or "802.1X" in security:
+        return {"success": False, "output": "Esta red requiere configuración empresarial"}
+    import dbus
+    bus = dbus.SystemBus()
+    nm_name = "org.freedesktop.NetworkManager"
+    manager = dbus.Interface(bus.get_object(nm_name, "/org/freedesktop/NetworkManager"), nm_name)
+    device_path = None
+    ap_path = None
+    rsn_flags = 0
+    for path in manager.GetDevices():
+        obj = bus.get_object(nm_name, path)
+        props = dbus.Interface(obj, "org.freedesktop.DBus.Properties")
+        if int(props.Get(nm_name + ".Device", "DeviceType")) != 2:
+            continue
+        wireless = dbus.Interface(obj, nm_name + ".Device.Wireless")
+        for candidate in wireless.GetAccessPoints():
+            ap = dbus.Interface(bus.get_object(nm_name, candidate), "org.freedesktop.DBus.Properties")
+            info = ap.GetAll(nm_name + ".AccessPoint")
+            if bytes(info["Ssid"]).decode("utf-8", errors="replace") == ssid:
+                device_path, ap_path = path, candidate
+                rsn_flags = int(info["RsnFlags"])
+                break
+        if ap_path:
+            break
+    if not ap_path:
+        return {"success": False, "output": "La red ya no está disponible; actualiza la lista"}
+    # Same minimal settings and memory persistence used by Noctalia.
+    settings = dbus.Dictionary({
+        "802-11-wireless-security": dbus.Dictionary({
+            "key-mgmt": "sae" if rsn_flags & 0x400 else "wpa-psk",
+            "psk": password,
+        }, signature="sv"),
+    }, signature="sa{sv}")
+    connection_path = None
+    success = False
+    try:
+        connection_path, active_path, _ = manager.AddAndActivateConnection2(
+            settings, device_path, ap_path,
+            dbus.Dictionary({"persist": "memory"}, signature="sv"), timeout=30,
+        )
+        active = dbus.Interface(bus.get_object(nm_name, active_path), "org.freedesktop.DBus.Properties")
+        deadline = time.monotonic() + 25
+        while time.monotonic() < deadline:
+            state = int(active.Get(nm_name + ".Connection.Active", "State"))
+            if state == 2:
+                success = True
+                return {"success": True, "output": "Conectado"}
+            if state == 4:
+                return {"success": False, "output": "No se pudo conectar; comprueba la contraseña"}
+            time.sleep(0.25)
+        return {"success": False, "output": "Se agotó el tiempo de conexión"}
+    except dbus.DBusException:
+        return {"success": False, "output": "NetworkManager no pudo completar la conexión; comprueba la contraseña y los permisos"}
+    finally:
+        if connection_path and not success:
+            try:
+                dbus.Interface(bus.get_object(nm_name, connection_path), nm_name + ".Settings.Connection").Delete(timeout=5)
+            except dbus.DBusException:
+                pass
 
 
 def get_wifi_device():
@@ -151,7 +219,9 @@ def scan_networks(rescan=True):
 def main():
     action = sys.argv[1] if len(sys.argv) > 1 else "scan"
 
-    if action == "status":
+    if action == "connect-private" and len(sys.argv) > 2:
+        print(json.dumps(connect_private(sys.argv[2])))
+    elif action == "status":
         print(json.dumps(get_status()))
     elif action == "scan":
         rescan = sys.argv[2] != "no" if len(sys.argv) > 2 else True
@@ -168,35 +238,21 @@ def main():
 
         if ssid in saved and not password:
             res = subprocess.run(
-                ["nmcli", "connection", "up", "id", ssid],
+                ["nmcli", "--wait", "25", "connection", "up", "id", ssid],
                 capture_output=True,
                 text=True,
+                timeout=30,
             )
         else:
-            cmd = ["nmcli", "device", "wifi", "connect", ssid]
+            cmd = ["nmcli", "--wait", "25", "device", "wifi", "connect", ssid]
             if password:
                 cmd.extend(["password", password])
             res = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
+                timeout=30,
             )
-
-        if res.returncode != 0 and ssid not in saved:
-            check = subprocess.run(
-                ["nmcli", "-t", "-f", "NAME,TIMESTAMP", "connection", "show", ssid],
-                capture_output=True,
-                text=True,
-            )
-            for l in check.stdout.strip().splitlines():
-                if ":" in l:
-                    p = l.split(":", 1)
-                    if p[0] == ssid and (p[1].strip() == "0" or p[1].strip() == ""):
-                        subprocess.run(
-                            ["nmcli", "connection", "delete", "id", ssid],
-                            capture_output=True,
-                        )
-                        break
 
         print(
             json.dumps(
@@ -223,4 +279,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except subprocess.TimeoutExpired:
+        print(json.dumps({"success": False, "output": "Se agotó el tiempo de conexión"}))

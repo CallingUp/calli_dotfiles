@@ -162,7 +162,7 @@ fi
 
 # Handle --select argument via Rofi
 if [[ "$1" == "--select" ]]; then
-    choice=$(printf "%s\n" "${WAYBAR_MODES[@]}" | rofi -dmenu -p "Waybar" -i -theme-str 'window {width: 25%; height: 40%;} entry { placeholder: " Select Mode"; }')
+    choice=$(printf "%s\n" "${WAYBAR_MODES[@]}" | haku-qml-menu -dmenu -p "Waybar" -i -theme-str 'window {width: 25%; height: 40%;} entry { placeholder: " Select Mode"; }')
     [[ -z "$choice" ]] && exit 0
 
     if [[ "$choice" != "$CURRENT_STATE" ]]; then

@@ -17,47 +17,23 @@ Item {
     readonly property int dotHeight: compact ? 6 : 8
     readonly property int activePillWidth: compact ? 18 : 24
     readonly property int activeWsId: NiriBackend.HyprlandService.focusedWorkspace ? NiriBackend.HyprlandService.focusedWorkspace.id : 1
-    readonly property int maxOccupiedWsId: {
-        let maxId = 1;
-        if (NiriBackend.HyprlandService.workspaces && NiriBackend.HyprlandService.workspaces.values) {
-            const list = NiriBackend.HyprlandService.workspaces.values;
-            for (let i = 0; i < list.length; i++) {
-                const ws = list[i];
-                if (!ws || ws.id <= 0)
-                    continue;
-
-                let hasWins = false;
-                if (ws.toplevels && ws.toplevels.values && ws.toplevels.values.length > 0)
-                    hasWins = true;
-
-                if (!hasWins && NiriBackend.HyprlandService.toplevels && NiriBackend.HyprlandService.toplevels.values)
-                    hasWins = NiriBackend.HyprlandService.toplevels.values.some((top) => {
-                    return top && top.workspace && top.workspace.id === ws.id;
-                });
-
-                if (hasWins && ws.id > maxId)
-                    maxId = ws.id;
-
-            }
-        }
-        if (NiriBackend.HyprlandService.toplevels && NiriBackend.HyprlandService.toplevels.values) {
-            for (let j = 0; j < NiriBackend.HyprlandService.toplevels.values.length; j++) {
-                const top = NiriBackend.HyprlandService.toplevels.values[j];
-                if (top && top.workspace && top.workspace.id > maxId)
-                    maxId = top.workspace.id;
-
-            }
-        }
-        return maxId;
+    // Niri can retain named empty workspaces: show occupied ones + one spare.
+    readonly property var workspaceSlots: {
+        const all = NiriBackend.HyprlandService.workspaces.values;
+        const occupied = all.filter(ws => ws.toplevels && ws.toplevels.values.length > 0);
+        const spare = all.find(ws => ws.id === activeWsId && !occupied.some(o => o.id === ws.id))
+            || all.find(ws => !occupied.some(o => o.id === ws.id));
+        const slots = occupied.slice();
+        slots.push(spare || {id: Math.max(0, ...occupied.map(ws => ws.id)) + 1});
+        return slots.sort((a, b) => a.id - b.id);
     }
-    readonly property int visibleWorkspaceCount: Math.min(10, Math.max(Math.max(activeWsId, maxOccupiedWsId) + 1, 5))
+    readonly property int visibleWorkspaceCount: workspaceSlots.length
 
     function handleWheel(wheel) {
-        const currentId = NiriBackend.HyprlandService.focusedWorkspace ? NiriBackend.HyprlandService.focusedWorkspace.id : 1;
-        const targetId = wheel.angleDelta.y > 0 ? (currentId - 1) : (currentId + 1);
-        if (targetId >= 1 && targetId <= 10)
-            NiriBackend.HyprlandService.dispatch('hl.dsp.focus({workspace=' + targetId + '})');
-
+        const current = workspaceSlots.findIndex(ws => ws.id === activeWsId);
+        const next = current + (wheel.angleDelta.y > 0 ? -1 : 1);
+        if (next >= 0 && next < workspaceSlots.length)
+            NiriBackend.HyprlandService.focusWorkspace(workspaceSlots[next].id);
     }
 
     implicitHeight: customHeight
@@ -102,13 +78,13 @@ Item {
         spacing: root.compact ? 5 : 6
 
         Repeater {
-            model: 10
+            model: root.visibleWorkspaceCount
 
             Item {
                 id: wsSlot
 
-                readonly property int wsId: index + 1
-                readonly property bool isVisibleSlot: wsId <= root.visibleWorkspaceCount
+                readonly property int wsId: root.workspaceSlots[index].id
+                readonly property bool isVisibleSlot: true
                 readonly property var workspace: NiriBackend.HyprlandService.workspaces.values.find((ws) => {
                     return ws.id === wsId;
                 })

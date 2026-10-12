@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import qs.Core
 import qs.Core.Services
 pragma Singleton
@@ -12,6 +13,30 @@ Item {
     readonly property bool isFocusWidgetOpen: isWidgetOpen("launcher") || isWidgetOpen("clipboard") || isWidgetOpen("wallpaper") || isWidgetOpen("powerMenu") || isWidgetOpen("screenshot")
     property int pendingSettingsTab: -1
     property var launcherApps: []
+    property var launcherUsage: ({})
+
+    FileView {
+        id: launcherUsageFile
+        path: (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")) + "/haku-launcher-usage.json"
+        atomicWrites: true
+        onLoaded: {
+            try {
+                const data = JSON.parse(text());
+                appState.launcherUsage = data && typeof data === "object" && !Array.isArray(data) ? data : {};
+            } catch (error) {
+                console.warn("Invalid launcher usage history; starting empty");
+                appState.launcherUsage = {};
+            }
+        }
+    }
+
+    function recordLauncherUse(desktopId) {
+        if (!desktopId) return;
+        const usage = Object.assign({}, launcherUsage);
+        usage[desktopId] = (Number(usage[desktopId]) || 0) + 1;
+        launcherUsage = usage;
+        launcherUsageFile.setText(JSON.stringify(usage));
+    }
     property bool socketsCleaned: true
     property real islandWidth: 180
     property real islandHeight: Constants.size3Xl
@@ -35,7 +60,7 @@ Item {
         if (!id)
             return false;
 
-        return id === "dashboard" || id === "controlCenter" || id === "notificationsCenter" || id === "music" || id === "clock" || id.startsWith("systemTray_");
+        return id === "stats" || id === "dashboard" || id === "controlCenter" || id === "notificationsCenter" || id === "music" || id === "clock" || id.startsWith("systemTray_");
     }
 
     function isFocusWidget(id) {
@@ -108,6 +133,13 @@ Item {
     function openWidgetInternal(widgetId) {
         if (!widgetId || isStandaloneWindow(widgetId))
             return ;
+
+        // Island mode has one expanded surface, never a hidden stack of panels.
+        if (SettingsService.barIslandMode && isBarOverlayWidget(widgetId)) {
+            activeWidgetsList = [widgetId];
+            activeWidget = widgetId;
+            return;
+        }
 
         let slot = getSlot(widgetId);
         // Rule 1: Focus widgets close each other, but do NOT close bar widgets

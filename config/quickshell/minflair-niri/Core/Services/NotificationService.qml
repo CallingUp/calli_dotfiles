@@ -8,10 +8,13 @@ Item {
     id: root
 
     property var server: notificationLoader.item
+    property double localNotificationId: Date.now()
     property bool nativeNotificationsEnabled: false
     property alias activeList: activeListModel
     property alias historyList: historyListModel
     property bool dndEnabled: false
+    readonly property bool automaticDnd: DisplayProfileService.gameModeActive || HyprlandService.isScreencasting
+    readonly property bool effectiveDnd: dndEnabled || automaticDnd
     property int unreadCount: historyListModel.count
     property var notificationObjects: ({
     })
@@ -36,7 +39,19 @@ Item {
     }
 
     function notify(summary, body, icon = "", appName = "System", urgency = NotificationUrgency.Normal) {
-        let timestamp = new Date().getTime();
+        const isOsd = summary === "Volume" || summary === "Brightness" || summary === "Microphone";
+        if (isOsd && activeListModel.count > 0) {
+            const current = activeListModel.get(0).notifData;
+            if (current && !current.closed && current.summary === summary) {
+                current.body = body;
+                current.appIcon = icon;
+                current.popup = true;
+                current.startProgress();
+                return;
+            }
+        }
+        let timestamp = Math.max(Date.now(), localNotificationId + 1);
+        localNotificationId = timestamp;
         let nd = notificationDataComponent.createObject(root, {
             "notificationId": timestamp.toString(),
             "summary": summary,
@@ -45,14 +60,14 @@ Item {
             "appIcon": icon,
             "urgency": urgency,
             "timestamp": timestamp,
-            "isDnd": root.dndEnabled
+            "isDnd": root.effectiveDnd
         });
         notificationObjects[timestamp] = nd;
-        historyListModel.insert(0, {
+        if (!nd.isTransient) historyListModel.insert(0, {
             "id": timestamp,
             "notifData": nd
         });
-        if (!dndEnabled) {
+        if (!effectiveDnd) {
             activeListModel.insert(0, {
                 "id": timestamp,
                 "notifData": nd
@@ -70,13 +85,8 @@ Item {
     }
 
     function getGroupKey(notification) {
-        let appsToGroup = ["whatsapp", "telegram", "discord", "slack"];
-        let app = (notification.appName || "").toLowerCase();
-        for (let i = 0; i < appsToGroup.length; i++) {
-            if (app.includes(appsToGroup[i]))
-                return appsToGroup[i];
-
-        }
+        // Visual grouping belongs to NotificationCenter. Keep individual objects
+        // so aggregating messages never discards their native application actions.
         return "";
     }
 
@@ -175,10 +185,8 @@ Item {
             groupRepresentationIds = reps;
             root.updateNotificationData(notification);
         } else {
-            if (!notification.alreadyDismissed) {
-                notification.alreadyDismissed = true;
-                notification.dismiss();
-            }
+            // Notification is a Qt object: arbitrary JS properties cannot be added.
+            notification.dismiss();
             let repData = notificationObjects[repId];
             if (repData) {
                 let displayNames = {
@@ -206,7 +214,7 @@ Item {
                 if (historyIndex > 0)
                     historyListModel.move(historyIndex, 0, 1);
 
-                if (!dndEnabled) {
+                if (!effectiveDnd) {
                     let activeIndex = -1;
                     for (let i = 0; i < activeListModel.count; i++) {
                         if (activeListModel.get(i).id == repId) {
@@ -234,7 +242,7 @@ Item {
         if (!nd) {
             nd = notificationDataComponent.createObject(root, {
                 "notification": notification,
-                "isDnd": root.dndEnabled
+                "isDnd": root.effectiveDnd
             });
             notificationObjects[notification.id] = nd;
         } else {
@@ -270,7 +278,7 @@ Item {
             });
 
         }
-        if ((!dndEnabled || nd.urgency === 2) && nd.popup) {
+        if ((!effectiveDnd || nd.urgency === 2) && nd.popup) {
             let activeUpdated = false;
             for (let i = 0; i < activeListModel.count; i++) {
                 if (activeListModel.get(i).id == notification.id) {
@@ -292,14 +300,14 @@ Item {
         while (historyListModel.count > 50)removeHistoryItem(historyListModel.count - 1)
     }
 
-    onDndEnabledChanged: {
+    onEffectiveDndChanged: {
         for (let id in notificationObjects) {
-            notificationObjects[id].isDnd = root.dndEnabled;
-            if (root.dndEnabled && notificationObjects[id].urgency !== 2)
+            notificationObjects[id].isDnd = root.effectiveDnd;
+            if (root.effectiveDnd && notificationObjects[id].urgency !== 2)
                 notificationObjects[id].popup = false;
 
         }
-        if (root.dndEnabled) {
+        if (root.effectiveDnd) {
             for (let i = activeListModel.count - 1; i >= 0; i--) {
                 if (activeListModel.get(i).notifData.urgency !== 2)
                     activeListModel.remove(i);
@@ -314,17 +322,6 @@ Item {
         NotificationData {
         }
 
-    }
-
-    Connections {
-        function onGameModeActiveChanged() {
-            if (DisplayProfileService.gameModeActive)
-                root.dndEnabled = true;
-            else
-                root.dndEnabled = false;
-        }
-
-        target: DisplayProfileService
     }
 
     Connections {
@@ -415,7 +412,7 @@ Item {
     NotificationServer {
         id: notificationServer
 
-        keepOnReload: false
+        keepOnReload: true
         imageSupported: true
         actionsSupported: true
         onNotification: (notification) => {

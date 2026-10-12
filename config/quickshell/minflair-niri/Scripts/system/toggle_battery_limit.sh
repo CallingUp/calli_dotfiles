@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 # Multi-vendor Linux battery charge limit controller
 # Supports:

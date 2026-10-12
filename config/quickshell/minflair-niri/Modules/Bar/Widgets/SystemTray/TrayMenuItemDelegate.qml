@@ -13,13 +13,22 @@ Rectangle {
     property bool isPressed: itemMouseArea.pressed
 
     Layout.fillWidth: true
-    Layout.preferredHeight: (modelData && modelData.isSeparator) ? 1 : Constants.size3Xl
+    Layout.preferredHeight: (modelData && modelData.isSeparator) ? 9 : 36
     implicitWidth: (modelData && modelData.isSeparator) ? 0 : (itemRow.implicitWidth + (Constants.sizeSm * 2))
-    implicitHeight: (modelData && modelData.isSeparator) ? 1 : Constants.size3Xl
-    color: isPressed ? Theme.bgAccent : (isHovered ? Theme.bgSecondary : "transparent")
+    implicitHeight: (modelData && modelData.isSeparator) ? 9 : 36
+    color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, isPressed ? 0.22 : (isHovered ? 0.13 : 0.025))
     radius: Constants.sizeMd
-    scale: isPressed ? 0.98 : (isHovered ? 1.01 : 1)
+    scale: isPressed ? 0.98 : 1
     transformOrigin: Item.Center
+    Rectangle {
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        width: 3; height: 16; radius: 1.5
+        color: Theme.accent
+        opacity: itemRoot.isHovered ? 1 : 0
+        visible: Boolean(modelData && !modelData.isSeparator && modelData.enabled)
+        Behavior on opacity { NumberAnimation { duration: 100 } }
+    }
     visible: {
         if (!modelData)
             return false;
@@ -85,7 +94,7 @@ Rectangle {
         ThemedText {
             Layout.fillWidth: true
             text: (modelData && modelData.text) ? modelData.text : ""
-            color: (modelData && modelData.enabled) ? Theme.fg : Theme.muted
+            color: (modelData && modelData.enabled) ? (itemRoot.isHovered ? Theme.accent : Theme.fg) : Theme.muted
             elide: Text.ElideRight
         }
 
@@ -131,8 +140,9 @@ Rectangle {
     }
 
     Rectangle {
-        anchors.fill: parent
-        color: Theme.border
+        anchors.verticalCenter: parent.verticalCenter
+        width: parent.width; height: 1
+        color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15)
         visible: Boolean(modelData && modelData.isSeparator)
     }
 
@@ -152,10 +162,11 @@ Rectangle {
                 s.push(modelData);
                 menuRoot.menuStack = s;
             } else {
+                const owner = menuRoot;
                 if (typeof modelData.triggered === "function")
                     modelData.triggered();
 
-                menuRoot.closeRequested();
+                if (owner) owner.closeRequested();
             }
         }
     }

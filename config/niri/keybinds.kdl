@@ -44,16 +44,20 @@ binds {
     // Noctalia
     // --------------------------------------------------------
 
-    Mod+Space hotkey-overlay-title="Launcher" {
-        spawn-sh "noctalia msg panel-toggle launcher"
+    Mod+Return hotkey-overlay-title="Launcher" {
+        spawn "quickshell" "ipc" "-p" "/home/calli/haku_shell/config/quickshell/minflair-niri/niri-preview.qml" "call" "haku-launcher" "toggleLauncher"
     }
 
     Mod+Z hotkey-overlay-title="Control Center" {
-        spawn-sh "noctalia msg panel-toggle control-center"
+        spawn "quickshell" "ipc" "-p" "/home/calli/haku_shell/config/quickshell/minflair-niri/niri-preview.qml" "call" "haku-controls" "toggleControls"
     }
 
-    Mod+Comma hotkey-overlay-title="Noctalia Settings" {
-        spawn-sh "noctalia msg settings-toggle"
+    Mod+Period hotkey-overlay-title="Reproductor y notificaciones" {
+        spawn "quickshell" "ipc" "-p" "/home/calli/haku_shell/config/quickshell/minflair-niri/niri-preview.qml" "call" "haku-activity" "toggle"
+    }
+
+    Mod+N hotkey-overlay-title="Wi-Fi, Bluetooth y audio" {
+        spawn "quickshell" "ipc" "-p" "/home/calli/haku_shell/config/quickshell/minflair-niri/niri-preview.qml" "call" "haku-controls" "toggleControls"
     }
 
     // --------------------------------------------------------
@@ -89,16 +93,14 @@ binds {
         spawn "/home/calli/.local/bin/waybar_manager.sh" "--context-actions"
     }
 
-    Alt+Tab {
-        spawn-sh "noctalia msg window-switcher"
-    }
+    // Mod+Tab belongs to recent-windows.kdl (native previews).
 
-    Mod+L hotkey-overlay-title="Lock Screen" {
-        spawn "lock.sh"
+    Mod+Ctrl+L hotkey-overlay-title="Lock Screen" {
+        spawn "haku-lock"
     }
 
     Mod+Shift+L hotkey-overlay-title="Lock and Suspend" {
-        spawn-sh "lock.sh & sleep 0.5 && systemctl suspend"
+        spawn "haku-lock" "--suspend"
     }
 
 
@@ -115,7 +117,7 @@ binds {
     // Wallpapers
     // --------------------------------------------------------
 
-    Mod+Shift+E hotkey-overlay-title="Wallpaper Selector" {
+    Mod+Comma hotkey-overlay-title="Wallpaper Selector" {
         spawn "/home/calli/.local/bin/wallpaper-carousel"
     }
 
@@ -133,15 +135,15 @@ binds {
     // --------------------------------------------------------
 
     XF86AudioRaiseVolume allow-when-locked=true {
-        spawn-sh "noctalia msg volume-up"
+        spawn "haku-osd-control" "volume-up"
     }
 
     XF86AudioLowerVolume allow-when-locked=true {
-        spawn-sh "noctalia msg volume-down"
+        spawn "haku-osd-control" "volume-down"
     }
 
     XF86AudioMute allow-when-locked=true {
-        spawn-sh "noctalia msg volume-mute"
+        spawn "haku-osd-control" "volume-mute"
     }
 
 
@@ -150,11 +152,11 @@ binds {
     // --------------------------------------------------------
 
     XF86MonBrightnessUp allow-when-locked=true {
-        spawn-sh "noctalia msg brightness-up"
+        spawn "haku-osd-control" "brightness-up"
     }
 
     XF86MonBrightnessDown allow-when-locked=true {
-        spawn-sh "noctalia msg brightness-down"
+        spawn "haku-osd-control" "brightness-down"
     }
 
 
@@ -437,7 +439,7 @@ binds {
     // --------------------------------------------------------
 
     Mod+Backspace {
-        spawn "logout-menu.sh"
+        spawn "quickshell" "ipc" "-p" "/home/calli/haku_shell/config/quickshell/minflair-niri/niri-preview.qml" "call" "haku-power" "togglePower"
     }
 
     Mod+Escape {

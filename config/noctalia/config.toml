@@ -170,3 +170,6 @@ enabled = false
 
 [weather]
 enabled = false
+
+[notification]
+enable_daemon = false

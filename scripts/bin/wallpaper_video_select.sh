@@ -63,7 +63,7 @@ list_walls() {
 
 generate_thumbnails
 
-CHOICE=$(list_walls | rofi -dmenu -i -p "Wallpaper" -theme-str "
+CHOICE=$(list_walls | haku-qml-menu -dmenu -i -p "Wallpaper" -theme-str "
     window { width: 65%; height: 80%; }
         listview { columns: 4; lines: 2; spacing: 5px; padding: 5px;}
         element { orientation: vertical; padding: 5px; border-radius: 15px; }

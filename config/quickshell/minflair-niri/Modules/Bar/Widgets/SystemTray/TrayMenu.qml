@@ -12,6 +12,7 @@ ColumnLayout {
     property var menuHandle: null
     property var menuStack: []
     property string title: "Menu"
+    property string applicationIcon: ""
     property var activeChildren: menuRoot.menuStack.length > 1 ? subOpener.children : rootOpener.children
     property int prevStackLength: 1
     property real contentSlideX: 0
@@ -135,6 +136,20 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: Constants.sizeSm
 
+        Rectangle {
+            Layout.preferredWidth: 36
+            Layout.preferredHeight: 36
+            radius: 10
+            color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.12)
+            visible: menuRoot.applicationIcon !== "" && menuRoot.menuStack.length <= 1
+            Image {
+                anchors.centerIn: parent
+                width: 24; height: 24
+                source: menuRoot.applicationIcon
+                fillMode: Image.PreserveAspectFit
+            }
+        }
+
         SvgIcon {
             id: backIcon
 
@@ -180,13 +195,17 @@ ColumnLayout {
             text: menuRoot.menuStack.length > 1 ? (menuRoot.menuStack[menuRoot.menuStack.length - 1].text || "Back") : menuRoot.title
             customSize: Constants.sizeLg
             font.bold: true
+            color: Theme.accent
             Layout.fillWidth: true
             elide: Text.ElideRight
         }
 
     }
 
-    Divider {
+    Rectangle {
+        Layout.fillWidth: true
+        Layout.preferredHeight: 1
+        color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.22)
     }
 
     ScrollView {

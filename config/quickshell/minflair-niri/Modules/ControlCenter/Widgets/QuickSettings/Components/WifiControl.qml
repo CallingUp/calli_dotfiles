@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Core
 import qs.Core.Components
+import qs.Core.Services
 
 QuickSettingsTile {
     id: root
@@ -21,11 +22,29 @@ QuickSettingsTile {
         return connectedSsid;
     }
     property bool isVisible: true
+    property string operationError: ""
+    property string passwordSsid: ""
+    property string passwordSecurity: ""
+    property string pendingSecret: ""
+    readonly property bool connecting: wifiConnectProc.running
+
+    function clearPassword() {
+        passwordSsid = "";
+        passwordSecurity = "";
+        pendingSecret = "";
+    }
+
+    function submitPassword(password) {
+        if (!password || connecting) return;
+        pendingSecret = JSON.stringify({password: password, security: passwordSecurity});
+        operationError = "";
+        wifiConnectProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/wifi.py", "connect-private", passwordSsid];
+        wifiConnectProc.running = true;
+    }
 
     function toggle() {
         wifiSetProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/wifi.py", "toggle-radio"];
         wifiSetProc.running = true;
-        root.isActive = !root.isActive;
     }
 
     function scan(forceRescan) {
@@ -39,6 +58,14 @@ QuickSettingsTile {
     }
 
     function connect(ssid) {
+        if (wifiConnectProc.running) return;
+        operationError = "";
+        const network = wifiList.find(item => item.ssid === ssid);
+        if (network && !network.saved && network.security && network.security !== "--") {
+            passwordSsid = ssid;
+            passwordSecurity = network.security;
+            return;
+        }
         wifiConnectProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/wifi.py", "connect", ssid];
         wifiConnectProc.running = true;
     }
@@ -46,7 +73,7 @@ QuickSettingsTile {
     hasMenu: true
     icon: root.isActive ? "wifi" : "wifi-off"
     label: "Wi-Fi"
-    subtitle: root.currentSsid
+    subtitle: operationError || (wifiConnectProc.running ? "Conectando…" : root.currentSsid)
     onClicked: root.toggle()
     onExpandedChanged: {
         if (expanded)
@@ -65,6 +92,7 @@ QuickSettingsTile {
         }
     }
     onIsVisibleChanged: {
+        if (!isVisible) clearPassword();
         if (isVisible && isActive && root.wifiList.length === 0)
             scan(false);
 
@@ -140,6 +168,20 @@ QuickSettingsTile {
 
     Process {
         id: wifiConnectProc
+        stdinEnabled: true
+        onStarted: {
+            if (root.pendingSecret) write(root.pendingSecret + "\n");
+            root.pendingSecret = "";
+        }
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const result = JSON.parse(text);
+                    if (!result.success) root.operationError = result.output || "No se pudo conectar";
+                    else root.clearPassword();
+                } catch (error) { root.operationError = "No se pudo conectar"; }
+            }
+        }
 
         onRunningChanged: {
             if (!running) {
@@ -148,5 +190,6 @@ QuickSettingsTile {
             }
         }
     }
+
 
 }

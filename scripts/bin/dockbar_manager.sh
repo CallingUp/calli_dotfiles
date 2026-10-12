@@ -155,7 +155,7 @@ if [[ $1 == "--icon-size" ]]; then
     current_size=$(grep -oP '"icon-size":\s*\K\d+' "$DOCKBAR_DIR/config" | head -n 1)
     [[ -z "$current_size" ]] && current_size=52
 
-    new_size=$(rofi -dmenu -p "Icon size (current: $current_size):" <<< "$current_size" -theme-str 'window {width: 40%; height: 40%;}' -theme-str 'entry { placeholder: "Type new size"; }')
+    new_size=$(haku-qml-menu -dmenu -p "Icon size (current: $current_size):" <<< "$current_size" -theme-str 'window {width: 40%; height: 40%;}' -theme-str 'entry { placeholder: "Type new size"; }')
     
     if [[ -n "$new_size" && "$new_size" =~ ^[0-9]+$ ]]; then
         sed -i -E "s/\"icon-size\": *[0-9]+/\"icon-size\": $new_size/g" "$DOCKBAR_DIR/config"

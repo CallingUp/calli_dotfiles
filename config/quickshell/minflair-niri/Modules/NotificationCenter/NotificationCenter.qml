@@ -18,6 +18,30 @@ Item {
     property bool controlCenterOpen: false
     property bool isClearingAll: false
 
+    // Group the view, not the stored notifications: preserve every message/action.
+    ListModel { id: groupedHistory; dynamicRoles: true }
+    function regroup() {
+        const rows = [];
+        const history = notificationService ? notificationService.historyList : null;
+        if (history) for (let i = 0; i < history.count; ++i) {
+            const entry = history.get(i);
+            rows.push({notifData: entry.notifData, app: entry.notifData.appName || "Sistema", originalIndex: i});
+        }
+        rows.sort((a, b) => a.app.localeCompare(b.app) || a.originalIndex - b.originalIndex);
+        groupedHistory.clear();
+        for (const entry of rows) groupedHistory.append(entry);
+    }
+    Component.onCompleted: regroup()
+    onNotificationServiceChanged: regroup()
+    Connections {
+        target: root.notificationService ? root.notificationService.historyList : null
+        function onRowsInserted() { root.regroup() }
+        function onRowsRemoved() { root.regroup() }
+        function onRowsMoved() { root.regroup() }
+        function onModelReset() { root.regroup() }
+        function onDataChanged() { root.regroup() }
+    }
+
     function startClearAllAnimation() {
         if (isClearingAll || !notificationService || historyView.count === 0)
             return ;
@@ -167,8 +191,23 @@ Item {
 
                         anchors.fill: parent
                         interactive: true
-                        model: notificationService ? notificationService.historyList : null
+                        model: groupedHistory
                         spacing: Constants.sizeXs
+                        section.property: "app"
+                        section.criteria: ViewSection.FullString
+                        section.delegate: Item {
+                            required property string section
+                            width: historyView.width
+                            height: 30
+                            ThemedText {
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: section
+                                customSize: 12
+                                font.bold: true
+                                color: Theme.accent
+                            }
+                        }
 
                         displaced: Transition {
                             NumberAnimation {

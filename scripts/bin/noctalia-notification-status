@@ -1,8 +1,0 @@
-#!/bin/sh
-
-status=$(noctalia msg notification-dnd-status 2>/dev/null)
-
-case "$status" in
-    *on*|*true*) printf '{"text":"","tooltip":"No molestar activado","class":"dnd"}\n' ;;
-    *) printf '{"text":"󰂚","tooltip":"Notificaciones","class":"normal"}\n' ;;
-esac

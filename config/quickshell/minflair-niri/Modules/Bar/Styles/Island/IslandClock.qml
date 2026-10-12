@@ -100,7 +100,8 @@ Item {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 enabled: root.clickable
-                onClicked: AppState.toggleWidget("clock")
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: mouse => AppState.toggleWidget(mouse.button === Qt.RightButton ? "notificationsCenter" : "clock")
             }
 
         }

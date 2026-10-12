@@ -109,7 +109,7 @@ Rectangle {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             enabled: !delegateRoot.isDeletingAnim
-            onClicked: delegateRoot.startDeleteAnimation()
+            onClicked: delegateRoot.expanded = !delegateRoot.expanded
         }
 
         RowLayout {
@@ -181,7 +181,7 @@ Rectangle {
                         icon: "chevron-down"
                         iconColor: Theme.muted
                         rotation: delegateRoot.expanded ? 180 : 0
-                        visible: bodyText.truncated || summaryText.truncated || delegateRoot.expanded
+                        visible: true
                         enabled: !delegateRoot.isDeletingAnim
                         flat: true
                         onClicked: {
@@ -198,6 +198,14 @@ Rectangle {
 
                     }
 
+                    SvgIconButton {
+                        icon: "x"
+                        iconSize: 12
+                        flat: true
+                        iconColor: Theme.muted
+                        onClicked: delegateRoot.startDeleteAnimation()
+                    }
+
                 }
 
                 ThemedText {
@@ -211,6 +219,25 @@ Rectangle {
                     maximumLineCount: delegateRoot.expanded ? 100 : 2
                     elide: Text.ElideRight
                     visible: text !== ""
+                }
+
+                Flow {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: childrenRect.height
+                    spacing: 6
+                    visible: delegateRoot.expanded
+                    Repeater {
+                        model: delegateRoot.expanded && delegateRoot.notifData && delegateRoot.notifData.notification && !delegateRoot.notifData.closed ? delegateRoot.notifData.notification.actions : []
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: actionLabel.implicitWidth + 20
+                            height: 28
+                            radius: 8
+                            color: Qt.alpha(Theme.accent, actionMouse.containsMouse ? 0.24 : 0.12)
+                            ThemedText { id: actionLabel; anchors.centerIn: parent; text: modelData.text; customSize: 12; color: Theme.accent }
+                            MouseArea { id: actionMouse; anchors.fill: parent; hoverEnabled: true; onClicked: modelData.invoke() }
+                        }
+                    }
                 }
 
             }

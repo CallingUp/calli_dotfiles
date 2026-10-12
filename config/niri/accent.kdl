@@ -2,6 +2,10 @@
 // Dynamic accent
 // ============================================================
 
+recent-windows {
+    highlight { active-color "#8d7c74"; }
+}
+
 layout {
     border {
         on

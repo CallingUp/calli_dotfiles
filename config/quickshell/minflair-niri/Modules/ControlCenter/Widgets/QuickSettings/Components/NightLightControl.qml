@@ -11,7 +11,7 @@ QuickSettingsTile {
     isActive: DisplayProfileService.nightLightActive
     icon: isActive ? "moon-filled" : "moon"
     label: "Night Light"
-    subtitle: isActive ? "On" : "Off"
+    subtitle: DisplayProfileService.nightLightError || (isActive ? "On" : "Off")
     onMenuClicked: clicked()
     onClicked: {
         DisplayProfileService.nightLightActive = !DisplayProfileService.nightLightActive;

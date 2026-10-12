@@ -43,7 +43,7 @@ FONT_SIZE="$(get_current_size)"
 prompt="Change Theme - Choose an option:"
 
 choice="$(
-    cat <<EOF | rofi -dmenu -p "$prompt" -i
+    cat <<EOF | haku-qml-menu -dmenu -p "$prompt" -i
   Change font
   Change font size
   Change color
@@ -55,13 +55,13 @@ case "$choice" in
     "  Change font")
         fonts="$(fc-list : family 2>/dev/null | sed 's/,.*//' | sort -u || true)"
         [[ -z "$fonts" ]] && { echo "No fonts found via fc-list" >&2; exit 1; }
-        new_font="$(printf '%s\n' "$fonts" | rofi -dmenu -p "  Current: ${FONT_FAMILY}" -i)"
+        new_font="$(printf '%s\n' "$fonts" | haku-qml-menu -dmenu -p "  Current: ${FONT_FAMILY}" -i)"
         [[ -z "${new_font:-}" ]] && exit 0
         FONT_FAMILY="$new_font"
         ;;
 
     "  Change font size")
-        new_size="$(printf '%s\n' "$FONT_SIZE" | rofi -dmenu -p "  Current: ${FONT_SIZE}px" -theme-str 'entry { placeholder: "Type font size here"; }' -i)"
+        new_size="$(printf '%s\n' "$FONT_SIZE" | haku-qml-menu -dmenu -p "  Current: ${FONT_SIZE}px" -theme-str 'entry { placeholder: "Type font size here"; }' -i)"
         [[ -z "${new_size:-}" ]] && exit 0
         [[ "$new_size" =~ ^[0-9]+$ ]] || exit 0
         FONT_SIZE="$new_size"
@@ -69,7 +69,7 @@ case "$choice" in
 
     "  Change color")
         accent_choice="$(
-        cat <<'EOF' | rofi -dmenu -p "  Current: ${ACCENT}" -theme-str 'entry { placeholder: "Type hex color here #xxxxxx"; }' -i
+        cat <<'EOF' | haku-qml-menu -dmenu -p "  Current: ${ACCENT}" -theme-str 'entry { placeholder: "Type hex color here #xxxxxx"; }' -i
 Pick Color   [Press Enter]
 Slate Blue   #7288AE
 Green        #A2CB8B
