@@ -13,6 +13,10 @@ esac
 
 # Never inherit preview mode into a real lock request.
 unset HAKU_LOCK_PREVIEW
+if [[ ! -r /etc/pam.d/hyprlock ]]; then
+    printf 'Falta /etc/pam.d/hyprlock. Configura PAM antes de usar el bloqueo.\n' >&2
+    exit 1
+fi
 quickshell --no-duplicate --daemonize -p "$config"
 for ((attempt=0; attempt<50; attempt++)); do
     if [[ "$(quickshell ipc -p "$config" call haku-lock status 2>/dev/null || true)" == "secure" ]]; then

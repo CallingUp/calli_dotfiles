@@ -29,11 +29,10 @@ Oh My Posh también queda adaptado, pero no se cambia el motor del prompt.
 
 Vesktop conserva System24; su generador lee palette.conf directamente y el
 QuickCSS activo fue regenerado. Sigue importando System24 remoto como antes.
-Zen usa `chrome/haku-siamese.css` mediante userChrome.css en el perfil
-`5qbbdr9a.Default (release)`, con estilos de interfaz, sin userContent.css ni
-modificaciones a páginas web. Se conservan zen-themes.css y los mods.
-Zen requiere reiniciar para cargar el nuevo user.js/userChrome.css; no se
-reinició automáticamente. Los colores CSS de Zen aún son una salida estática.
+Zen usa `chrome/haku-siamese.css` mediante userChrome.css en el perfil elegido,
+con estilos de interfaz, sin userContent.css ni modificaciones a páginas web.
+Se conservan zen-themes.css y los mods. Reinicia Zen para cargar user.js y
+userChrome.css. Sus colores CSS aún son una salida estática.
 
 Excepción solicitada: SDDM y lock conservan el acento dinámico. El sincronizador
 de SDDM extrae un acento del wallpaper normalizado y lo guarda en su configuración
@@ -43,7 +42,6 @@ PAM, la política de intentos ni el bloqueo de sesión. El wallpaper sigue diná
 
 Pendiente: regeneración conjunta de salidas estáticas y comprobación visual de
 aplicaciones tras reiniciarlas.
-Steam queda fuera de la tematización: el usuario
-solicitó retirar Millennium y sus residuos se enviaron a la papelera.
+Steam queda fuera de la tematización: Millennium no es un requisito ni se instala.
 No se considera terminada la
 unificación de todas las aplicaciones por centralizar la shell.

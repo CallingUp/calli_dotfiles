@@ -1,7 +1,7 @@
 # Carrusel QML de wallpapers
 
 Isla negra pegada al borde izquierdo, esquinas derechas redondeadas, fuente
-compartida y acento dinámico observado mediante FileView. No reserva espacio
+compartida y paleta compartida observada mediante FileView. No reserva espacio
 ni altera el layout de Niri. Esc o clic fuera cierra.
 
 Siete tarjetas recicladas describen un arco; las vecinas se desplazan y cambian
@@ -21,7 +21,7 @@ Miniaturas de 420x300, generación secuencial y precarga limitada al entorno de
 la selección. Las imágenes originales solo se descargan al aplicar. El caché
 está en `~/.cache/haku-wallpaper-carousel/qml`. No se añade un servicio residente.
 
-Optimización QML (2026-10-13): las rutas de miniaturas locales ya guardadas se
+Optimización QML: las rutas de miniaturas locales ya guardadas se
 reciben con el catálogo, evitando procesos de consulta individuales. Solo se
 cargan imágenes dentro del viewport o a 64 px de entrar; se conservan las siete
 tarjetas, su geometría y precarga de rutas. En 1920×1080 son cinco imágenes
@@ -40,12 +40,8 @@ python3 -B ~/haku_shell/tools/haku-carousel-prototype/measure_full.py --modes qm
 ```
 
 La opción interna `optimizeThumbnails: false` en la petición permite medir la
-ruta anterior sin reiniciar Qt; el launcher normal usa la optimizada. En tres
-rondas con 40 pasos y caché disponible, los workers pasaron de 47 a 0. CPU del
-giro: 20.55 % frente a 20.33 % de un núcleo, diferencia demasiado pequeña para
-afirmar un ahorro significativo. La paginación impide atribuir el cambio de RAM
-residente a esta mejora. Detalles en
-`tools/haku-carousel-prototype/MEASUREMENTS-FULL-20261013.md`.
+ruta anterior sin reiniciar Qt; el launcher normal usa la optimizada.
+Consulta la [metodología de medición](../../../docs/PERFORMANCE.md) para comparar ambas rutas.
 
 El catálogo, búsqueda Wallhaven, miniaturas locales/web, aplicar y Papelera usan Rust mediante
 `scripts/bin/haku-wallpaper-worker`, con alternativa Python. HTTPS usa curl.
@@ -59,13 +55,6 @@ El selector intenta abrirlo bajo demanda dentro de la shell principal mediante
 conserva el modo independiente como alternativa cuando la shell no está disponible.
 El mismo atajo alterna abrir/cerrar en ambos modos.
 
-Medición local tras la integración (PSS, proceso principal, sin aplicar fondos):
-233,9 MiB cerrado, 248,9 MiB abierto, 248,7 MiB después de recorrer 40 tarjetas,
-235,7 MiB tras cerrar. Incremento abierto de aproximadamente 15 MiB, frente a
-143 MiB de incremento total en la prueba anterior con un proceso independiente.
-Son muestras de esta sesión, no garantías entre equipos; la recarga de Qt cambia
-las cachés y no permite atribuir diferencias de consumo base a esta modificación.
-
 Se mantienen `wallpaper-transition`, `wallpaper-theme-sync`, los archivos de
 generación/current_wallpaper y la animación del único backdrop. No se cambia
 su renderer ni la sincronización de SDDM.
@@ -75,5 +64,3 @@ Pruebas mock (sin aplicar fondos, descargar ni borrar):
 ```sh
 python3 ~/haku_shell/config/quickshell/haku-wallpaper/test_backend.py
 ```
-
-Respaldo GTK: `~/backups/wallpaper-carousel-qml-20261011/`.

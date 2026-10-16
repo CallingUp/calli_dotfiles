@@ -7,5 +7,6 @@ input="${1:-}"
 case "${input,,}" in
     *.gif|*.webp) exec python3 "$legacy" "$@";;
 esac
+if command -v haku-info >/dev/null 2>&1; then exec haku-info theme "$@"; fi
 if [[ -x "$binary" ]]; then exec "$binary" theme "$@"; fi
 exec python3 "$legacy" "$@"

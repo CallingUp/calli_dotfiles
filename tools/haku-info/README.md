@@ -23,10 +23,6 @@ Las pruebas comparan 200 histogramas aleatorios, grises/empates, una imagen
 local y los cuatro archivos del generador completo. Se ejecutan con HOME
 temporal: no modifican el tema activo.
 
-Medianas de 7 ejecuciones completas con `icon.png` (720×720), HOME temporal:
-Python 196 ms / Rust 152 ms (~22 % menos tiempo). Pico RSS reportado por
-`wait4`, incluidos descendientes: 27,81 / 25,61 MiB (~2,2 MiB menos).
-Es el pico de esta operación, no una suma de PSS ni ahorro de la shell en reposo.
 Se conserva la ruta de caché del generador anterior (`quickshell`); no se
 modifican aquí los otros lectores/escritores que usan `haku-minflair-niri`.
 
@@ -61,17 +57,9 @@ cargo test --locked --manifest-path ~/haku_shell/tools/haku-info/Cargo.toml
 python3 ~/haku_shell/tools/haku-info/test_worker.py
 ```
 
-Comparación real: mismos 92 atajos y mismos campos del sistema, excepto `wm`
-(ahora Niri en lugar de Hyprland; la UI ya mostraba Niri por su override).
 El helper omite la consulta inútil a hyprctl en Niri y usa el mismo fallback DRM.
 Pacman, lspci y lscpu siguen siendo herramientas externas cuando se necesitan,
 con límite de 8 s por comando; no se sustituyen consultas por datos inventados.
-
-Medianas de 10 ejecuciones en esta sesión:
-- Atajos: Python 40,99 ms; Rust 5,50 ms.
-- Información estática: Python 904,94 ms; Rust 783,91 ms.
-- Reproductores instalados: Python 162,26 ms; Rust 11,24 ms (15 ejecuciones),
-  mismos 7 reproductores en esta sesión.
 
 El trabajo de herramientas externas permanece; no se ha medido ahorro global
 de RAM/temperatura. Las pruebas no modifican configuración, paquetes ni hardware.

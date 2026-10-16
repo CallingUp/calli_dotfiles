@@ -31,5 +31,5 @@ case "$1" in
 esac
 
 # Controls work even if the bar is stopped; never start a notification daemon.
-quickshell ipc -p /home/calli/haku_shell/config/quickshell/minflair-niri/niri-preview.qml \
+quickshell ipc -p "$HOME/haku_shell/config/quickshell/minflair-niri/niri-preview.qml" \
     call haku-osd displayOsd "$label" "$level" "$icon" >/dev/null 2>&1 || true

@@ -1,11 +1,7 @@
-# Waybar · Haku Neon
+# Waybar (archivo histórico)
 
-La única barra activa es `neon`:
+Estos diseños se conservan como referencia. La interfaz actual usa QuickShell;
+el instalador no activa ni despliega esta configuración de Waybar.
 
-- `config` → `neon/config`
-- `style.css` → `neon/style.css`
-- `module/`: módulos JSON compartidos por la barra activa.
-
-Los diseños anteriores están versionados en `~/backups/haku-shell/`. El Waybar
-de pruebas usa el source parcheado de `~/build/waybar-hover/Waybar` hasta que se
-instale el paquete definitivo.
+Consulta la [documentación pública](../../docs/README.md) para instalar y usar
+la shell actual. Los módulos históricos pueden requerir adaptación manual.

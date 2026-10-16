@@ -1,9 +1,11 @@
 # Paquetes
 
-`core-packages.txt` enumera las dependencias de usuario de la shell. Revísalo antes de instalarlo en otra máquina:
+La lista vigente por familia está en `../installer/packages.json` y la usa
+`../install.sh --dependencies`. `core-packages.txt` es histórica y contiene
+Waybar/Noctalia: **no la uses para instalar la shell actual**.
 
 ```bash
-yay -S --needed $(tr '\n' ' ' < packages/core-packages.txt)
+./install.sh --dry-run --dependencies
 ```
 
-Noctalia y Waybar con parches propios no se instalan desde esa lista; sus cambios fuente están en `../patches/`.
+Consulta `../docs/INSTALL.md`. Noctalia, Waybar y sus parches no se instalan.

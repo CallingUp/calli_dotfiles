@@ -73,7 +73,5 @@ cargo test --locked --manifest-path ~/haku_shell/tools/haku-connectivity/Cargo.t
 python3 ~/haku_shell/tools/haku-connectivity/test_worker.py
 ```
 
-Las pruebas usan herramientas falsas y no modifican conectividad. Comprobación
-real de solo lectura: mismo JSON de estado que Python para Wi-Fi y Bluetooth.
-Medianas de 5 consultas en esta sesión: Wi-Fi 63,7→27,1 ms; Bluetooth
-74,1→4,9 ms. No demuestra una reducción de temperatura ni de RAM en reposo.
+Las pruebas usan herramientas falsas y no modifican conectividad.
+Consulta la [metodología de medición](../../docs/PERFORMANCE.md) para evaluar el consumo en tu equipo.

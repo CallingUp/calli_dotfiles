@@ -8,7 +8,7 @@ HAKU_LOCK_PREVIEW=1 quickshell -p ~/haku_shell/config/quickshell/haku-lock/shell
 
 Esc cierra la vista previa. El modo normal usa WlSessionLock y PAM con
 `/etc/pam.d/hyprlock`. Solo PamResult.Success libera la sesión; no existe
-IPC de desbloqueo. Autenticación real validada por el usuario el 2026-10-11.
+IPC de desbloqueo.
 
 Prueba real, después de guardar el trabajo (sin otro bloqueo activo):
 
