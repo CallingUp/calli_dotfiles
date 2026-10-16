@@ -39,6 +39,5 @@ when its backend is unavailable.
 Do not run a second notification server alongside Haku. System authentication,
 network and audio services must be configured by the distribution.
 
-See [installation](../../../docs/INSTALL.md),
-[hover controls](../../../docs/edge-bar.md) and
-[performance methodology](../../../docs/PERFORMANCE.md).
+See [installation](../../../docs/INSTALL.md) and
+[hover controls](../../../docs/edge-bar.md).

@@ -41,7 +41,6 @@ python3 -B ~/haku_shell/tools/haku-carousel-prototype/measure_full.py --modes qm
 
 La opción interna `optimizeThumbnails: false` en la petición permite medir la
 ruta anterior sin reiniciar Qt; el launcher normal usa la optimizada.
-Consulta la [metodología de medición](../../../docs/PERFORMANCE.md) para comparar ambas rutas.
 
 El catálogo, búsqueda Wallhaven, miniaturas locales/web, aplicar y Papelera usan Rust mediante
 `scripts/bin/haku-wallpaper-worker`, con alternativa Python. HTTPS usa curl.

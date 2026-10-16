@@ -23,7 +23,7 @@ The QML launcher falls back to the original Python helper on fresh clones withou
 a compiled binary. It does not replace Python's full process-list API used by
 other legacy components. No binary/build directory is tracked in Git.
 
-Resource usage depends on the system. See [measurement methodology](../../docs/PERFORMANCE.md).
+Resource usage depends on the system.
 
 Related UI changes bound album cover decoding to display resolution, disable
 unneeded cover mipmaps, and stop hidden typewriter/idle-icon/clock animations.
