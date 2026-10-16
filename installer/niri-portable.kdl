@@ -1,0 +1,50 @@
+// Upstream Niri: no fork-only actions or hardware-specific outputs.
+input {
+    keyboard { xkb { layout "@KEYBOARD@"; }; }
+    touchpad { tap; natural-scroll; }
+}
+layout {
+    gaps 12
+    focus-ring { width 2; active-color "#B99573"; inactive-color "#705542"; }
+    default-column-width { proportion 0.5; }
+}
+prefer-no-csd
+spawn-at-startup "@HOME@/.local/bin/awww-daemon" "-n" "awww-daemon-backdrop"
+spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
+spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
+spawn-sh-at-startup "sleep 1; '@HOME@/.local/bin/haku-wallpaper-restore'"
+binds {
+    Mod+Return { spawn "quickshell" "ipc" "-p" "@HOME@/haku_shell/config/quickshell/minflair-niri/niri-preview.qml" "call" "haku-launcher" "toggleLauncher"; }
+    Mod+T { spawn "kitty"; }
+    Mod+Q { close-window; }
+    Mod+Left { spawn "@HOME@/.local/bin/haku-waybar-visibility" "previous"; }
+    Mod+Right { spawn "@HOME@/.local/bin/haku-waybar-visibility" "next"; }
+    Mod+Up { spawn "@HOME@/.local/bin/haku-waybar-visibility" "hide"; }
+    Mod+Down { spawn "@HOME@/.local/bin/haku-waybar-visibility" "show"; }
+    Mod+Comma { spawn "@HOME@/.local/bin/wallpaper-carousel"; }
+    Mod+Period { spawn "quickshell" "ipc" "-p" "@HOME@/haku_shell/config/quickshell/minflair-niri/niri-preview.qml" "call" "haku-activity" "toggle"; }
+    Mod+N { spawn "quickshell" "ipc" "-p" "@HOME@/haku_shell/config/quickshell/minflair-niri/niri-preview.qml" "call" "haku-controls" "toggleControls"; }
+    Mod+V { spawn "@HOME@/.local/bin/haku-clipboard"; }
+    Mod+Ctrl+L { spawn "@HOME@/.local/bin/haku-lock"; }
+    Mod+O repeat=false { toggle-overview; }
+    Mod+H { focus-column-left; }
+    Mod+J { focus-window-down; }
+    Mod+K { focus-window-up; }
+    Mod+L { focus-column-right; }
+    Mod+Shift+H { move-column-left; }
+    Mod+Shift+L { move-column-right; }
+    Mod+Ctrl+A { consume-or-expel-window-left; }
+    Mod+Ctrl+D { consume-or-expel-window-right; }
+    Mod+F { fullscreen-window; }
+    Mod+M { maximize-column; }
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+Shift+E { quit; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "@HOME@/.local/bin/haku-osd-control" "volume-up"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "@HOME@/.local/bin/haku-osd-control" "volume-down"; }
+    XF86AudioMute allow-when-locked=true { spawn "@HOME@/.local/bin/haku-osd-control" "volume-mute"; }
+    XF86MonBrightnessUp allow-when-locked=true { spawn "@HOME@/.local/bin/haku-osd-control" "brightness-up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "@HOME@/.local/bin/haku-osd-control" "brightness-down"; }
+}
+window-rule { geometry-corner-radius 10; clip-to-geometry true; }

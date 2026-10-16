@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Portable transitions already persist the login accent. Desktop colors are fixed.
+# Preserve the worker's two-argument API without starting a second transition.
+set -euo pipefail
+exit 0

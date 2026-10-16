@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Same three-argument contract as the personal transition renderer.
+set -euo pipefail
+image="${2:?missing target wallpaper}"
+state="$HOME/.local/state/haku_theme/current_wallpaper"
+if [[ -r "$state" ]]; then
+    read -r current < "$state"
+    [[ "$current" == "$(realpath -- "$image")" ]] || exit 0
+fi
+exec "$HOME/.local/bin/set-wallpaper" "$image"

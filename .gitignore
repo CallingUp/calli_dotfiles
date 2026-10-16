@@ -4,6 +4,10 @@
 build/
 secrets/
 private/
+# Personal learning guides and machine-specific benchmark journals (kept locally).
+/docs/[0-9][0-9]-*.md
+/config/quickshell/minflair-niri/RUNTIME-OPTIMIZATION.md
+/tools/haku-carousel-prototype/MEASUREMENTS-FULL-20261013.md
 __pycache__/
 *.pyc
 tools/haku-metrics/target/

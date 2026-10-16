@@ -8,6 +8,7 @@ Item {
     id: updateService
 
     property bool isSystemUpdating: false
+    readonly property bool archPackagesAvailable: Quickshell.env("HAKU_PACKAGE_BACKEND") !== "disabled"
     property bool packageManagerChecksEnabled: true
     property int packageManagerCheckInterval: 3.6e+06
     property string pacmanUpdatesCount: "..."
@@ -37,6 +38,7 @@ Item {
         }
     }
     onCheckUpdates: {
+        if (!archPackagesAvailable) return;
         pacmanProc.running = false;
         pacmanProc.running = true;
         aurProc.running = false;
@@ -82,7 +84,7 @@ Item {
         id: lockCheckTimer
 
         interval: updateService.isSystemUpdating || AppState.activeWidget === "packageManager" ? 1500 : 10000
-        running: updateService.lockCheckNeeded
+        running: updateService.archPackagesAvailable && updateService.lockCheckNeeded
         repeat: true
         triggeredOnStart: true
         onTriggered: {
@@ -94,7 +96,7 @@ Item {
         id: hourlyUpdateTimer
 
         interval: updateService.packageManagerCheckInterval
-        running: updateService.packageManagerChecksEnabled
+        running: updateService.archPackagesAvailable && updateService.packageManagerChecksEnabled
         repeat: true
         triggeredOnStart: true
         onTriggered: {
@@ -111,6 +113,7 @@ Item {
         interval: 800
         repeat: false
         onTriggered: {
+            if (!updateService.archPackagesAvailable) return;
             pacmanProc.running = false;
             pacmanProc.running = true;
             aurProc.running = false;

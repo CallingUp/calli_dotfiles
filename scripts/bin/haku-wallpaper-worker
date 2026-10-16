@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 binary="$HOME/haku_shell/tools/haku-wallpaper/target/release/haku-wallpaper"
+if command -v haku-wallpaper >/dev/null 2>&1; then exec haku-wallpaper "$@"; fi
 if [[ -x "$binary" ]]; then
     exec "$binary" "$@"
 fi

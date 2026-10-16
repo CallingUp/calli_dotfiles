@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Portable wallpaper path: no SDDM or personal renderer.
+set -euo pipefail
+image="${1:?Uso: set-wallpaper /ruta/al/fondo}"
+[[ -f "$image" ]] || { echo "No existe el wallpaper" >&2; exit 1; }
+state="$HOME/.local/state/haku_theme"
+mkdir -p "$state"
+"$HOME/.local/bin/awww" img -n awww-daemon-backdrop "$image" --transition-type fade --transition-duration 0.35
+realpath -- "$image" > "$state/current_wallpaper"
+accent=$(python3 "$HOME/.local/bin/get_accent_color.py" "$image" 2>/dev/null || true)
+[[ "$accent" =~ ^#[0-9A-Fa-f]{6}$ ]] || accent="#B99573"
+printf '@define-color accent_color %s;\n' "$accent" > "$state/login-colors.css"

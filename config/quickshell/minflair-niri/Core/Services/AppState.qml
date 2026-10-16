@@ -131,6 +131,10 @@ Item {
     }
 
     function openWidgetInternal(widgetId) {
+        if (widgetId === "packageManager" && Quickshell.env("HAKU_PACKAGE_BACKEND") === "disabled") {
+            console.warn("Haku: el gestor integrado requiere Arch; usa el gestor de tu distribución.");
+            return;
+        }
         if (!widgetId || isStandaloneWindow(widgetId))
             return ;
 

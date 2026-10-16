@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 binary="$HOME/haku_shell/tools/haku-metrics/target/release/haku-metrics"
+if command -v haku-metrics >/dev/null 2>&1; then exec haku-metrics "${1:-4000}"; fi
 if [[ -x "$binary" ]]; then
     exec "$binary" "${1:-4000}"
 fi

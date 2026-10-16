@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+state="$HOME/.local/state/haku_theme/current_wallpaper"
+[[ -r "$state" ]] || exit 0
+read -r image < "$state"
+[[ -f "$image" ]] || exit 0
+for attempt in {1..20}; do
+    if "$HOME/.local/bin/awww" query -n awww-daemon-backdrop >/dev/null 2>&1; then
+        exec "$HOME/.local/bin/set-wallpaper" "$image"
+    fi
+    sleep 0.25
+done

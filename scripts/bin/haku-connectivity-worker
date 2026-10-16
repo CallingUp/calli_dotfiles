@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 binary="$HOME/haku_shell/tools/haku-connectivity/target/release/haku-connectivity"
+if command -v haku-connectivity >/dev/null 2>&1; then exec haku-connectivity "$@"; fi
 if [[ -x "$binary" ]]; then exec "$binary" "$@"; fi
 if [[ "${1:-}" == bluetooth && "${2:-}" == pair ]]; then
     shift 2

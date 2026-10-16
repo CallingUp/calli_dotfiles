@@ -43,7 +43,6 @@ bash ~/haku_shell/scripts/bin/haku-carousel-mode qml
 ```
 
 No cambian los keybinds, no hay daemon permanente y QML no fue borrado/modificado.
-Respaldo original: `~/.local/state/haku-backups/carousel-before-rust-20261013/`.
 Si faltan los binarios necesarios, el launcher puede volver a la ruta QML/Python.
 
 ```sh

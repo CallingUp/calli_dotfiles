@@ -6,6 +6,7 @@ if [[ "${1:-}" == packages && "${2:-}" == --* ]]; then
     exec python3 "$HOME/haku_shell/config/quickshell/minflair-niri/Modules/PackageManager/scripts/search_packages.py" "$@"
 fi
 if [[ -x "$binary" ]]; then exec "$binary" "$@"; fi
+if command -v haku-info >/dev/null 2>&1; then exec haku-info "$@"; fi
 case "${1:-}" in
     system) exec python3 "$HOME/haku_shell/config/quickshell/minflair-niri/Scripts/system/get_system_info.py";;
     players) exec python3 "$HOME/haku_shell/config/quickshell/minflair-niri/Modules/Music/scripts/get_music_players.py";;

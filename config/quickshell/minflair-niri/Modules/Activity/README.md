@@ -26,5 +26,3 @@ cargan únicamente mientras el panel está visible.
   OutCubic de 160 ms con los paneles laterales. El morph del launcher se conserva.
 - El carrusel ya incluye contador, marca ACTUAL y precarga de siete tarjetas;
   se conserva su comportamiento y no se inicia una segunda caché.
-
-Backup anterior al pulido: `~/backups/shell-polish-20261011/`.
