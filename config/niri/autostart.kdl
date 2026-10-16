@@ -6,7 +6,6 @@
 
 // Desktop UI runs through haku-quickshell.service; lock is on demand.
 spawn-at-startup "haku-keyring-unlock"
-spawn-sh-at-startup "sleep 2 && haku-ssh-unlock"
 
 // Wallpapers
 spawn-at-startup "awww-daemon" "-n" "awww-daemon-backdrop"

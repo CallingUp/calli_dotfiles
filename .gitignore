@@ -4,6 +4,14 @@
 build/
 secrets/
 private/
+backups/
+*.before-*
+# Personal shell state and access aliases stay local, never public.
+/config/fish/config.fish
+/config/fish/fish_variables
+/config/fish/textoxd
+/config/fish/shortcuts
+/scripts/bin/haku-ssh-unlock
 # Personal learning guides and machine-specific benchmark journals (kept locally).
 /docs/[0-9][0-9]-*.md
 /config/quickshell/minflair-niri/RUNTIME-OPTIMIZATION.md
