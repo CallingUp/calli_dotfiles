@@ -3,7 +3,6 @@
 - [Instalación multiplataforma, requisitos y restauración](INSTALL.md).
 - [Islas y controles por hover](edge-bar.md).
 - [Paleta fija y colores de las pantallas de acceso](fixed-palette.md).
-- [Medición y diagnóstico de rendimiento](PERFORMANCE.md).
 - [Configuración portable y personal de Niri](../config/niri/README.md).
 - [Port de Minflair, alcance y atribución](../config/quickshell/minflair-niri/PORT.md).
 - [Bloqueo independiente y prueba segura](../config/quickshell/haku-lock/README.md).

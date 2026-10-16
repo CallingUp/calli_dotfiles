@@ -187,7 +187,6 @@ Consulta [los límites de restauración](docs/INSTALL.md#restaurar-configuracion
 | --- | --- |
 | [docs/INSTALL.md](docs/INSTALL.md) | Instalación detallada, seguridad, NixOS y pruebas |
 | [docs/README.md](docs/README.md) | Índice de guías públicas |
-| [docs/PERFORMANCE.md](docs/PERFORMANCE.md) | Mediciones reproducibles |
 | `config/` | Configuraciones y componentes QML |
 | `scripts/bin/` | Comandos y wrappers |
 | `tools/` | Helpers Rust y pruebas |

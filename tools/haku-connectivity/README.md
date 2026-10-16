@@ -74,4 +74,3 @@ python3 ~/haku_shell/tools/haku-connectivity/test_worker.py
 ```
 
 Las pruebas usan herramientas falsas y no modifican conectividad.
-Consulta la [metodología de medición](../../docs/PERFORMANCE.md) para evaluar el consumo en tu equipo.

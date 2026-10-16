@@ -28,4 +28,3 @@ Use a stable workload, verify actual window visibility and count the shared
 QuickShell process together with the frontend and its workers. Report PSS and
 SwapPss separately rather than summing duplicated RSS.
 
-See [public performance guidance](../../docs/PERFORMANCE.md).
