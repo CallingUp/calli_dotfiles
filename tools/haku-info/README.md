@@ -1,5 +1,11 @@
 # Información y atajos Rust
 
+[Documentación](../../docs/README.md) · [Instalación](../../docs/INSTALL.md)
+
+El asistente compila este helper. Sus subcomandos se ejecutan bajo demanda;
+la búsqueda de paquetes necesita Arch y `yay`, no disponible automáticamente
+en otras distribuciones.
+
 ## Paleta de wallpaper
 
 `haku-info theme IMAGE [true|false]` sustituye el generador Python para imágenes
@@ -13,7 +19,8 @@ se convierten en una paleta inventada; las llamadas tienen límite de 30 s.
 `scripts/bin/haku-theme-worker` selecciona Rust y mantiene el generador anterior
 como respaldo si no hay binario. GIF/WebP conservan Python/GdkPixbuf para no
 alterar sus fotogramas/JPEG intermedios. La aplicación de temas sigue en Python.
-Esto solo afecta cambios de wallpaper con generación dinámica, no el reposo.
+El portable usa una paleta fija y su adaptador de wallpaper; este generador
+se conserva para integraciones dinámicas opcionales, no como requisito.
 
 ```sh
 python3 -B ~/haku_shell/tools/haku-info/test_theme.py

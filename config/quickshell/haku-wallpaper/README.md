@@ -1,8 +1,11 @@
 # Carrusel QML de wallpapers
 
+[Documentación](../../../docs/README.md) · [Instalación](../../../docs/INSTALL.md)
+
 Isla negra pegada al borde izquierdo, esquinas derechas redondeadas, fuente
 compartida y paleta compartida observada mediante FileView. No reserva espacio
-ni altera el layout de Niri. Esc o clic fuera cierra.
+ni altera el layout de Niri. `Mod+,` alterna abrir/cerrar en el perfil portable.
+Esc o clic fuera también cierra. Añade imágenes a `~/Pictures/Wallpapers`.
 
 Siete tarjetas recicladas describen un arco; las vecinas se desplazan y cambian
 de escala/opacidad alrededor del centro. Una sola posición animada (210ms,
@@ -29,7 +32,7 @@ activas en reposo, frente a siete anteriormente. `Image.cache: false` se mantien
 para no acumular una caché global sin límite. El mapa de rutas no se reemplaza
 si no cambió. El worker sigue generando caché faltante y las miniaturas web.
 
-La animación conserva 210 ms OutCubic y la entrada 160 ms. No se cambian diseño,
+La navegación usa 210 ms OutCubic, la entrada 160 ms y la salida 120 ms InCubic. No se cambian diseño,
 fuente, acento, controles ni comportamiento de aplicar/Papelera. La prueba real
 incluye navegación rápida, límites de caché, recuperación si falta un archivo,
 compatibilidad con catálogo sin metadatos nuevos y cierre. No aplica fondos.
@@ -44,9 +47,10 @@ ruta anterior sin reiniciar Qt; el launcher normal usa la optimizada.
 
 El catálogo, búsqueda Wallhaven, miniaturas locales/web, aplicar y Papelera usan Rust mediante
 `scripts/bin/haku-wallpaper-worker`, con alternativa Python. HTTPS usa curl.
-Se conservan los scripts existentes de transición y sincronización. Python queda
+En el perfil portable, los scripts de transición y sincronización son los
+adaptadores incluidos en `installer/`; no se integra SDDM automáticamente. Python queda
 como alternativa si falta el binario; el launcher normal también es Rust. Detalles y compilación:
-`tools/haku-wallpaper/README.md`.
+[worker de wallpapers](../../../tools/haku-wallpaper/README.md).
 
 El componente vive en `../minflair-niri/Modules/WallpaperCarousel/Carousel.qml`.
 El selector intenta abrirlo bajo demanda dentro de la shell principal mediante
@@ -54,9 +58,9 @@ El selector intenta abrirlo bajo demanda dentro de la shell principal mediante
 conserva el modo independiente como alternativa cuando la shell no está disponible.
 El mismo atajo alterna abrir/cerrar en ambos modos.
 
-Se mantienen `wallpaper-transition`, `wallpaper-theme-sync`, los archivos de
-generación/current_wallpaper y la animación del único backdrop. No se cambia
-su renderer ni la sincronización de SDDM.
+El backend conserva el contrato `wallpaper-transition`, `wallpaper-theme-sync`
+y los archivos de estado. En el portable el fondo usa fade de awww/swww;
+el renderer avanzado y la sincronización de SDDM requieren integración manual.
 
 Pruebas mock (sin aplicar fondos, descargar ni borrar):
 

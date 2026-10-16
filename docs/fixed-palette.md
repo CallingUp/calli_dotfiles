@@ -1,15 +1,22 @@
-# Haku Siamese: paleta fija
+# Paleta siamesa de calli_dotfiles
+
+[Documentación](../docs/README.md) · [Instalación](../docs/INSTALL.md)
 
 Fuente activa: `~/.config/haku/palette.conf`.
 Copia distribuida: `config/haku/palette.conf`.
+
+El asistente `./install.sh` despliega la paleta y los temas de Kitty, Alacritty,
+GTK y Qt. En modo avanzado esas aplicaciones se incluyen con `--apps`.
+Zen, Vesktop, Neovim, prompt y SDDM requieren integración manual: los ejemplos
+siguientes describen las configuraciones del repo, no pasos aplicados a todos
+los equipos por el instalador.
 
 Negro #000000, texto crema #E8DCC8, acento café #B99573,
 selección/foco claro #D7B894, café oscuro #705542.
 
 QuickShell observa ese archivo y no carga esquemas antiguos ni ejecuta sus
 aplicadores dinámicos en modo fijo. Cambiar wallpaper no extrae colores:
-`set-wallpaper` lee los acentos de esa paleta. El renderizado y las animaciones
-del wallpaper no se alteran. Los archivos generados para otros consumidores
+`set-wallpaper` lee los acentos de esa paleta. El perfil portable usa fade de awww/swww; no instala el renderer avanzado. Los archivos generados para otros consumidores
 siguen siendo compatibles con sus formatos anteriores.
 
 GTK 3/4 importan `~/.config/haku/palette.css` (derivada de palette.conf).
@@ -28,17 +35,18 @@ y actualiza resaltado/prompt sin ejecutar sed/head en cada prompt. El archivo
 Oh My Posh también queda adaptado, pero no se cambia el motor del prompt.
 
 Vesktop conserva System24; su generador lee palette.conf directamente y el
-QuickCSS activo fue regenerado. Sigue importando System24 remoto como antes.
+QuickCSS se integra manualmente en el perfil de la aplicación. Sigue importando System24 remoto como antes.
 Zen usa `chrome/haku-siamese.css` mediante userChrome.css en el perfil elegido,
 con estilos de interfaz, sin userContent.css ni modificaciones a páginas web.
 Se conservan zen-themes.css y los mods. Reinicia Zen para cargar user.js y
 userChrome.css. Sus colores CSS aún son una salida estática.
 
-Excepción solicitada: SDDM y lock conservan el acento dinámico. El sincronizador
+SDDM y lock pueden conservar el acento dinámico. El sincronizador
 de SDDM extrae un acento del wallpaper normalizado y lo guarda en su configuración
 y en `~/.local/state/haku_theme/login-colors.css`. El lock lee ese archivo,
 independiente de colors.css y de la paleta fija del escritorio. No se modifica
-PAM, la política de intentos ni el bloqueo de sesión. El wallpaper sigue dinámico.
+PAM, la política de intentos ni el bloqueo de sesión. El wallpaper sigue siendo seleccionable. En el portable, `set-wallpaper`
+actualiza el acento del lock sin modificar SDDM.
 
 Pendiente: regeneración conjunta de salidas estáticas y comprobación visual de
 aplicaciones tras reiniciarlas.

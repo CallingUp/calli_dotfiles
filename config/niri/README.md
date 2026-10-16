@@ -1,13 +1,21 @@
-# Niri y Haku
+# Niri en calli_dotfiles
+
+[Documentación](../../docs/README.md) · [Instalación](../../docs/INSTALL.md)
+
+Ejecuta `./install.sh` desde la raíz: el asistente elige el teclado y, en Arch,
+permite instalar Niri normal o el fork SHORiN. En ambos casos usa el perfil
+portable por defecto. Elegir un compositor y elegir un perfil son cosas distintas.
 
 El instalador ofrece dos perfiles:
 
 - **Portable**: `installer/niri-portable.kdl`, para Niri estándar reciente,
-  con detección automática de pantallas y teclado configurable.
+  también compatible con SHORiN, con detección automática de pantallas y teclado configurable.
 - **Personal**: los KDL de esta carpeta, como ejemplo avanzado. Necesitan el
   fork SHORiN; revisa hardware, teclado, reglas y atajos antes de usarlos.
 
-No copies el perfil personal sobre otro equipo sin revisarlo. El instalador
+La opción avanzada `--shorin` instala el paquete del fork solo en Arch/derivados;
+`--profile personal` selecciona los KDL avanzados, pero no instala por sí misma
+el compositor. No copies el perfil personal sobre otro equipo sin revisarlo. El instalador
 valida el KDL antes de reemplazar archivos y adapta las rutas del usuario.
 
 ## Módulos del perfil avanzado

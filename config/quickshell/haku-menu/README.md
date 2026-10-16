@@ -1,5 +1,7 @@
 # Selectores QML
 
+[Documentación](../../../docs/README.md) · [Instalación](../../../docs/INSTALL.md)
+
 `haku-qml-menu` sustituye las llamadas locales a Rofi conservando los scripts
 que realizan cada acción. Se inicia solo al abrir un menú y termina al elegir
 o cancelar; no hay otro demonio ni sondeo continuo.
@@ -14,7 +16,7 @@ La compatibilidad cubre los argumentos usados por los scripts migrados, no
 pretende reproducir toda la API de Rofi. Los estilos `.rasi` se ignoran: el
 diseño compartido está en `shell.qml`. Los metadatos `icon` se muestran en
 las filas; `info`/`data` se devuelven a los modos de script. Drun/run abre el
-launcher existente. El carrusel GTK actual no se sustituye aquí: no era Rofi.
+launcher existente. El selector de wallpaper actual es un carrusel QML independiente de este puente.
 
 Los datos temporales, incluido el historial del portapapeles, se guardan en
 un directorio privado 0700 de XDG_RUNTIME_DIR y se eliminan al cerrar. No se

@@ -1,5 +1,7 @@
 # Experimental Rust / Iced carousel
 
+[Documentación](../../docs/README.md) · [Instalación](../../docs/INSTALL.md)
+
 This directory contains experimental alternatives to the active QML carousel.
 They are not built or enabled by the portable installer. Rust is not assumed
 to use less memory or CPU than QML.
@@ -17,14 +19,8 @@ The complete layer-shell implementation and its build options are documented
 in [README-FULL.md](README-FULL.md). Keep QML as the normal backend unless you
 explicitly want to test the experimental implementation.
 
-## Measurements
+## Scope
 
-The scripts in this directory can compare navigation, idle and total resident
-memory. They open windows and may move carousel selection; read each script
-before executing it. Do not infer power or temperature savings from a short
-CPU/RAM sample.
-
-Use a stable workload, verify actual window visibility and count the shared
-QuickShell process together with the frontend and its workers. Report PSS and
-SwapPss separately rather than summing duplicated RSS.
+The test utilities may open windows and change carousel selection. Review each
+script before running it. They are not part of the guided installation.
 

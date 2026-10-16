@@ -6,7 +6,7 @@ Mis dotfiles y escritorio para **Niri**, construidos con **QuickShell** y helper
 
 Islas por hover · Wallpapers · Música · Notificaciones · Launcher · Lock
 
-[Instalación](#instalación) · [Atajos](#atajos) · [Documentación](docs/README.md) · [Restauración](#restauración)
+[Instalación](#instalación) · [Atajos](#atajos) · [Guías y componentes](docs/README.md) · [Restauración](#restauración)
 
 </div>
 

@@ -1,4 +1,9 @@
-# Barra superior por hover
+# Islas QuickShell de calli_dotfiles
+
+[Documentación](../docs/README.md) · [Instalación](../docs/INSTALL.md)
+
+Instala con `./install.sh`; no hace falta instalar Waybar. Estos atajos
+corresponden al perfil portable, salvo indicación contraria.
 
 La barra QuickShell muestra tres líneas de acento: estadísticas junto al reloj
 central y bandeja de aplicaciones a su derecha, todas en un grupo centrado con
@@ -19,7 +24,8 @@ estilos y funciones existentes.
 - Mod + Izquierda/Derecha conserva acceso alternativo a reloj/estadísticas.
 - El worker de estadísticas se detiene al ocultar su isla, salvo que otro panel lo necesite.
 
-Implementación: `config/quickshell/minflair-niri/niri-preview.qml`;
+Implementación (rutas relativas a la raíz del repositorio):
+`config/quickshell/minflair-niri/niri-preview.qml`;
 controlador y líneas en `Modules/Bar/Styles/Island/EdgeReveal.qml` y
 `EdgeHandle.qml`. El controlador usa eventos y temporizadores de una sola
 ejecución, sin sondeo continuo ni proceso adicional.

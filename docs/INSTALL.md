@@ -1,12 +1,14 @@
-# Instalación multiplataforma
+# Instalación de calli_dotfiles
+
+[Documentación](../docs/README.md) · [Instalación](../docs/INSTALL.md)
 
 ## Estado y límites
 
 Primera implementación, no certificada en todas las distribuciones. Probada
 localmente: vista previa, despliegue/restauración en directorios temporales,
 validación KDL con Niri y pruebas QML. Debian/Ubuntu no se han instalado en VM;
-NixOS todavía necesita evaluación/build real porque el equipo de desarrollo
-no tiene Nix. No presentar estos módulos como probados en producción.
+NixOS todavía necesita evaluación y build reales. Sus módulos son experimentales,
+no una instalación certificada para producción.
 
 Requisitos: Linux, sesión Niri reciente, QuickShell 0.3.x compatible con su Qt,
 **Qt >= 6.9**, Python 3.9+ para el instalador y systemd de usuario. Los helpers
@@ -146,7 +148,7 @@ en tu PATH de sesión. El servicio de la shell tiene su PATH explícito.
 PipeWire/WirePlumber, NetworkManager y Bluetooth deben estar configurados por
 tu distribución. El instalador no reemplaza PulseAudio, no apaga otros servicios
 ni configura interfaces de red. No actives dos servidores de notificaciones
-simultáneos: Haku usa org.freedesktop.Notifications.
+simultáneos: calli_dotfiles usa org.freedesktop.Notifications.
 
 **Bloqueo:** antes de usar Mod+Ctrl+L, instala/configura un servicio PAM válido
 `/etc/pam.d/hyprlock` siguiendo tu distribución (por ejemplo, el proporcionado
@@ -230,8 +232,10 @@ Estos módulos son una implementación inicial, no un build NixOS ya verificado.
 
 ```sh
 python3 -m unittest discover -s tests -p test_installer.py -v
+bash -n install.sh installer/niri-shorin/PKGBUILD
 QT_QPA_PLATFORM=offscreen /usr/lib/qt6/bin/qmltestrunner -input tests/quickshell
 ./install.sh --dry-run --distro arch --dependencies
+./install.sh --dry-run --distro arch --dependencies --build --shorin
 ./install.sh --dry-run --distro debian --dependencies
 ./install.sh --dry-run --distro ubuntu --dependencies
 ./install.sh --dry-run --distro nixos

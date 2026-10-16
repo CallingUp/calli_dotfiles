@@ -1,5 +1,7 @@
 # Minflair → Niri
 
+[Documentación](../../../docs/README.md) · [Instalación](../../../docs/INSTALL.md)
+
 Upstream: https://github.com/t4lentles5/minflair
 Imported revision: a5d8a4455d80fbac71f270d5aec5cff6e0159066
 Original code is distributed under GPL-3.0; see LICENSE.
@@ -24,13 +26,16 @@ It does not apply Hyprland compositor settings.
 - Independent session lock using WlSessionLock and PAM.
 - Read-only and action-specific IPC targets documented with their components.
 
-Desktop colors use the fixed Haku palette. Login/lock accents have a separate
+Desktop colors use the fixed Siamese palette of calli_dotfiles. Login/lock accents have a separate
 wallpaper-derived source. Noctalia, Cava and the legacy Waybar are not required
 by the active interface.
 
 ## Distribution boundaries
 
-The portable installer targets upstream Niri and uses a fade wallpaper path.
+The guided installer (`./install.sh`) deploys the portable Niri profile and
+uses a fade wallpaper path. On Arch, it offers upstream Niri or a packaged
+SHORiN build pinned by `installer/niri-shorin/PKGBUILD`. Selecting the fork does
+not enable hardware-specific settings or the personal profile.
 Native recent-window previews, grid overview, magnifier and custom compositor
 effects depend on the selected Niri version/fork and are not promised by the
 portable profile. The package-manager widget is Arch-specific and disabled

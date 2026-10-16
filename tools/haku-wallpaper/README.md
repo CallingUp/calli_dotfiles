@@ -1,5 +1,7 @@
 # Worker nativo del carrusel
 
+[Documentación](../../docs/README.md) · [Instalación](../../docs/INSTALL.md)
+
 Backend bajo demanda, sin daemon. Rust implementa el catálogo local,
 búsqueda Wallhaven, validación de rutas y miniaturas locales/web; reutiliza los hashes SHA-256 existentes,
 ImageMagick, geometría 420×300, caché atómica y límite de 20 segundos por conversión.
@@ -10,7 +12,8 @@ compatible con el backend anterior. Aplicar conserva `wallpaper_generation`,
 `current_wallpaper`, las cuatro direcciones y los scripts `wallpaper-transition`
 y `wallpaper-theme-sync` en sesiones independientes. Si el fondo ya está activo,
 no regenera el estado ni lanza animación. La Papelera usa gio, nunca borrado directo,
-y rechaza el fondo activo. No se cambian los scripts de backdrop/colores/SDDM.
+y rechaza el fondo activo. El portable usa adaptadores de `installer/`: fade y estado del lock, sin
+modificar SDDM ni desplegar el renderer avanzado.
 El filtrado interactivo permanece en QML, sin procesos externos por pulsación.
 
 El catálogo incluye `cachedThumbnail`: nombre SHA-256 del JPEG ya existente, o
@@ -46,7 +49,3 @@ python3 ~/haku_shell/config/quickshell/haku-wallpaper/test_backend.py
 Las pruebas usan galerías temporales y acciones simuladas. No aplican ni borran
 wallpapers reales. Verifican rutas, symlinks, caché compatible, comandos de
 miniaturas y solicitudes por línea (sin esperar EOF del proceso QML).
-
-Medición local: catálogo, 15 ejecuciones, mediana Python 101,51 ms frente a
-Rust 2,41 ms. No representa una reducción equivalente del tiempo de apertura
-completo ni del coste de ImageMagick; no se ha demostrado ahorro de RAM en reposo.

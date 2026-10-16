@@ -1,4 +1,9 @@
-# Carrusel completo Rust / Iced
+# Carrusel completo Rust / Iced (experimental)
+
+[Documentación](../../docs/README.md) · [Instalación](../../docs/INSTALL.md)
+
+> El carrusel activo de calli_dotfiles es QML. Esta alternativa no se compila
+> ni se activa con `./install.sh`. Los comandos siguientes son pruebas opcionales.
 
 El binario **haku-carousel** sustituye la interfaz QML en modo Rust. El binario
 `haku-carousel-prototype` y sus copias software/GPU quedan únicamente para los
@@ -50,9 +55,8 @@ cargo build --locked --release -j 2 --manifest-path ~/haku_shell/tools/haku-wall
 cargo build --locked --release -j 2 --no-default-features --features full --bin haku-carousel --manifest-path ~/haku_shell/tools/haku-carousel-prototype/Cargo.toml
 ```
 
-El launcher usa la Intel integrada mediante Vulkan en este equipo. No hace
-cambios globales de drivers. Para abrir, usar el launcher; ejecutar directamente
-el binario sin las variables del launcher puede elegir otra GPU.
+La selección de GPU depende del launcher y del equipo. No se cambian drivers
+globales; revisa sus variables antes de ensayar el renderer experimental.
 Cargo.lock fija winit-common/core **0.31.0-beta.2**: beta.3 rompe una coincidencia
 de enum de iced_exdevtools 0.19.1. No usar `cargo update` sin repetir las pruebas.
 
@@ -123,10 +127,8 @@ También verifican alineación de uniforms WGSL y slots GPU sin colisiones. No
 modifican wallpapers reales. Se vuelven a ejecutar las 29 pruebas del backend
 (5 Rust, 18 del worker, 6 del backend anterior con fixtures).
 
-En sesión se verificó: galería real, foco `searchFocused=true`, diseño mediante
-captura solo del panel, consulta Wallhaven y aplicar el fondo ya activo con
-respuesta `unchanged`. No se enviaron wallpapers del usuario a la Papelera como
-prueba. Los cambios de fondo que haga el usuario en la UI usan el backend real.
+Las acciones de aplicar/Papelera de la UI usan el backend real: no las ejecutes
+como prueba si no quieres modificar tu galería o fondo.
 
 El consumo anterior del prototipo de tres imágenes ya no es una comparación
 válida: esta versión incluye búsqueda, capa fullscreen transparente, controles

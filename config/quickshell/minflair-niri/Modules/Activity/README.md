@@ -1,9 +1,12 @@
 # Panel derecho de actividad
 
-Integra `MiniMusicWidget` y `NotificationCenter` de Minflair en una superficie
-pegada al borde derecho, con los colores dinámicos del shell. Reutiliza MPRIS,
-CavaService y la única instancia de NotificationService; no inicia otro daemon.
+[Documentación](../../../../../docs/README.md) · [Instalación](../../../../../docs/INSTALL.md)
 
+Integra `MiniMusicWidget` y `NotificationCenter` de Minflair en una superficie
+pegada al borde derecho, con la paleta compartida de la shell. Reutiliza MPRIS
+y la única instancia de NotificationService; no inicia otro daemon.
+
+- `Mod+.` en el perfil portable alterna abrir/cerrar.
 - Clic en el acceso de música o clic derecho en el reloj: abrir/cerrar.
 - Escape, clic fuera u ocultar la barra: cerrar.
 - Pantalla completa: se oculta junto con la barra.

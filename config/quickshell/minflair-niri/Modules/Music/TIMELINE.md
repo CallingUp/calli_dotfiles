@@ -1,5 +1,7 @@
 # Timeline / Firefox recovery
 
+[Documentación](../../../../../docs/README.md) · [Instalación](../../../../../docs/INSTALL.md)
+
 Only use MPRIS `length` as duration when `lengthSupported` is true. Otherwise
 Quickshell returns position as length, which produced a permanently full bar.
 Keep the last supported duration for the same player/video, not across tracks.
@@ -28,4 +30,6 @@ quickshell ipc -p ~/haku_shell/config/quickshell/minflair-niri/niri-preview.qml 
 ```
 
 Tests use fake players and the actual service functions. They do not seek the
-user's video. Real drag behavior still needs user verification in Zen.
+user's video. Real drag behavior should be checked with the selected browser.
+The duration fallback requires `yt-dlp`, which is optional and is not installed
+by the base installer. MPRIS controls remain available without that fallback.

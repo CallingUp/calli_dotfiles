@@ -1,7 +1,10 @@
 # Portapapeles QML
 
-`Mod+Shift+V`, `cliphist.sh`, `clipboard_menu.sh` y `haku-clipboard` abren la
-misma vista. Usa el historial existente de cliphist, sin migrar ni borrar datos.
+[Documentación](../../../docs/README.md) · [Instalación](../../../docs/INSTALL.md)
+
+En el perfil portable, `Mod+V` abre el historial con `haku-clipboard`.
+El perfil avanzado usa `Mod+Shift+V`; los wrappers históricos pueden abrir
+la misma vista, pero el instalador no los despliega todos. Usa el historial existente de cliphist, sin migrar ni borrar datos.
 No añade servicios en segundo plano ni sondeo periódico.
 
 - Búsqueda y filtros: todo, texto, imágenes y enlaces.
@@ -26,7 +29,7 @@ Pruebas (mock; no copian ni borran datos reales):
 ```sh
 python3 ~/haku_shell/config/quickshell/haku-clipboard/test_clipboard.py
 ```
-# Ejecución compartida
+## Ejecución compartida
 
 La UI vive en `../minflair-niri/Modules/Clipboard/Clipboard.qml` y se carga bajo
 demanda dentro de la shell. `haku-clipboard` alterna abrir/cerrar mediante IPC;

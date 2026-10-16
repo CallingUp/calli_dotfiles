@@ -1,4 +1,6 @@
-# Native Haku metrics
+# Native metrics for calli_dotfiles
+
+[Documentación](../../docs/README.md) · [Instalación](../../docs/INSTALL.md)
 
 Small, dependency-free Rust sampler for the five fields consumed by SystemStats:
 CPU usage, used RAM, RAM percentage, CPU temperature and uptime. Reads /proc and
@@ -10,13 +12,13 @@ Interval defaults to 4 seconds and is clamped to 1–60 seconds. CPU uses deltas
 of the first eight /proc/stat counters, excluding duplicate guest time. Memory
 uses MemAvailable. Missing sensors produce --°C, not a fake zero temperature.
 
-Build and test (one compiler job, no downloads):
+The guided installer builds this helper automatically. Manual build and tests
+(one compiler job; add `--offline` only when dependencies are already cached):
 
 ```sh
-cargo test --offline --manifest-path ~/haku_shell/tools/haku-metrics/Cargo.toml -j 1
-cargo build --release --offline --manifest-path ~/haku_shell/tools/haku-metrics/Cargo.toml -j 1
+cargo test --locked --manifest-path ~/haku_shell/tools/haku-metrics/Cargo.toml -j 1
+cargo build --release --locked --manifest-path ~/haku_shell/tools/haku-metrics/Cargo.toml -j 1
 ~/haku_shell/tools/haku-metrics/target/release/haku-metrics --once
-python3 ~/haku_shell/tools/haku-metrics/benchmark.py
 ```
 
 The QML launcher falls back to the original Python helper on fresh clones without

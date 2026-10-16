@@ -1,9 +1,15 @@
 # Consultas de conectividad Rust
 
+[Documentación](../../docs/README.md) · [Instalación](../../docs/INSTALL.md)
+
 Helper bajo demanda; no daemon. La UI usa Rust para `wifi status`, `wifi scan`
 y `bluetooth status/scan`. Se conservan el formato JSON, redes guardadas, deduplicación
 y prioridad de conexiones activas. El parser nmcli reconoce campos escapados
 (dos puntos y barras), también en el SSID conectado.
+
+El asistente compila el helper y solicita paquetes de conectividad. Los servicios
+NetworkManager y BlueZ deben estar configurados por tu distribución; el instalador
+imperativo no cambia tus conexiones ni habilita esos servicios automáticamente.
 
 Dependencias del sistema: nmcli, busctl y timeout. Los comandos tienen un límite
 de 12 segundos. Las consultas Bluetooth usan ObjectManager de BlueZ mediante
