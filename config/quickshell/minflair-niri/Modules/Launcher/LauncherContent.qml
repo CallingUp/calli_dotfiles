@@ -23,6 +23,9 @@ Item {
         const id = app.id.replace(/\.desktop$/, "").toLowerCase();
         return (Number(AppState.launcherUsage[app.id]) || 0) + (preferredApps[id] || 0);
     }
+    function compareApps(a, b) {
+        return appRank(b) - appRank(a) || a.name.localeCompare(b.name);
+    }
     property alias initialFocusItem: searchField
     property int maxVisibleItems: 8
     readonly property bool isSearching: searchField.text.trim() !== ""
@@ -75,10 +78,8 @@ Item {
                 newFiltered.push(app);
 
         }
-        root.filteredApps = newFiltered.sort((a, b) => {
-            const frequency = appRank(b) - appRank(a);
-            return frequency || a.name.localeCompare(b.name);
-        });
+        // Filtering preserves the ranking computed when applications/usage change.
+        root.filteredApps = newFiltered;
         if (appsView) {
             appsView.expandedIndex = -1;
             if (root.filteredApps.length > 0)
@@ -177,7 +178,7 @@ Item {
                 terminal: entry.runInTerminal,
                 actions: Array.from(entry.actions).map(action => ({name: action.name, exec: action}))
             }))
-            .sort((a, b) => a.name.localeCompare(b.name));
+            .sort(compareApps);
         filterApps("");
         searchField.forceActiveFocus();
     }
@@ -192,7 +193,10 @@ Item {
 
     Connections {
         target: AppState
-        function onLauncherUsageChanged() { root.filterApps(searchField.text); }
+        function onLauncherUsageChanged() {
+            root.allApps = root.allApps.slice().sort(root.compareApps);
+            root.filterApps(searchField.text);
+        }
     }
 
     ColumnLayout {

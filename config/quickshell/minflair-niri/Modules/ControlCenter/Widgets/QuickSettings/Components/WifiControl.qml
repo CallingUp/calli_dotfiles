@@ -38,12 +38,12 @@ QuickSettingsTile {
         if (!password || connecting) return;
         pendingSecret = JSON.stringify({password: password, security: passwordSecurity});
         operationError = "";
-        wifiConnectProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/wifi.py", "connect-private", passwordSsid];
+        wifiConnectProc.command = ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "wifi", "connect-private", passwordSsid];
         wifiConnectProc.running = true;
     }
 
     function toggle() {
-        wifiSetProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/wifi.py", "toggle-radio"];
+        wifiSetProc.command = ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "wifi", "toggle-radio"];
         wifiSetProc.running = true;
     }
 
@@ -52,7 +52,7 @@ QuickSettingsTile {
             return ;
 
         let rescan = (forceRescan === undefined) ? true : forceRescan;
-        wifiScanProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/wifi.py", "scan", rescan ? "yes" : "no"];
+        wifiScanProc.command = ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "wifi", "scan", rescan ? "yes" : "no"];
         wifiScanProc.running = false;
         wifiScanProc.running = true;
     }
@@ -66,7 +66,7 @@ QuickSettingsTile {
             passwordSecurity = network.security;
             return;
         }
-        wifiConnectProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/wifi.py", "connect", ssid];
+        wifiConnectProc.command = ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "wifi", "connect", ssid];
         wifiConnectProc.running = true;
     }
 
@@ -116,7 +116,7 @@ QuickSettingsTile {
     Process {
         id: wifiGetProc
 
-        command: ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/wifi.py", "status"]
+        command: ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "wifi", "status"]
 
         stdout: SplitParser {
             onRead: (data) => {
@@ -147,7 +147,7 @@ QuickSettingsTile {
     Process {
         id: wifiScanProc
 
-        command: ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/wifi.py", "scan"]
+        command: ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "wifi", "scan"]
 
         stdout: SplitParser {
             onRead: (data) => {

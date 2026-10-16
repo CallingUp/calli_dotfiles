@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+binary="$HOME/haku_shell/tools/haku-info/target/release/haku-info"
+legacy="$HOME/haku_shell/config/quickshell/minflair-niri/Scripts/theme/generate_theme.py"
+# Keep GdkPixbuf's existing first-frame/JPEG policy for animated formats.
+input="${1:-}"
+case "${input,,}" in
+    *.gif|*.webp) exec python3 "$legacy" "$@";;
+esac
+if [[ -x "$binary" ]]; then exec "$binary" theme "$@"; fi
+exec python3 "$legacy" "$@"

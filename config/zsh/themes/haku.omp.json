@@ -1,0 +1,88 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 3,
+  "palette": {
+    "base": "#000000",
+    "text": "#E8DCC8",
+    "muted": "#967F6B",
+    "accent": "#B99573",
+    "inactive": "#705542",
+    "danger": "#BF616A"
+  },
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "type": "session",
+          "style": "diamond",
+          "foreground": "p:base",
+          "background": "p:accent",
+          "background_templates": ["{{ if ne .Env.HAKU_ACCENT \"\" }}#{{ .Env.HAKU_ACCENT }}{{ end }}"],
+          "leading_diamond": "",
+          "trailing_diamond": "",
+          "template": "  {{ .UserName }} "
+        },
+        {
+          "type": "path",
+          "style": "diamond",
+          "foreground": "p:text",
+          "background": "p:inactive",
+          "background_templates": ["{{ if ne .Env.HAKU_INACTIVE \"\" }}#{{ .Env.HAKU_INACTIVE }}{{ end }}"],
+          "leading_diamond": "",
+          "trailing_diamond": "",
+          "template": " 󰉋 {{ .Path }} ",
+          "properties": {
+            "style": "folder",
+            "folder_separator_icon": "/",
+            "home_icon": "~"
+          }
+        },
+        {
+          "type": "git",
+          "style": "diamond",
+          "foreground": "p:base",
+          "background": "p:accent",
+          "background_templates": ["{{ if ne .Env.HAKU_ACCENT \"\" }}#{{ .Env.HAKU_ACCENT }}{{ end }}"],
+          "leading_diamond": "",
+          "trailing_diamond": "",
+          "template": " 󰊢 {{ .HEAD }}{{ if .Working.Changed }} •{{ end }} ",
+          "properties": {
+            "branch_icon": ""
+          }
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "type": "status",
+          "style": "plain",
+          "foreground": "p:accent",
+          "foreground_templates": ["{{ if gt .Code 0 }}p:danger{{ end }}", "{{ if ne .Env.HAKU_ACCENT \"\" }}#{{ .Env.HAKU_ACCENT }}{{ end }}"],
+          "template": "╰─❯ ",
+          "properties": {
+            "always_enabled": true
+          }
+        }
+      ]
+    }
+  ],
+  "transient_prompt": {
+    "background": "transparent",
+    "foreground": "p:accent",
+    "foreground_templates": ["{{ if gt .Code 0 }}p:danger{{ end }}", "{{ if ne .Env.HAKU_ACCENT \"\" }}#{{ .Env.HAKU_ACCENT }}{{ end }}"],
+    "template": "╰─❯ "
+  },
+  "secondary_prompt": {
+    "background": "transparent",
+    "foreground": "p:muted",
+    "template": "  ↳ ",
+    "multiline_keepprompt": true
+  }
+}

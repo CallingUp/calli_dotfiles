@@ -26,8 +26,15 @@ Item {
             return ;
 
         _prevText = text;
-        _charCount = 0;
-        typeTimer.restart();
+        _charCount = visible ? 0 : text.length;
+        if (visible) typeTimer.restart();
+        else typeTimer.stop();
+    }
+    onVisibleChanged: {
+        if (!visible) {
+            typeTimer.stop();
+            _charCount = text.length;
+        }
     }
 
     Timer {
@@ -35,7 +42,7 @@ Item {
 
         interval: rootItem.typeInterval
         repeat: true
-        running: rootItem._charCount < rootItem.text.length
+        running: rootItem.visible && rootItem._charCount < rootItem.text.length
         onTriggered: {
             rootItem._charCount++;
         }

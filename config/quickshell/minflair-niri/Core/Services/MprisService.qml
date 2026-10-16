@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Services.Mpris
 import qs.Core
 import qs.Core.Services
+import "../../Modules/Music/Components/TimelineState.js" as TimelineState
 pragma Singleton
 
 Item {
@@ -15,6 +16,172 @@ Item {
     property var playerDisplayNames: ({
     })
     property var activePlayer: null
+    property var durationState: ({key: "", seconds: 0})
+    property string durationRequestKey: ""
+    readonly property bool timelineNeeded: ["music", "notificationsCenter", "dashboard", "controlCenter"].includes(AppState.activeWidget)
+    onTimelineNeededChanged: {
+        if (timelineNeeded) root.rememberDuration();
+        else durationLookupTimer.stop();
+    }
+    readonly property string timelineUrl: root.activePlayer && root.activePlayer.metadata
+        ? String(root.activePlayer.metadata["xesam:url"] || "") : ""
+    readonly property string timelineKey: {
+        const p = root.activePlayer;
+        if (!p) return "";
+        const url = p.metadata ? String(p.metadata["xesam:url"] || "") : "";
+        return TimelineState.identity(p.dbusName || "", url, p.uniqueId);
+    }
+    readonly property real timelineDuration: {
+        const p = root.activePlayer;
+        if (!p) return 0;
+        if (p.lengthSupported && Number.isFinite(p.length) && p.length > 0) return p.length;
+        return root.durationState.key === root.timelineKey ? root.durationState.seconds : 0;
+    }
+    function rememberDuration() {
+        const p = root.activePlayer;
+        root.durationState = TimelineState.retainDuration(root.durationState, root.timelineKey,
+            p !== null && p.lengthSupported, p ? p.length : 0);
+        if (root.timelineNeeded && root.timelineDuration <= 0 && root.timelineUrl && root.durationRequestKey !== root.timelineKey)
+            durationLookupTimer.restart();
+    }
+    onTimelineKeyChanged: root.rememberDuration()
+    Connections {
+        target: root.activePlayer
+        function onLengthChanged() { root.rememberDuration(); }
+        function onLengthSupportedChanged() { root.rememberDuration(); }
+        function onMetadataChanged() { root.rememberDuration(); }
+    }
+    Timer {
+        id: durationLookupTimer
+        interval: 500
+        onTriggered: {
+            if (!root.timelineNeeded || root.timelineDuration > 0 || durationLookupProc.running || root.durationRequestKey === root.timelineKey) return;
+            const match = root.timelineUrl.match(/^https:\/\/(?:www\.|music\.)?youtube\.com\/watch\?[^#]*\bv=([A-Za-z0-9_-]{11})(?:&|$)/)
+                || root.timelineUrl.match(/^https:\/\/youtu\.be\/([A-Za-z0-9_-]{11})(?:[?&#]|$)/);
+            if (!match) return;
+            root.durationRequestKey = root.timelineKey;
+            durationLookupProc.command = ["timeout", "20s", "yt-dlp", "--ignore-config", "--skip-download",
+                "--no-playlist", "--no-warnings", "--socket-timeout", "8", "--retries", "0",
+                "--print", "%(duration)s", "--", "https://www.youtube.com/watch?v=" + match[1]];
+            durationLookupProc.running = true;
+        }
+    }
+    Process {
+        id: durationLookupProc
+        stdout: StdioCollector { id: durationLookupOutput }
+        onExited: exitCode => {
+            if (root.durationRequestKey !== root.timelineKey) {
+                if (root.timelineNeeded) durationLookupTimer.restart();
+                return;
+            }
+            if (exitCode !== 0) return;
+            const seconds = Number(durationLookupOutput.text.trim());
+            if (root.timelineDuration <= 0 && Number.isFinite(seconds) && seconds > 0)
+                root.durationState = {key: root.timelineKey, seconds: seconds};
+        }
+    }
+    property var seekPlayer: null
+    property real seekTarget: 0
+    property int seekTrack: -1
+    property int seekAttempts: 0
+    property var recoveryPlayer: null
+    property string recoveryKey: ""
+    property real recoveryTarget: 0
+    property int recoveryAttempts: 0
+    IpcHandler {
+        target: "haku-media-timeline"
+        function status(): string {
+            const p = root.activePlayer;
+            return JSON.stringify(p ? {durationSupported: p.lengthSupported,
+                positionSupported: p.positionSupported, duration: p.length,
+                position: p.position, canSeek: p.canSeek,
+                retainedDuration: root.timelineDuration,
+                timelineNeeded: root.timelineNeeded,
+                durationLookupRunning: durationLookupProc.running,
+                pendingSeek: root.seekPlayer !== null} : {available: false});
+        }
+    }
+
+    function seekTo(seconds) {
+        const player = root.activePlayer;
+        if (!player || !player.canSeek || !player.positionSupported || !Number.isFinite(seconds)) return;
+        root.rememberDuration();
+        const target = Math.max(0, root.timelineDuration > 0 ? Math.min(root.timelineDuration, seconds) : seconds);
+        if (root.seekPlayer === player) { root.seekTarget = target; return; }
+        const browser = (player.dbusName || "").toLowerCase().includes("firefox");
+        if (!browser || !player.isPlaying) { player.position = target; return; }
+        // Firefox may report Position=0 and lose length after a seek while playing.
+        // Wait for Paused before SetPosition, then resume the same track.
+        root.seekPlayer = player;
+        root.seekTrack = player.uniqueId;
+        root.seekTarget = target;
+        root.seekAttempts = 0;
+        player.pause();
+        seekPauseTimer.restart();
+    }
+    function finishBrowserSeek() {
+        const player = root.seekPlayer;
+        if (!player) return;
+        if (player.uniqueId !== root.seekTrack) { root.seekPlayer = null; return; }
+        if (player.isPlaying) {
+            root.seekAttempts++;
+            if (root.seekAttempts < 20) seekPauseTimer.restart();
+            else root.seekPlayer = null;
+            return;
+        }
+        if (player.canSeek && player.positionSupported) player.position = root.seekTarget;
+        player.play();
+        root.recoveryPlayer = player;
+        root.recoveryKey = root.timelineKey;
+        root.recoveryTarget = root.seekTarget;
+        recoveryCheckTimer.restart();
+        root.seekPlayer = null;
+    }
+    Timer {
+        id: seekPauseTimer
+        interval: 50
+        onTriggered: root.finishBrowserSeek()
+    }
+    Timer {
+        id: recoveryCheckTimer
+        interval: 250
+        onTriggered: {
+            if (!root.recoveryPlayer || root.recoveryKey !== root.timelineKey || root.recoveryTarget < 1 || recoveryReadProc.running) return;
+            recoveryReadProc.command = ["busctl", "--user", "--timeout=2", "--json=short", "call",
+                root.recoveryPlayer.dbusName, "/org/mpris/MediaPlayer2", "org.freedesktop.DBus.Properties",
+                "Get", "ss", "org.mpris.MediaPlayer2.Player", "Position"];
+            recoveryReadProc.running = true;
+        }
+    }
+    Process {
+        id: recoveryReadProc
+        stdout: StdioCollector { id: recoveryReadOutput }
+        onExited: exitCode => {
+            if (exitCode !== 0 || !root.recoveryPlayer || root.recoveryKey !== root.timelineKey) return;
+            try {
+                const value = JSON.parse(recoveryReadOutput.text).data[0].data;
+                if (value === 0 && root.recoveryPlayer.isPlaying) {
+                    root.recoveryAttempts = 0;
+                    root.recoveryPlayer.pause();
+                    recoveryResumeTimer.restart();
+                } else root.recoveryPlayer = null;
+            } catch (_) {}
+        }
+    }
+    Timer {
+        id: recoveryResumeTimer
+        interval: 50
+        onTriggered: {
+            const p = root.recoveryPlayer;
+            if (!p || root.recoveryKey !== root.timelineKey) return;
+            if (p.isPlaying) {
+                if (++root.recoveryAttempts < 20) restart();
+                return;
+            }
+            p.play();
+            root.recoveryPlayer = null;
+        }
+    }
     readonly property bool isPlaying: root.activePlayer !== null && (root.activePlayer.playbackState === 1 || root.activePlayer.playbackState === Mpris.Playing || String(root.activePlayer.playbackState).toLowerCase().includes("playing"))
     readonly property string activePlayerName: {
         if (!root.activePlayer)
@@ -317,7 +484,7 @@ Item {
     Process {
         id: playerScannerProc
 
-        command: ["python3", Quickshell.shellDir + "/Modules/Music/scripts/get_music_players.py"]
+        command: ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-info-worker", "players"]
         Component.onCompleted: running = true
         onExited: (exitCode) => {
             if (exitCode === 0) {
@@ -374,9 +541,10 @@ Item {
     }
 
     Timer {
-        running: root.isPlaying
+        running: root.isPlaying && root.timelineNeeded
         interval: 1000
         repeat: true
+        triggeredOnStart: true
         onTriggered: {
             if (root.activePlayer)
                 root.activePlayer.positionChanged();

@@ -1,15 +1,15 @@
 // ============================================================
-// Dynamic accent
+// Fixed Siamese accent
 // ============================================================
 
 recent-windows {
-    highlight { active-color "#8d7c74"; }
+    highlight { active-color "#B99573"; }
 }
 
 layout {
     border {
         on
-        active-color "#C2C7CC"
-        inactive-color "#555A61"
+        active-color "#D7B894"
+        inactive-color "#705542"
     }
 }

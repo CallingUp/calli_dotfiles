@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.Core.Services
 pragma Singleton
 
 Singleton {
@@ -8,6 +9,8 @@ Singleton {
 
     property bool running: false
     property int durationInSeconds: 0
+    readonly property bool statusNeeded: running || SystemInfoService.barClockVisible
+        || AppState.activeWidget === "screenshot"
 
     function formattedTime() {
         let m = Math.floor(durationInSeconds / 60);
@@ -46,7 +49,7 @@ Singleton {
         id: checkTimer
 
         interval: root.running ? 1000 : 5000
-        running: true
+        running: root.statusNeeded
         repeat: true
         triggeredOnStart: true
         onTriggered: {

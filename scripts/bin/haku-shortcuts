@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+config="$HOME/haku_shell/config/quickshell/haku-shortcuts/shell.qml"
+if quickshell ipc -p "$config" call haku-shortcuts close >/dev/null 2>&1; then
+    exit 0
+fi
+if quickshell ipc -p "$HOME/haku_shell/config/quickshell/minflair-niri/niri-preview.qml" call haku-shortcuts-host toggle >/dev/null 2>&1; then
+    exit 0
+fi
+exec quickshell --no-duplicate --daemonize -p "$config"

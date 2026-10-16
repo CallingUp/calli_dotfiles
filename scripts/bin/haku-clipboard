@@ -57,6 +57,21 @@ def image_extension(data):
 
 def worker(args):
     action = args[0]
+    if action == 'cleanup':
+        cache = Path(args[1])
+        runtime = Path(os.environ.get('XDG_RUNTIME_DIR') or tempfile.gettempdir()).resolve()
+        if cache.parent.resolve() != runtime or not cache.name.startswith('haku-clipboard-') or cache.is_symlink():
+            raise ValueError('Directorio inválido')
+        stat = cache.stat()
+        if stat.st_uid != os.getuid() or stat.st_mode & 0o077 or not cache.is_dir():
+            raise ValueError('Directorio no privado')
+        for child in cache.iterdir():
+            if not re.fullmatch(r'preview-[0-9]+\.(png|jpg|gif|webp|bmp)', child.name) or child.is_dir():
+                raise ValueError('Archivo inesperado')
+        for child in cache.iterdir():
+            child.unlink()
+        cache.rmdir()
+        return {'ok': True}
     if action == 'list': return {'ok': True, 'rows': entries()}
     if action == 'wipe':
         subprocess.run(['cliphist', 'wipe'], check=True, stdout=subprocess.DEVNULL)
@@ -98,6 +113,15 @@ def worker(args):
 
 
 def main(args):
+    if args == ['session']:
+        bridge = runpy.run_path(str(BASE / 'scripts/bin/haku-qml-menu'))
+        tmp = tempfile.mkdtemp(prefix='haku-clipboard-', dir=os.environ.get('XDG_RUNTIME_DIR') or None)
+        try:
+            print(json.dumps({**bridge['theme'](), 'rows': entries(), 'cacheDir': tmp}), flush=True)
+        except BaseException:
+            worker(['cleanup', tmp])
+            raise
+        return 0
     if args:
         try:
             print(json.dumps(worker(args)))
@@ -107,6 +131,12 @@ def main(args):
             return 1
         return 0
     bridge = runpy.run_path(str(BASE / 'scripts/bin/haku-qml-menu'))
+    hosted = subprocess.run(
+        ['quickshell', 'ipc', '-p', str(BASE / 'config/quickshell/minflair-niri/niri-preview.qml'),
+         'call', 'haku-clipboard-host', 'toggle'],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if hosted.returncode == 0:
+        return 0
     bridge['select']({'title': 'Portapapeles', 'rows': entries()},
                      config=BASE / 'config/quickshell/haku-clipboard/shell.qml')
     return 0

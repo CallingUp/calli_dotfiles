@@ -1,0 +1,38 @@
+/* Haku Siamese — interface only; preserve Zen layout and installed mods. */
+:root {
+  --zen-primary-color: #B99573 !important;
+  --zen-colors-primary: #211813 !important;
+  --zen-colors-secondary: #705542 !important;
+  --zen-colors-tertiary: #000000 !important;
+  --zen-main-browser-background: #000000 !important;
+  --zen-main-browser-background-toolbar: #000000 !important;
+  --zen-colors-border: #705542 !important;
+  --toolbar-bgcolor: #000000 !important;
+  --toolbar-color: #E8DCC8 !important;
+  --lwt-accent-color: #000000 !important;
+  --lwt-text-color: #E8DCC8 !important;
+  --lwt-sidebar-background-color: #000000 !important;
+  --lwt-sidebar-text-color: #E8DCC8 !important;
+  --sidebar-background-color: #000000 !important;
+  --sidebar-text-color: #E8DCC8 !important;
+  --toolbar-field-background-color: #211813 !important;
+  --toolbar-field-color: #E8DCC8 !important;
+  --toolbar-field-focus-background-color: #211813 !important;
+  --toolbar-field-focus-color: #F5EBDC !important;
+  --toolbar-field-focus-border-color: #B99573 !important;
+  --button-primary-bgcolor: #B99573 !important;
+  --button-primary-hover-bgcolor: #D7B894 !important;
+  --button-primary-color: #000000 !important;
+  --panel-background: #211813 !important;
+  --panel-color: #E8DCC8 !important;
+  --panel-border-color: #705542 !important;
+}
+#navigator-toolbox, #sidebar-box, #zen-sidebar-top-buttons, #zen-appcontent-wrapper {
+  background: #000000 !important;
+  color: #E8DCC8 !important;
+}
+.tabbrowser-tab[selected] .tab-background {
+  background: #211813 !important;
+  outline: 1px solid #705542 !important;
+}
+#urlbar-input::selection { background: #705542; color: #F5EBDC; }

@@ -21,6 +21,51 @@ Miniaturas de 420x300, generación secuencial y precarga limitada al entorno de
 la selección. Las imágenes originales solo se descargan al aplicar. El caché
 está en `~/.cache/haku-wallpaper-carousel/qml`. No se añade un servicio residente.
 
+Optimización QML (2026-10-13): las rutas de miniaturas locales ya guardadas se
+reciben con el catálogo, evitando procesos de consulta individuales. Solo se
+cargan imágenes dentro del viewport o a 64 px de entrar; se conservan las siete
+tarjetas, su geometría y precarga de rutas. En 1920×1080 son cinco imágenes
+activas en reposo, frente a siete anteriormente. `Image.cache: false` se mantiene
+para no acumular una caché global sin límite. El mapa de rutas no se reemplaza
+si no cambió. El worker sigue generando caché faltante y las miniaturas web.
+
+La animación conserva 210 ms OutCubic y la entrada 160 ms. No se cambian diseño,
+fuente, acento, controles ni comportamiento de aplicar/Papelera. La prueba real
+incluye navegación rápida, límites de caché, recuperación si falta un archivo,
+compatibilidad con catálogo sin metadatos nuevos y cierre. No aplica fondos.
+
+```sh
+python3 -B ~/haku_shell/tools/haku-carousel-prototype/smoke_qml.py
+python3 -B ~/haku_shell/tools/haku-carousel-prototype/measure_full.py --modes qml-base,qml-opt
+```
+
+La opción interna `optimizeThumbnails: false` en la petición permite medir la
+ruta anterior sin reiniciar Qt; el launcher normal usa la optimizada. En tres
+rondas con 40 pasos y caché disponible, los workers pasaron de 47 a 0. CPU del
+giro: 20.55 % frente a 20.33 % de un núcleo, diferencia demasiado pequeña para
+afirmar un ahorro significativo. La paginación impide atribuir el cambio de RAM
+residente a esta mejora. Detalles en
+`tools/haku-carousel-prototype/MEASUREMENTS-FULL-20261013.md`.
+
+El catálogo, búsqueda Wallhaven, miniaturas locales/web, aplicar y Papelera usan Rust mediante
+`scripts/bin/haku-wallpaper-worker`, con alternativa Python. HTTPS usa curl.
+Se conservan los scripts existentes de transición y sincronización. Python queda
+como alternativa si falta el binario; el launcher normal también es Rust. Detalles y compilación:
+`tools/haku-wallpaper/README.md`.
+
+El componente vive en `../minflair-niri/Modules/WallpaperCarousel/Carousel.qml`.
+El selector intenta abrirlo bajo demanda dentro de la shell principal mediante
+`haku-wallpaper-host`; al cerrar, el Loader destruye el componente. `shell.qml`
+conserva el modo independiente como alternativa cuando la shell no está disponible.
+El mismo atajo alterna abrir/cerrar en ambos modos.
+
+Medición local tras la integración (PSS, proceso principal, sin aplicar fondos):
+233,9 MiB cerrado, 248,9 MiB abierto, 248,7 MiB después de recorrer 40 tarjetas,
+235,7 MiB tras cerrar. Incremento abierto de aproximadamente 15 MiB, frente a
+143 MiB de incremento total en la prueba anterior con un proceso independiente.
+Son muestras de esta sesión, no garantías entre equipos; la recarga de Qt cambia
+las cachés y no permite atribuir diferencias de consumo base a esta modificación.
+
 Se mantienen `wallpaper-transition`, `wallpaper-theme-sync`, los archivos de
 generación/current_wallpaper y la animación del único backdrop. No se cambia
 su renderer ni la sincronización de SDDM.

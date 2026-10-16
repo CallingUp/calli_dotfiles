@@ -1,0 +1,127 @@
+/**
+ * Haku System24 for Vesktop
+ * System24 layout by refact0r, adapted to the fixed Haku Siamese palette.
+ */
+@import url('https://refact0r.github.io/system24/build/system24.css');
+
+body {
+  --font: '__FONT_FAMILY__';
+  --code-font: '__FONT_MONO__';
+  font-weight: 400;
+  letter-spacing: -0.03ch;
+  --gap: 8px;
+  --divider-thickness: 2px;
+  --border-thickness: 1px;
+  --border-hover-transition: 0.2s ease;
+  --animations: off; /* Reduce theme-only animation work; keep voice/video intact. */
+  --list-item-transition: 0.16s ease;
+  --dms-icon-svg-transition: 0.3s ease;
+  --top-bar-height: var(--gap);
+  --top-bar-button-position: titlebar;
+  --top-bar-title-position: off;
+  --subtle-top-bar-title: on;
+  --custom-window-controls: off;
+  --window-control-size: 14px;
+  --custom-dms-icon: hide;
+  --custom-dms-background: color;
+  --dms-background-color: var(--haku-bg-2);
+  --background-image: off;
+  --background-image-url: url('');
+  --transparency-tweaks: off;
+  --remove-bg-layer: off;
+  --panel-blur: off;
+  --blur-amount: 0px;
+  --bg-floating: var(--bg-3);
+  --small-user-panel: on;
+  --unrounding: on;
+  --round-pfp: off;
+  --remove-pfp-decor: off;
+  --custom-spotify-bar: on;
+  --ascii-titles: on;
+  --ascii-loader: system24;
+  --panel-labels: on;
+  --label-color: var(--text-5);
+  --label-font-weight: 600;
+}
+
+:root {
+  /* Rendered from ~/.config/haku/palette.conf by haku-vesktop-theme. */
+  --haku-accent: __ACCENT__;
+  --haku-active: __ACTIVE__;
+  --haku-inactive: __INACTIVE__;
+  --haku-bg-1: #30231B;
+  --haku-bg-2: __SURFACE__;
+  --haku-bg-3: __BACKGROUND__;
+  --haku-bg-4: __BACKGROUND__;
+  --colors: on;
+
+  --text-0: #000000;
+  --text-1: #F5EBDC;
+  --text-2: __FOREGROUND__;
+  --text-3: __FOREGROUND__;
+  --text-4: #C5AF98;
+  --text-5: __MUTED__;
+
+  /* System24 layers, intentionally near-black like Kitty. */
+  --bg-1: var(--haku-bg-1);
+  --bg-2: var(--haku-bg-2);
+  --bg-3: var(--haku-bg-3);
+  --bg-4: var(--haku-bg-4);
+  --hover: color-mix(in srgb, var(--haku-accent) 13%, transparent);
+  --active: color-mix(in srgb, var(--haku-accent) 22%, transparent);
+  --active-2: color-mix(in srgb, var(--haku-accent) 31%, transparent);
+  --message-hover: color-mix(in srgb, var(--haku-accent) 8%, transparent);
+
+  --accent-1: var(--haku-active);
+  --accent-2: var(--haku-accent);
+  --accent-3: var(--haku-accent);
+  --accent-4: var(--haku-active);
+  --accent-5: color-mix(in srgb, var(--haku-accent) 82%, #000000);
+  --accent-new: __ERROR__;
+  --mention: linear-gradient(to right, color-mix(in srgb, var(--haku-accent) 18%, transparent) 40%, transparent);
+  --mention-hover: linear-gradient(to right, color-mix(in srgb, var(--haku-accent) 28%, transparent) 40%, transparent);
+  --reply: linear-gradient(to right, color-mix(in srgb, var(--text-3) 12%, transparent) 40%, transparent);
+  --reply-hover: linear-gradient(to right, color-mix(in srgb, var(--text-3) 19%, transparent) 40%, transparent);
+
+  --online: __SUCCESS__;
+  --dnd: __ERROR__;
+  --idle: __ACTIVE__;
+  --streaming: #C5A48C;
+  --offline: var(--text-5);
+  --border-light: color-mix(in srgb, var(--haku-inactive) 55%, transparent);
+  --border: color-mix(in srgb, var(--haku-inactive) 82%, transparent);
+  --border-hover: var(--haku-accent);
+  --button-border: color-mix(in srgb, var(--text-1) 12%, transparent);
+
+  --red-1: #e08da0; --red-2: #d2768c; --red-3: #d2768c; --red-4: #b95f76; --red-5: #9e4d62;
+  --green-1: #a4c7aa; --green-2: #8fb59b; --green-3: #8fb59b; --green-4: #6f957c; --green-5: #597861;
+  --blue-1: #B99573; --blue-2: #B99573; --blue-3: #B99573; --blue-4: #B99573; --blue-5: #B99573;
+  --yellow-1: #d8bd8a; --yellow-2: #B99573; --yellow-3: #c7aa78; --yellow-4: #a78b5d; --yellow-5: #866f49;
+  --purple-1: #bca3cc; --purple-2: #aa8fba; --purple-3: #aa8fba; --purple-4: #896f99; --purple-5: #6e597b;
+}
+
+/* Recent Discord icons that bypass System24's color tokens. */
+button svg, [role="button"] svg, [class*="iconWrapper"] svg {
+  color: var(--text-3) !important;
+  opacity: 1 !important;
+}
+
+button:hover svg, [role="button"]:hover svg, [class*="iconWrapper"]:hover svg {
+  color: var(--haku-active) !important;
+}
+
+/* Discord defines its own font variables on nested components.  Keep text
+ * coherent with the shell font while leaving SVG icon glyphs untouched. */
+:root {
+  --font-primary: "__FONT_FAMILY__", sans-serif !important;
+  --font-code: "__FONT_MONO__", monospace !important;
+}
+
+body, body :is(p, h1, h2, h3, h4, h5, h6, span, div, a, li, button, input,
+textarea, select, label, time) {
+  font-family: "__FONT_FAMILY__", sans-serif !important;
+}
+
+body :is(code, pre, kbd, samp, [class*="codeBlock"], [class*="markupCode"]) {
+  font-family: "__FONT_MONO__", monospace !important;
+}

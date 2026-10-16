@@ -13,6 +13,9 @@ Item {
     property string pacmanUpdatesCount: "..."
     property string aurUpdatesCount: "..."
     readonly property bool isCheckingUpdates: pacmanProc.running || aurProc.running
+    readonly property bool lockCheckNeeded: isSystemUpdating
+        || AppState.activeWidget === "packageManager"
+        || AppState.activeWidget === "dashboard"
 
     signal checkUpdates()
 
@@ -79,11 +82,11 @@ Item {
         id: lockCheckTimer
 
         interval: updateService.isSystemUpdating || AppState.activeWidget === "packageManager" ? 1500 : 10000
-        running: true
+        running: updateService.lockCheckNeeded
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            checkLockProc.running = true;
+            if (!checkLockProc.running) checkLockProc.running = true;
         }
     }
 

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+mode="${1:-}"
+case "$mode" in qml|rust) ;; *) echo 'Usage: bash ~/haku_shell/scripts/bin/haku-carousel-mode qml|rust' >&2; exit 2;; esac
+preview="$HOME/haku_shell/tools/haku-carousel-prototype/target/release/haku-carousel"
+worker="$HOME/haku_shell/tools/haku-wallpaper/target/release/haku-wallpaper"
+if [[ "$mode" == rust && ( ! -x "$preview" || ! -x "$worker" ) ]]; then echo 'Build the Rust carousel and haku-wallpaper worker first' >&2; exit 1; fi
+state="$HOME/.local/state/haku_theme"
+mkdir -p "$state"
+umask 077
+pending=$(mktemp "$state/carousel-backend.XXXXXX")
+trap 'rm -f -- "$pending"' EXIT
+printf '%s\n' "$mode" > "$pending"
+mv -- "$pending" "$state/carousel_backend"
+if [[ "$mode" == rust ]]; then
+    quickshell ipc -p "$HOME/haku_shell/config/quickshell/minflair-niri/niri-preview.qml" call haku-wallpaper-host close >/dev/null 2>&1 || true
+else
+    if [[ -x "$preview" ]]; then "$preview" --close >/dev/null 2>&1 || true; fi
+fi
+printf 'Carrusel: %s\n' "$mode"

@@ -179,7 +179,7 @@ Item {
         SequentialAnimation {
             id: intervalAnim
 
-            running: HyprlandService.enableAnimations && root.enableIntervalAnim && !introAnim.running
+            running: root.visible && HyprlandService.enableAnimations && root.enableIntervalAnim && !introAnim.running
             loops: Animation.Infinite
 
             PauseAnimation {

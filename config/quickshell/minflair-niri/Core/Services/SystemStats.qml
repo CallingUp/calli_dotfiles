@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs.Core
+import qs.Core.Services
 pragma Singleton
 
 Item {
@@ -27,13 +28,12 @@ Item {
     property real memPercent: 0
     property string cpuTemperature: "--°C"
     property string uptime: ""
+    property bool barStatsVisible: false
+    readonly property bool statsNeeded: barStatsVisible || ["stats", "dashboard", "controlCenter", "settings", "lockScreen"].includes(AppState.activeWidget)
 
     Component.onCompleted: {
         if (!staticInfoProc.running)
             staticInfoProc.running = true;
-
-        if (!statsProc.running)
-            statsProc.running = true;
 
     }
 
@@ -43,7 +43,7 @@ Item {
         interval: 3000
         repeat: false
         onTriggered: {
-            if (!statsProc.running)
+            if (root.statsNeeded && !statsProc.running)
                 statsProc.running = true;
 
         }
@@ -52,7 +52,7 @@ Item {
     Process {
         id: staticInfoProc
 
-        command: ["python3", Quickshell.shellDir + "/Scripts/system/get_system_info.py"]
+        command: ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-info-worker", "system"]
         running: true
         onExited: (exitCode) => {
             if (exitCode === 0) {
@@ -74,7 +74,7 @@ Item {
                     root.gpuName = info.gpus || "None";
                     root.hasGpu = root.gpuName !== "" && root.gpuName !== "None" && root.gpuName !== "Integrated Graphics";
                 } catch (e) {
-                    console.error("Error parsing get_system_info.py JSON: " + e);
+                    console.error("Error parsing static system info JSON: " + e);
                 }
             }
         }
@@ -88,10 +88,10 @@ Item {
     Process {
         id: statsProc
 
-        command: ["python3", Quickshell.shellDir + "/Scripts/system/get_processes.py", "4000", "cpu", "--daemon", "--no-processes"]
-        running: true
+        command: ["bash", Quickshell.shellDir + "/Scripts/system/haku-metrics", "4000"]
+        running: root.statsNeeded
         onExited: (exitCode) => {
-            restartTimer.start();
+            if (root.statsNeeded) restartTimer.start();
         }
 
         stdout: SplitParser {

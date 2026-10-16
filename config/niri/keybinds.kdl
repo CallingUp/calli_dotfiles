@@ -10,8 +10,8 @@ binds {
     // Help
     // --------------------------------------------------------
 
-    Mod+Slash {
-        show-hotkey-overlay
+    Mod+apostrophe hotkey-overlay-title="Ayuda de atajos" {
+        spawn "bash" "/home/calli/haku_shell/scripts/bin/haku-shortcuts"
     }
 
 
@@ -23,12 +23,12 @@ binds {
         spawn "kitty"
     }
 
-    Mod+F hotkey-overlay-title="Files: Nautilus" {
-        spawn "nautilus"
+    Mod+F hotkey-overlay-title="Files: HyprFM" {
+        spawn "hyprfm"
     }
 
     Mod+B hotkey-overlay-title="Browser: Zen" {
-        spawn "brave"
+        spawn "zen-browser"
     }
 
     Mod+Shift+B hotkey-overlay-title="Browser: Zen new window" {
@@ -41,7 +41,7 @@ binds {
 
 
     // --------------------------------------------------------
-    // Noctalia
+    // Haku QuickShell
     // --------------------------------------------------------
 
     Mod+Return hotkey-overlay-title="Launcher" {
@@ -61,36 +61,27 @@ binds {
     }
 
     // --------------------------------------------------------
-    // Contextual Waybar — one centered profile at a time
+    // Haku QuickShell — islas centrales y visibilidad por hover
     // --------------------------------------------------------
 
-    Mod+Ctrl+Space hotkey-overlay-title="Waybar: siguiente perfil" {
-        spawn "/home/calli/.local/bin/waybar_manager.sh" "--context-next"
-    }
-
-    Mod+Left hotkey-overlay-title="Minflair: isla anterior" {
-        spawn "/home/calli/.local/bin/haku-waybar-visibility" "previous"
-    }
-    Mod+Right hotkey-overlay-title="Minflair: isla siguiente" {
+    Mod+Ctrl+Space hotkey-overlay-title="Haku: siguiente isla" {
         spawn "/home/calli/.local/bin/haku-waybar-visibility" "next"
     }
-    Mod+Up hotkey-overlay-title="Minflair: ocultar" {
+
+    Mod+Left hotkey-overlay-title="Haku: isla anterior" {
+        spawn "/home/calli/.local/bin/haku-waybar-visibility" "previous"
+    }
+
+    Mod+Right hotkey-overlay-title="Haku: isla siguiente" {
+        spawn "/home/calli/.local/bin/haku-waybar-visibility" "next"
+    }
+
+    Mod+Up hotkey-overlay-title="Haku: ocultar barra" {
         spawn "/home/calli/.local/bin/haku-waybar-visibility" "hide"
     }
-    Mod+Down hotkey-overlay-title="Minflair: mostrar" {
+
+    Mod+Down hotkey-overlay-title="Haku: mostrar barra" {
         spawn "/home/calli/.local/bin/haku-waybar-visibility" "show"
-    }
-
-    Mod+Ctrl+M hotkey-overlay-title="Waybar: Media" {
-        spawn "/home/calli/.local/bin/waybar_manager.sh" "--context-media"
-    }
-
-    Mod+Ctrl+I hotkey-overlay-title="Waybar: Sistema" {
-        spawn "/home/calli/.local/bin/waybar_manager.sh" "--context-system"
-    }
-
-    Mod+Ctrl+P hotkey-overlay-title="Waybar: Acciones" {
-        spawn "/home/calli/.local/bin/waybar_manager.sh" "--context-actions"
     }
 
     // Mod+Tab belongs to recent-windows.kdl (native previews).
@@ -212,6 +203,14 @@ binds {
         move-column-right
     }
 
+    Mod+Ctrl+A {
+        consume-or-expel-window-left
+    }
+
+    Mod+Ctrl+D {
+        consume-or-expel-window-right
+    }
+
     Mod+Shift+W {
         move-window-up
     }
@@ -239,6 +238,39 @@ binds {
 
     Mod+Shift+WheelScrollDown cooldown-ms=120 {
         focus-column-right
+    }
+
+
+    // --------------------------------------------------------
+    // Grid Overview (fork niri-shorin)
+    // --------------------------------------------------------
+
+    Mod+Shift+E hotkey-overlay-title="Grid Overview" {
+        toggle-grid-overview
+    }
+
+    // --------------------------------------------------------
+    // Lupa (magnifier en vivo, fork niri-shorin)
+    // --------------------------------------------------------
+
+    Mod+H hotkey-overlay-title="Lupa" {
+        toggle-magnifier
+    }
+
+    Mod+Shift+H hotkey-overlay-title="Acercar lupa" {
+        adjust-magnifier-zoom 0.5
+    }
+
+    Mod+Shift+N hotkey-overlay-title="Alejar lupa" {
+        adjust-magnifier-zoom -0.5
+    }
+
+    Mod+Ctrl+WheelScrollUp cooldown-ms=60 hotkey-overlay-title="Lupa +" {
+        adjust-magnifier-zoom 0.5
+    }
+
+    Mod+Ctrl+WheelScrollDown cooldown-ms=60 hotkey-overlay-title="Lupa -" {
+        adjust-magnifier-zoom -0.5
     }
 
 
@@ -378,8 +410,8 @@ binds {
         maximize-column
     }
 
-    Mod+M {
-        maximize-window-to-edges
+    Mod+M repeat=false {
+        spawn-sh "niri msg action maximize-window-to-edges && niri msg action toggle-window-rule-opacity"
     }
 
     Alt+Return {

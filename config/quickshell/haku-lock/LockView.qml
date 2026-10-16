@@ -1,11 +1,16 @@
 import QtQuick
-import Quickshell
 
 Item {
     id: view
     required property var controller
     required property var auth
     focus: true
+    // Opaque fallback during asynchronous image loading or a missing wallpaper.
+    Rectangle {
+        objectName: "lockFallbackBackground"
+        anchors.fill: parent
+        color: "#000000"
+    }
     Image {
         anchors.fill: parent
         source: view.controller.wallpaper ? "file://" + view.controller.wallpaper : ""
@@ -28,7 +33,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             text: view.controller.time.slice(2)
             font { family: "Maple Mono NF"; pixelSize: 180; bold: true }
-            color: Qt.lighter(view.controller.accent, 1.35)
+            color: view.controller.activeColor
         }
     }
     Text {
@@ -64,7 +69,7 @@ Item {
     Text {
         anchors { horizontalCenter: parent.horizontalCenter; top: input.bottom; topMargin: 24 }
         text: view.controller.cooldown > 0 ? "Espera " + view.controller.cooldown + " s" : view.controller.status
-        color: view.controller.accent
+        color: view.controller.errorColor
         font { family: "Maple Mono NF"; pixelSize: 16 }
     }
     Keys.onPressed: event => {

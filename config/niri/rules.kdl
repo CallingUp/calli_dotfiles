@@ -23,7 +23,7 @@ window-rule {
 // Dolphin
 window-rule {
     match app-id="org.kde.dolphin"
-    opacity 0.90
+    opacity 1.0
 }
 
 window-rule {
@@ -63,19 +63,19 @@ window-rule {
 // Firefox
 window-rule {
     match app-id="firefox"
-    opacity 0.95
+    opacity 1.0
 }
 
 // Kitty
 window-rule {
     match app-id="kitty"
-    opacity 0.88
+    opacity 1.0
 }
 
 // Helium
 window-rule {
     match app-id="helium-browser"
-    opacity 0.85
+    opacity 1.0
 }
 
 // Pear Desktop

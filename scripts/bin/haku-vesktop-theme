@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+template="$HOME/.config/vesktop/settings/haku-kitty.css.in"
+output="$HOME/.config/vesktop/settings/quickCss.css"
+colors="$HOME/.config/haku/palette.conf"
+font_config="$HOME/.config/font/config"
+
+[[ -r "$template" && -r "$colors" ]] || exit 0
+
+# Vesktop is Chromium-based and does not inherit Fontconfig dynamically.
+# Keep its QuickCSS tied to the same source used by haku-font.
+FONT_FAMILY="sans-serif"
+FONT_MONO="monospace"
+if [[ -r "$font_config" ]]; then
+  # shellcheck disable=SC1090
+  source "$font_config"
+fi
+
+source "$colors"
+accent="$ACCENT"
+active="$ACTIVE"
+inactive="$INACTIVE"
+
+[[ "$accent" =~ ^#[0-9A-Fa-f]{6}$ ]] || exit 0
+[[ "$active" =~ ^#[0-9A-Fa-f]{6}$ ]] || active="$accent"
+[[ "$inactive" =~ ^#[0-9A-Fa-f]{6}$ ]] || inactive="$accent"
+
+sed \
+  -e "s/__ACCENT__/$accent/g" \
+  -e "s/__ACTIVE__/$active/g" \
+  -e "s/__INACTIVE__/$inactive/g" \
+  -e "s/__BACKGROUND__/$BACKGROUND/g" \
+  -e "s/__FOREGROUND__/$FOREGROUND/g" \
+  -e "s/__SURFACE__/$SURFACE/g" \
+  -e "s/__MUTED__/$MUTED/g" \
+  -e "s/__ERROR__/$ERROR/g" \
+  -e "s/__SUCCESS__/$SUCCESS/g" \
+  -e "s/__FONT_FAMILY__/$FONT_FAMILY/g" \
+  -e "s/__FONT_MONO__/$FONT_MONO/g" \
+  "$template" > "$output"

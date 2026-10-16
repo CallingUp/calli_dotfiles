@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+binary="$HOME/haku_shell/tools/haku-clipboard/target/release/haku-clipboard"
+if [[ -x "$binary" ]]; then
+    exec "$binary" "$@"
+fi
+exec python3 "$HOME/haku_shell/scripts/bin/haku-clipboard" "$@"

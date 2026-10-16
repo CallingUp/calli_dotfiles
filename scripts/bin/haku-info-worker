@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+binary="$HOME/haku_shell/tools/haku-info/target/release/haku-info"
+if [[ "${1:-}" == packages && "${2:-}" == --* ]]; then
+    shift
+    exec python3 "$HOME/haku_shell/config/quickshell/minflair-niri/Modules/PackageManager/scripts/search_packages.py" "$@"
+fi
+if [[ -x "$binary" ]]; then exec "$binary" "$@"; fi
+case "${1:-}" in
+    system) exec python3 "$HOME/haku_shell/config/quickshell/minflair-niri/Scripts/system/get_system_info.py";;
+    players) exec python3 "$HOME/haku_shell/config/quickshell/minflair-niri/Modules/Music/scripts/get_music_players.py";;
+    packages) shift; exec python3 "$HOME/haku_shell/config/quickshell/minflair-niri/Modules/PackageManager/scripts/search_packages.py" "$@";;
+    shortcuts) exec python3 "$HOME/haku_shell/config/quickshell/haku-shortcuts/shortcuts.py";;
+    *) exit 1;;
+esac

@@ -91,47 +91,62 @@ Item {
         if (!updatingState) applyGameMode(gameModeActive);
     }
 
-    Timer {
-        id: gameDaemonPollTimer
-
-        interval: 3000
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            if (!checkGameDaemonProc.running)
-                checkGameDaemonProc.running = true;
-
+    function updateGameDaemon(active) {
+        gameModeDaemonDetected = active;
+        if (active && !gameModeActive && !gameModeError) {
+            autoActivatedByDaemon = true;
+            gameModeActive = true;
+        } else if (!active && gameModeActive && autoActivatedByDaemon) {
+            autoActivatedByDaemon = false;
+            gameModeActive = false;
         }
+    }
+    property bool gameStatusPending: false
+    function refreshGameDaemon() {
+        gameStatusPending = true;
+        gameStatusDebounce.restart();
+    }
+    Timer {
+        id: gameStatusDebounce
+        interval: 50
+        onTriggered: {
+            if (!checkGameDaemonProc.running && displayProfileService.gameStatusPending) {
+                displayProfileService.gameStatusPending = false;
+                checkGameDaemonProc.running = true;
+            }
+        }
+    }
+    Process {
+        id: gameDaemonEvents
+        command: ["gdbus", "monitor", "--session", "--dest", "com.feralinteractive.GameMode", "--object-path", "/com/feralinteractive/GameMode"]
+        running: true
+        onStarted: displayProfileService.refreshGameDaemon()
+        onExited: gameMonitorReconnect.restart()
+        stdout: SplitParser {
+            onRead: data => {
+                if (data.includes("does not have an owner")) displayProfileService.updateGameDaemon(false);
+                else if (data.includes("GameRegistered") || data.includes("GameUnregistered") || data.includes("PropertiesChanged") || data.includes("owned by")) displayProfileService.refreshGameDaemon();
+            }
+        }
+    }
+    Timer {
+        id: gameMonitorReconnect
+        interval: 3000
+        onTriggered: if (!gameDaemonEvents.running) gameDaemonEvents.running = true
     }
 
     Process {
         id: checkGameDaemonProc
 
-        command: ["python3", Quickshell.shellDir + "/Core/Services/scripts/game_mode.py", "status"]
-
-        stdout: SplitParser {
-            onRead: (data) => {
-                if (!data)
-                    return ;
-
-                try {
-                    let info = JSON.parse(data.trim());
-                    if (info.gamemode_active) {
-                        displayProfileService.gameModeDaemonDetected = true;
-                        if (!displayProfileService.gameModeActive && !displayProfileService.gameModeError) {
-                            displayProfileService.autoActivatedByDaemon = true;
-                            displayProfileService.gameModeActive = true;
-                        }
-                    } else {
-                        displayProfileService.gameModeDaemonDetected = false;
-                        if (displayProfileService.gameModeActive && displayProfileService.autoActivatedByDaemon) {
-                            displayProfileService.autoActivatedByDaemon = false;
-                            displayProfileService.gameModeActive = false;
-                        }
-                    }
-                } catch (e) {
-                }
+        command: ["gdbus", "call", "--session", "--dest", "com.feralinteractive.GameMode", "--object-path", "/com/feralinteractive/GameMode", "--method", "org.freedesktop.DBus.Properties.Get", "com.feralinteractive.GameMode", "ClientCount"]
+        onExited: code => {
+            if (code !== 0) displayProfileService.updateGameDaemon(false);
+            if (displayProfileService.gameStatusPending) gameStatusDebounce.restart();
+        }
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const count = text.match(/<(?:int32\s+)?(\d+)>/);
+                if (count) displayProfileService.updateGameDaemon(Number(count[1]) > 0);
             }
         }
 

@@ -31,11 +31,12 @@ ThemedSlider {
     }
 
     Timer {
-        interval: 250
+        // The setter updates the UI immediately; poll only for external changes.
+        interval: 1000
         running: root.isVisible
         repeat: true
         triggeredOnStart: true
-        onTriggered: brightGetProc.running = true
+        onTriggered: if (!brightGetProc.running && !brightSetProc.running) brightGetProc.running = true
     }
 
     Process {
@@ -65,6 +66,10 @@ ThemedSlider {
 
     Process {
         id: brightSetProc
+        onExited: {
+            if (root.isVisible && !root.pressed && !brightGetProc.running)
+                brightGetProc.running = true;
+        }
     }
 
 }

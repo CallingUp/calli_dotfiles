@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.UPower
 import qs.Core
 pragma Singleton
 
@@ -11,6 +12,8 @@ Item {
     property string powerProfile: "balanced"
     property bool hasPerformanceProfile: true
     property date currentTime: systemClock.date
+    // Hosts without hover reveal retain the existing seconds behavior.
+    property bool barClockVisible: true
     property string osId: "arch"
     readonly property string osName: {
         switch (osId) {
@@ -31,10 +34,22 @@ Item {
             return "Arch Linux";
         }
     }
-    property bool hasBattery: true
-    property int batteryLevel: 100
+    readonly property var battery: UPower.displayDevice
+    readonly property bool hasBattery: battery && battery.ready && battery.isLaptopBattery && battery.isPresent
+    readonly property int batteryLevel: hasBattery ? Math.min(100, Math.max(0, Math.round(battery.percentage * 100))) : 0
     readonly property string batteryPercentage: batteryLevel + "%"
-    property string batteryStatus: ""
+    readonly property string batteryStatus: {
+        if (!hasBattery) return "No battery";
+        switch (battery.state) {
+        case UPowerDeviceState.Charging: return "Charging";
+        case UPowerDeviceState.Discharging: return "Discharging";
+        case UPowerDeviceState.FullyCharged: return "Full";
+        case UPowerDeviceState.Empty: return "Discharging";
+        case UPowerDeviceState.PendingCharge:
+        case UPowerDeviceState.PendingDischarge: return "Not charging";
+        default: return "Unknown";
+        }
+    }
     property string batteryEstimation: {
         if (!hasBattery)
             return "Continuous power supply active";
@@ -91,7 +106,8 @@ Item {
     SystemClock {
         id: systemClock
 
-        precision: SettingsService.clockSeconds ? SystemClock.Seconds : SystemClock.Minutes
+        precision: SettingsService.clockSeconds && (systemInfoService.barClockVisible || AppState.activeWidget !== "")
+            ? SystemClock.Seconds : SystemClock.Minutes
     }
 
     Process {
@@ -116,39 +132,6 @@ Item {
             id: osOutput
         }
 
-    }
-
-    Process {
-        id: batteryProc
-
-        command: ["sh", "-c", 'for b in /sys/class/power_supply/BAT* /sys/class/power_supply/*; do if [ -d "$b" ] && [ -f "$b/capacity" ]; then if [ -f "$b/type" ] && [ "$(cat "$b/type" 2>/dev/null)" != "Battery" ]; then continue; fi; if [ -f "$b/present" ] && [ "$(cat "$b/present" 2>/dev/null)" = "0" ]; then continue; fi; c=$(cat "$b/capacity" 2>/dev/null); s=$(cat "$b/status" 2>/dev/null); [ -z "$s" ] && s="Unknown"; if [ -n "$c" ]; then echo "$c $s"; exit 0; fi; fi; done; echo "0 No battery"']
-
-        stdout: SplitParser {
-            onRead: (data) => {
-                let parts = data.trim().split(" ");
-                if (parts.length >= 2) {
-                    let capacity = parseInt(parts[0]);
-                    let status = parts.slice(1).join(" ");
-                    systemInfoService.batteryLevel = isNaN(capacity) ? 0 : Math.min(100, Math.max(0, capacity));
-                    systemInfoService.batteryStatus = status;
-                    systemInfoService.hasBattery = (status !== "No battery");
-                }
-            }
-        }
-
-    }
-
-    Timer {
-        id: batteryTimer
-
-        interval: systemInfoService.performanceInterval
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            batteryProc.running = false;
-            batteryProc.running = true;
-        }
     }
 
 }

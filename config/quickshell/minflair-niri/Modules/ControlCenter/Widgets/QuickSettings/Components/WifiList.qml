@@ -165,11 +165,11 @@ Rectangle {
                                 settingsProc.running = true;
                             }
                             onDisconnectClicked: {
-                                disconnectProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/wifi.py", "disconnect", modelData.ssid];
+                                disconnectProc.command = ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "wifi", "disconnect", modelData.ssid];
                                 disconnectProc.running = true;
                             }
                             onForgetClicked: {
-                                forgetProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/wifi.py", "forget", modelData.ssid];
+                                forgetProc.command = ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "wifi", "forget", modelData.ssid];
                                 forgetProc.running = true;
                             }
                         }

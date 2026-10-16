@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+binary="$HOME/haku_shell/tools/haku-wallpaper/target/release/haku-wallpaper"
+if [[ -x "$binary" ]]; then
+    exec "$binary" "$@"
+fi
+exec python3 "$HOME/haku_shell/scripts/bin/haku-wallpaper-selector" --worker
