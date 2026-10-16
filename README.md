@@ -52,7 +52,7 @@ Ejecuta como tu usuario, **sin sudo**. Si ya existe `~/haku_shell`, revisa
 ese checkout antes de continuar; no lo sobrescribas.
 
 ```sh
-git clone --branch main https://github.com/CallingUp/haku_shell.git ~/haku_shell
+git clone --branch main https://github.com/CallingUp/calli_dotfiles.git ~/haku_shell
 cd ~/haku_shell
 ```
 

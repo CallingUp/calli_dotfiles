@@ -37,7 +37,7 @@ El PPA de Ubuntu indicado por QuickShell es externo; el instalador no lo añade.
 Clona en tu usuario (no con sudo):
 
 ```sh
-git clone --branch main https://github.com/CallingUp/haku_shell.git ~/haku_shell
+git clone --branch main https://github.com/CallingUp/calli_dotfiles.git ~/haku_shell
 cd ~/haku_shell
 ./install.sh --dry-run --dependencies --apps --build --keyboard latam
 ```
