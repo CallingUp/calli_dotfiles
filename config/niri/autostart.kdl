@@ -9,12 +9,11 @@ spawn-at-startup "haku-keyring-unlock"
 spawn-sh-at-startup "sleep 2 && haku-ssh-unlock"
 
 // Wallpapers
-spawn-at-startup "haku-wallpaper-renderer"
 spawn-at-startup "awww-daemon" "-n" "awww-daemon-backdrop"
 spawn-sh-at-startup "sleep 1 && haku-wallpaper-restore"
 
-// Waybar lo gestiona exclusivamente waybar.service.
-// No iniciarlo aquí: hacerlo duplicaría la barra tras cada sesión.
+// Haku QuickShell lo gestiona haku-quickshell.service.
+// No iniciarlo aquí: hacerlo duplicaría la shell tras cada sesión.
 
 // Clipboard history
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"

@@ -1,5 +1,6 @@
 import Qt5Compat.GraphicalEffects
 import QtQuick
+import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
@@ -14,7 +15,6 @@ Item {
     id: root
 
     property var widget: null
-    property var cavaData: CavaService.cavaData
     property bool prominentArt: false
     readonly property real artSize: prominentArt ? Math.min(144, playerWidth * 0.35) : metadataColumn.implicitHeight
     property real playerWidth: 410
@@ -53,7 +53,9 @@ Item {
                     anchors.fill: parent
                     source: MprisService.activePlayer ? (MprisService.activePlayer.trackArtUrl || "") : ""
                     fillMode: Image.PreserveAspectCrop
-                    mipmap: true
+                    // Decode for the largest displayed size, not the full cover.
+                    sourceSize: Qt.size(Math.ceil(root.artSize * Math.min(2, Screen.devicePixelRatio)), Math.ceil(root.artSize * Math.min(2, Screen.devicePixelRatio)))
+                    mipmap: false
                     asynchronous: true
                     visible: false
                 }
@@ -132,11 +134,6 @@ Item {
 
                         return MprisService.activePlayer.shuffle;
                     }
-                }
-
-                // CAVA VISUALIZER BOTTOM
-                MusicCavaBars {
-                    cavaData: root.cavaData
                 }
 
             }

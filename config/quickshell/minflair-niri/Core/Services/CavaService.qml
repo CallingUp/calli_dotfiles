@@ -9,7 +9,10 @@ Item {
 
     property var cavaData: []
     property bool barEnabled: true
-    readonly property bool isCavaActive: barEnabled && !HyprlandService.isTrueFullscreen && MprisService.isPlaying && SystemInfoService.powerProfile !== "power-saver"
+    // The compact media island was removed: only the activity panel draws Cava.
+    readonly property bool visualizerVisible: AppState.activeWidget === "music" || AppState.activeWidget === "notificationsCenter"
+    // Disabled globally: legacy components may still reference empty data.
+    readonly property bool isCavaActive: false
 
     Timer {
         id: watchdog

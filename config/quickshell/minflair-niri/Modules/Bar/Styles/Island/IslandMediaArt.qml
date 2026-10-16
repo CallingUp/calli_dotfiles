@@ -30,9 +30,10 @@ Item {
             id: artImage
 
             anchors.fill: parent
-            source: MprisService.activePlayer ? (MprisService.activePlayer.trackArtUrl || "") : ""
+            source: root.visible && root.showMedia && MprisService.activePlayer ? (MprisService.activePlayer.trackArtUrl || "") : ""
             fillMode: Image.PreserveAspectCrop
-            mipmap: true
+            sourceSize: Qt.size(64, 64)
+            mipmap: false
             asynchronous: true
             visible: false
         }

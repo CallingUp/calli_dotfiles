@@ -48,7 +48,7 @@ PanelWindow {
                 })
             }
         }
-        Rectangle { width: parent.width + 22; height: parent.height; radius: 22; color: "#08090b" }
+        Rectangle { width: parent.width + 22; height: parent.height; radius: 22; color: "#000000" }
         MouseArea { anchors.fill: parent }
         Loader {
             anchors.fill: parent

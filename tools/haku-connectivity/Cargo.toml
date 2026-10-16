@@ -1,0 +1,15 @@
+[package]
+name = "haku-connectivity"
+version = "0.1.0"
+edition = "2021"
+publish = false
+[dependencies]
+serde_json = "=1.0.149"
+dbus = "0.9"
+libc = "=0.2.190"
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

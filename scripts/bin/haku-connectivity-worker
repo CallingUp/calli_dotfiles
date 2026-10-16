@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+binary="$HOME/haku_shell/tools/haku-connectivity/target/release/haku-connectivity"
+if [[ -x "$binary" ]]; then exec "$binary" "$@"; fi
+if [[ "${1:-}" == bluetooth && "${2:-}" == pair ]]; then
+    shift 2
+    exec python3 "$HOME/haku_shell/config/quickshell/minflair-niri/Modules/ControlCenter/scripts/bluetooth_pair.py" "$@"
+fi
+case "${1:-}" in wifi|bluetooth) kind="$1"; shift;; *) exit 1;; esac
+exec python3 "$HOME/haku_shell/config/quickshell/minflair-niri/Modules/ControlCenter/scripts/$kind.py" "$@"

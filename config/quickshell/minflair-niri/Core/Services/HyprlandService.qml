@@ -59,7 +59,21 @@ Item {
     function applyHyprlandSettings() {}
     function applyMouseSettings() {}
     function setPowerSaverMode(enabled) {}
-    function refreshWorkspaces() { if (!workspaceQuery.running) workspaceQuery.running = true; }
+    property bool workspaceRefreshPending: false
+    function refreshWorkspaces() {
+        workspaceRefreshPending = true;
+        workspaceRefreshDebounce.restart();
+    }
+    Timer {
+        id: workspaceRefreshDebounce
+        interval: 40
+        onTriggered: {
+            if (!workspaceQuery.running && backend.workspaceRefreshPending) {
+                backend.workspaceRefreshPending = false;
+                workspaceQuery.running = true;
+            }
+        }
+    }
     function dispatch(command) {
         const match = command.match(/workspace=(\d+)/);
         if (match) focusWorkspace(Number(match[1]));
@@ -73,6 +87,10 @@ Item {
         id: workspaceQuery
         command: ["niri", "msg", "-j", "workspaces"]
         running: true
+        onExited: {
+            // Events received during a query must not be lost.
+            if (backend.workspaceRefreshPending) workspaceRefreshDebounce.restart();
+        }
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
@@ -85,8 +103,11 @@ Item {
         }
     }
     Process {
+        id: niriEvents
         command: ["niri", "msg", "-j", "event-stream"]
         running: true
+        onStarted: backend.refreshWorkspaces()
+        onExited: eventReconnect.restart()
         stdout: SplitParser {
             onRead: data => {
                 if (data.includes("Workspace") || data.includes("Window")) backend.refreshWorkspaces();
@@ -104,6 +125,16 @@ Item {
             }
         }
     }
-    // Recovery if the event stream disconnects; normal updates are event-driven.
-    Timer { interval: 3000; running: true; repeat: true; onTriggered: backend.refreshWorkspaces() }
+    // No workspace polling while connected. Reconnect and resync on failure.
+    Timer {
+        id: eventReconnect
+        interval: 2000
+        onTriggered: if (!niriEvents.running) niriEvents.running = true
+    }
+    Timer {
+        interval: 3000
+        running: !niriEvents.running
+        repeat: true
+        onTriggered: backend.refreshWorkspaces()
+    }
 }

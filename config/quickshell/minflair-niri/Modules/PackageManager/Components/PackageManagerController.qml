@@ -435,7 +435,7 @@ Item {
             controller.isSearching = true;
             controller.accumulatedSearchOutput = "";
             controller.currentSearchQuery = targetQuery;
-            let baseCmd = ["python3", Quickshell.shellDir + "/Modules/PackageManager/scripts/search_packages.py"];
+            let baseCmd = ["bash", Quickshell.shellDir + "/../../../scripts/bin/haku-info-worker", "packages"];
             searchProc.command = baseCmd.concat(nextCommand);
             searchProc.running = true;
         }

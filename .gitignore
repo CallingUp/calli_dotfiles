@@ -6,3 +6,9 @@ secrets/
 private/
 __pycache__/
 *.pyc
+tools/haku-metrics/target/
+tools/haku-clipboard/target/
+tools/haku-wallpaper/target/
+tools/haku-connectivity/target/
+tools/haku-info/target/
+tools/haku-carousel-prototype/target/

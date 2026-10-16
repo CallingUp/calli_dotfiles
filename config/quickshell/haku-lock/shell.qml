@@ -12,7 +12,9 @@ ShellRoot {
     property string status: ""
     property int failures: 0
     property int cooldown: 0
-    property color accent: "#8d7c74"
+    property color accent: "#B99573"
+    property color activeColor: Qt.lighter(accent, 1.35)
+    property color errorColor: "#BF616A"
     property string wallpaper: ""
     property string time: Qt.formatDateTime(new Date(), "HHmm")
     property string date: Qt.formatDateTime(new Date(), "dddd, d MMMM")
@@ -28,7 +30,9 @@ ShellRoot {
         onLoaded: root.wallpaper = text().trim()
     }
     FileView {
-        path: Quickshell.env("HOME") + "/.local/state/haku_theme/colors.css"
+        path: Quickshell.env("HOME") + "/.local/state/haku_theme/login-colors.css"
+        watchChanges: true
+        onFileChanged: reload()
         onLoaded: {
             const match = text().match(/accent_color\s+(#[0-9a-fA-F]{6})/)
             if (match) root.accent = match[1]
@@ -89,6 +93,7 @@ ShellRoot {
         id: session
         locked: !root.preview
         WlSessionLockSurface {
+            color: "#000000"
             LockView { anchors.fill: parent; controller: root; auth: pam }
         }
     }
@@ -97,6 +102,7 @@ ShellRoot {
         PanelWindow {
             required property var modelData
             screen: modelData
+            color: "#000000"
             anchors { top: true; bottom: true; left: true; right: true }
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay

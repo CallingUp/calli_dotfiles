@@ -11,10 +11,22 @@ Item {
     property bool micMuted: false
     property string defaultSourceName: ""
     property bool hasPhysicalMic: defaultSourceName !== "" && !defaultSourceName.endsWith(".monitor")
+    property bool micRefreshPending: false
 
     function updateMicStatus() {
-        defaultSourceProc.running = false;
-        defaultSourceProc.running = true;
+        micRefreshPending = true;
+        micRefreshDebounce.restart();
+    }
+
+    Timer {
+        id: micRefreshDebounce
+        interval: 80
+        onTriggered: {
+            if (!defaultSourceProc.running && audioService.micRefreshPending) {
+                audioService.micRefreshPending = false;
+                defaultSourceProc.running = true;
+            }
+        }
     }
 
     function setMicVolume(val) {
@@ -119,6 +131,8 @@ Item {
             if (!SettingsService.settingsLoaded)
                 SettingsService.load();
 
+            if (audioService.micRefreshPending) micRefreshDebounce.restart();
+
         }
 
         stdout: StdioCollector {
@@ -135,7 +149,9 @@ Item {
 
         stdout: SplitParser {
             onRead: (data) => {
-                if (data.includes("source") && SettingsService.settingsLoaded)
+                // source-output events describe recording streams, not source volume.
+                // A server event can change the default microphone.
+                if (/\bon (source|server) #/.test(data) && SettingsService.settingsLoaded)
                     audioService.updateMicStatus();
 
             }

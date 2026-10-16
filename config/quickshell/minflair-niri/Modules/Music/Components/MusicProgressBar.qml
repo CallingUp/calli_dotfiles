@@ -11,6 +11,13 @@ ColumnLayout {
     id: progressRoot
 
     property bool isVisibleOnScreen: true
+    readonly property var player: MprisService.activePlayer
+    // MprisPlayer.length falls back to position when duration is unsupported.
+    readonly property bool hasDuration: player !== null && MprisService.timelineDuration > 0
+    readonly property real duration: hasDuration ? MprisService.timelineDuration : 0
+    readonly property bool hasPosition: player !== null && player.positionSupported
+    readonly property real elapsed: hasPosition && Number.isFinite(player.position)
+                                    ? Math.max(0, hasDuration ? Math.min(duration, player.position) : player.position) : 0
 
     Layout.fillWidth: true
     spacing: Constants.size3Xs
@@ -19,7 +26,8 @@ ColumnLayout {
     Item {
         id: progressArea
 
-        readonly property real rawProgress: (MprisService.activePlayer && MprisService.activePlayer.length > 0) ? (MprisService.activePlayer.position / MprisService.activePlayer.length) : 0
+        readonly property real rawProgress: progressRoot.hasDuration && progressRoot.hasPosition
+                                            ? progressRoot.elapsed / progressRoot.duration : 0
         property real seekProgress: 0
         readonly property real currentProgress: seekMouseArea.pressed ? seekProgress : Math.max(0, Math.min(1, rawProgress))
         property real lastRawProgress: 0
@@ -108,7 +116,7 @@ ColumnLayout {
             height: width
             radius: width / 2
             color: Theme.accent
-            visible: MprisService.activePlayer !== null
+            visible: progressRoot.hasDuration && progressRoot.hasPosition
             scale: progressArea.currentProgress > 0.001 ? 1 : 0
             layer.enabled: progressArea.isInteractive
 
@@ -152,20 +160,24 @@ ColumnLayout {
             id: seekMouseArea
 
             function updateSeek(mouse) {
-                if (!MprisService.activePlayer || !MprisService.activePlayer.canSeek)
+                if (!progressRoot.hasDuration || !progressRoot.hasPosition || !progressRoot.player.canSeek)
                     return ;
 
                 var p = Math.max(0, Math.min(1, mouse.x / width));
                 progressArea.seekProgress = p;
-                MprisService.activePlayer.position = p * MprisService.activePlayer.length;
             }
 
             anchors.fill: parent
+            enabled: progressRoot.hasDuration && progressRoot.hasPosition && progressRoot.player.canSeek
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             preventStealing: true
             onPressed: (mouse) => {
                 updateSeek(mouse);
+            }
+            onReleased: {
+                if (progressRoot.hasDuration && progressRoot.hasPosition)
+                    MprisService.seekTo(progressArea.seekProgress * progressRoot.duration);
             }
             onPositionChanged: (mouse) => {
                 if (pressed)
@@ -181,10 +193,10 @@ ColumnLayout {
 
         ThemedText {
             text: {
-                if (seekMouseArea.pressed && MprisService.activePlayer && MprisService.activePlayer.length > 0)
-                    return MprisService.formatTime(progressArea.seekProgress * MprisService.activePlayer.length);
+                if (seekMouseArea.pressed && progressRoot.hasDuration)
+                    return MprisService.formatTime(progressArea.seekProgress * progressRoot.duration);
 
-                return MprisService.formatTime(MprisService.activePlayer ? MprisService.activePlayer.position : 0);
+                return progressRoot.hasPosition ? MprisService.formatTime(progressRoot.elapsed) : "--:--";
             }
             customSize: Constants.sizeXs
             color: Theme.muted
@@ -195,7 +207,7 @@ ColumnLayout {
         }
 
         ThemedText {
-            text: MprisService.formatTime(MprisService.activePlayer ? MprisService.activePlayer.length : 0)
+            text: progressRoot.hasDuration ? MprisService.formatTime(progressRoot.duration) : "--:--"
             customSize: Constants.sizeXs
             color: Theme.muted
         }

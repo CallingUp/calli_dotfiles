@@ -31,7 +31,7 @@ QuickSettingsTile {
     }
 
     function toggle() {
-        btSetProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth.py", "toggle-power"];
+        btSetProc.command = ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "bluetooth", "toggle-power"];
         btSetProc.running = true;
     }
 
@@ -51,11 +51,11 @@ QuickSettingsTile {
             pairingName = device.name;
             pairingKind = "";
             pairingCode = "";
-            pairingProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth_pair.py", mac];
+            pairingProc.command = ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "bluetooth", "pair", mac];
             pairingProc.running = true;
             return;
         }
-        btConnectProc.command = ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth.py", "toggle-connect", mac];
+        btConnectProc.command = ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "bluetooth", "toggle-connect", mac];
         btConnectProc.running = true;
     }
 
@@ -124,7 +124,7 @@ QuickSettingsTile {
     Process {
         id: btGetProc
 
-        command: ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth.py", "status"]
+        command: ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "bluetooth", "status"]
 
         stdout: SplitParser {
             onRead: (data) => {
@@ -160,7 +160,7 @@ QuickSettingsTile {
     Process {
         id: btDiscoveryProc
 
-        command: ["python3", Quickshell.shellDir + "/Modules/ControlCenter/scripts/bluetooth.py", "scan"]
+        command: ["bash", Quickshell.env("HOME") + "/haku_shell/scripts/bin/haku-connectivity-worker", "bluetooth", "scan"]
 
         stdout: SplitParser {
             onRead: (data) => {

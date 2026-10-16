@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+binary="$HOME/haku_shell/tools/haku-metrics/target/release/haku-metrics"
+if [[ -x "$binary" ]]; then
+    exec "$binary" "${1:-4000}"
+fi
+# Fresh clones remain usable until the optional native helper is compiled.
+script_dir="${BASH_SOURCE[0]%/*}"
+exec python3 "$script_dir/get_processes.py" "${1:-4000}" cpu --daemon --no-processes

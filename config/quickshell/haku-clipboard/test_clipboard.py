@@ -10,6 +10,22 @@ backend = runpy.run_path(str(Path(__file__).resolve().parents[3] / 'scripts/bin/
 
 
 class ClipboardTests(unittest.TestCase):
+    def test_cleanup_only_private_session_directory(self):
+        with tempfile.TemporaryDirectory() as runtime:
+            cache = Path(tempfile.mkdtemp(prefix='haku-clipboard-', dir=runtime))
+            with patch.dict('os.environ', XDG_RUNTIME_DIR=runtime):
+                with self.assertRaises(ValueError): backend['worker'](['cleanup', runtime])
+                self.assertTrue(backend['worker'](['cleanup', str(cache)])['ok'])
+                self.assertFalse(cache.exists())
+
+    def test_cleanup_refuses_unexpected_files(self):
+        with tempfile.TemporaryDirectory() as runtime:
+            cache = Path(tempfile.mkdtemp(prefix='haku-clipboard-', dir=runtime))
+            (cache / 'keep.txt').touch()
+            with patch.dict('os.environ', XDG_RUNTIME_DIR=runtime):
+                with self.assertRaises(ValueError): backend['worker'](['cleanup', str(cache)])
+            self.assertTrue((cache / 'keep.txt').exists())
+
     def test_classify(self):
         classify = backend['classify']
         self.assertEqual(classify('https://example.org/'), 'link')

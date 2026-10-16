@@ -1,3 +1,24 @@
 #!/usr/bin/env bash
-# QML carousel; original GTK implementation is archived in ~/backups.
+# Native launcher, with the previous Python launcher as fallback.
+mode=qml
+mode_file="$HOME/.local/state/haku_theme/carousel_backend"
+if [[ -r "$mode_file" ]]; then read -r mode < "$mode_file"; fi
+preview="$HOME/haku_shell/tools/haku-carousel-prototype/target/release/haku-carousel"
+worker="$HOME/haku_shell/tools/haku-wallpaper/target/release/haku-wallpaper"
+if [[ "$mode" == rust && -x "$preview" && -x "$worker" ]]; then
+    # Opening dismisses the other panels, as the original QML host did.
+    # A second invocation only closes the carousel.
+    if ! "$preview" --status >/dev/null 2>&1; then
+        shell_config="$HOME/haku_shell/config/quickshell/minflair-niri/niri-preview.qml"
+        for panel in widgets haku-clipboard-host haku-shortcuts-host haku-wallpaper-host; do
+            timeout 1s quickshell ipc -p "$shell_config" call "$panel" close >/dev/null 2>&1 || true
+        done
+    fi
+    exec env WGPU_POWER_PREF=low WGPU_BACKEND=vulkan \
+        VK_DRIVER_FILES=/usr/share/vulkan/icd.d/intel_icd.json "$preview" --toggle "$@"
+fi
+binary="$HOME/haku_shell/tools/haku-wallpaper/target/release/haku-wallpaper"
+if [[ -x "$binary" ]]; then
+    exec "$binary" --launch "$@"
+fi
 exec python3 "$HOME/haku_shell/scripts/bin/haku-wallpaper-selector" "$@"

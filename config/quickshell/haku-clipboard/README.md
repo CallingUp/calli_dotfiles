@@ -26,3 +26,16 @@ Pruebas (mock; no copian ni borran datos reales):
 ```sh
 python3 ~/haku_shell/config/quickshell/haku-clipboard/test_clipboard.py
 ```
+# Ejecución compartida
+
+La UI vive en `../minflair-niri/Modules/Clipboard/Clipboard.qml` y se carga bajo
+demanda dentro de la shell. `haku-clipboard` alterna abrir/cerrar mediante IPC;
+`shell.qml` mantiene el modo independiente si la shell no está disponible.
+Un worker corto prepara la lista y un directorio privado en el runtime; no queda
+residente. Al cerrar se eliminan únicamente las vistas previas de esa sesión,
+mediante una operación que valida ubicación, permisos y nombres de archivo.
+El historial de cliphist no se borra al cerrar.
+
+Las operaciones usan el helper Rust `tools/haku-clipboard` a través de
+`scripts/bin/haku-clipboard-worker`; si el binario falta se usa Python.
+Compilación y pruebas: `tools/haku-clipboard/README.md`.

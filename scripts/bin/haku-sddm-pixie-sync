@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+image="${1:?}"
+source "$HOME/.config/haku/palette.conf"
+accent="${2:-$ACCENT}"
+target="/usr/local/share/haku-sddm/pixie-background.jpg"
+temporary="${target}.tmp"
+theme_config="/usr/local/share/haku-sddm/pixie-theme.conf"
+theme_temporary="${theme_config}.tmp"
+
+[[ -f "$image" ]] || exit 0
+[[ "$accent" =~ ^#[0-9A-Fa-f]{6}$ ]] || exit 1
+
+magick "${image}[0]" \
+    -auto-orient \
+    -resize '1920x1080^' \
+    -gravity center \
+    -extent 1920x1080 \
+    -quality 92 \
+    "$temporary"
+mv -f "$temporary" "$target"
+
+# Login/lock are the only wallpaper-derived accent consumers.
+if extracted=$(python3 "$HOME/.local/bin/get_accent_color.py" "$target" 2>/dev/null) \
+    && [[ "$extracted" =~ ^#[0-9A-Fa-f]{6}$ ]]; then
+    accent="$extracted"
+else
+    echo "No se pudo extraer el acento de acceso; se conserva el fallback." >&2
+fi
+login_colors="$HOME/.local/state/haku_theme/login-colors.css"
+mkdir -p "$HOME/.local/state/haku_theme"
+printf '@define-color accent_color %s;\n' "$accent" > "${login_colors}.tmp"
+mv -f "${login_colors}.tmp" "$login_colors"
+
+cat > "$theme_temporary" <<EOF
+[General]
+background=/usr/local/share/haku-sddm/pixie-background.jpg
+accentColor=$accent
+autoColor=false
+use24HourClock=true
+backgroundColor=$BACKGROUND
+textColor=$FOREGROUND
+fontFamily=0xProto Nerd Font
+EOF
+mv -f "$theme_temporary" "$theme_config"

@@ -35,6 +35,10 @@ QtObject {
         return false;
     }
     property NumberAnimation progressAnim
+    onPopupChanged: {
+        if (!popup && progressAnim)
+            progressAnim.stop();
+    }
 
     progressAnim: NumberAnimation {
         target: root
@@ -43,12 +47,12 @@ QtObject {
         to: 0
         duration: {
             if (root.summary === "Power Menu")
-                return 10000;
+                return 5000;
 
             if (root.summary === "Volume" || root.summary === "Brightness" || root.summary === "Microphone")
-                return 1500;
+                return 1000;
 
-            return 5000;
+            return 2500;
         }
         onFinished: {
             if (!root.isLocked)

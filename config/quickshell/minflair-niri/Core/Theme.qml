@@ -12,10 +12,10 @@ QtObject {
         "name": "Default",
         "dark": {
             "name": "Default",
-            "bg": '#030107',
-            "fg": '#d1d1d1',
-            "accent": '#a77ef5',
-            "accentComplementary": '#f57eb6'
+            "bg": '#000000',
+            "fg": '#E8DCC8',
+            "accent": '#B99573',
+            "accentComplementary": '#D7B894'
         },
         "light": {
             "name": "Default Light",
@@ -43,6 +43,26 @@ QtObject {
     property color accentComplementary: themes[0].dark.accentComplementary
     property color shadow: isDark ? Qt.rgba(0, 0, 0, 0.75) : Qt.rgba(0, 0, 0, 0.45)
     property bool generateFromWallpaper: false
+    readonly property bool fixedPaletteEnabled: true
+    property FileView fixedPalette: FileView {
+        path: Quickshell.env("HOME") + "/.config/haku/palette.conf"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            const values = {};
+            for (const line of text().split("\n")) {
+                const match = line.match(/^([A-Z_]+)="(#[0-9a-fA-F]{6})"$/);
+                if (match) values[match[1]] = match[2];
+            }
+            if (!values.BACKGROUND || !values.FOREGROUND || !values.ACCENT || !values.ACTIVE) return;
+            root.generateFromWallpaper = false;
+            root.currentScheme = "Haku Siamese";
+            root._rawBg = values.BACKGROUND;
+            root.fg = values.FOREGROUND;
+            root.accent = values.ACCENT;
+            root.accentComplementary = values.ACTIVE;
+        }
+    }
     property bool wallpaperIsDark: true
     property var wallpaperColors: null
     property Process saver
@@ -55,6 +75,7 @@ QtObject {
     signal themeApplied()
 
     function applyScheme(scheme) {
+        if (fixedPaletteEnabled) { fixedPalette.reload(); return; }
         currentScheme = scheme.name;
         _rawBg = scheme.bg;
         fg = scheme.fg;
@@ -109,12 +130,14 @@ QtObject {
     }
 
     function generateTheme(wallpaperPath) {
+        if (fixedPaletteEnabled) return;
         generatorProc.running = false;
-        generatorProc.command = ["python3", Quickshell.shellDir + "/Scripts/theme/generate_theme.py", wallpaperPath, generateFromWallpaper ? "True" : "False"];
+        generatorProc.command = ["bash", Quickshell.shellDir + "/../../../scripts/bin/haku-theme-worker", wallpaperPath, generateFromWallpaper ? "True" : "False"];
         generatorProc.running = true;
     }
 
     function loadScheme() {
+        if (fixedPaletteEnabled) { fixedPalette.reload(); return; }
         loader.running = false;
         loader.running = true;
         wallpaperLoader.running = false;

@@ -1,0 +1,51 @@
+/* Haku Siamese — derived from palette.conf. */
+@define-color accent_color #B99573;
+@define-color accent_bg_color #B99573;
+@define-color accent_fg_color #000000;
+@define-color accent_active #D7B894;
+@define-color accent_inactive #705542;
+@define-color window_bg_color #000000;
+@define-color window_fg_color #E8DCC8;
+@define-color view_bg_color #000000;
+@define-color view_fg_color #E8DCC8;
+@define-color headerbar_bg_color #211813;
+@define-color headerbar_fg_color #E8DCC8;
+@define-color popover_bg_color #211813;
+@define-color popover_fg_color #E8DCC8;
+@define-color dialog_bg_color #211813;
+@define-color dialog_fg_color #E8DCC8;
+@define-color card_bg_color #211813;
+@define-color card_fg_color #E8DCC8;
+@define-color sidebar_bg_color #211813;
+@define-color sidebar_fg_color #E8DCC8;
+@define-color theme_bg_color #000000;
+@define-color theme_fg_color #E8DCC8;
+@define-color theme_base_color #000000;
+@define-color theme_text_color #E8DCC8;
+@define-color theme_selected_bg_color #B99573;
+@define-color theme_selected_fg_color #000000;
+@define-color error_color #BF616A;
+@define-color success_color #A3BE8C;
+@define-color warning_color #D7B894;
+
+window, .background { background-color: @window_bg_color; color: @window_fg_color; }
+headerbar, menubar, popover > contents, menu {
+    background-color: @headerbar_bg_color;
+    color: @headerbar_fg_color;
+}
+entry, textview, textview text, treeview, list, .view {
+    background-color: @view_bg_color;
+    color: @view_fg_color;
+}
+button {
+    background-image: none;
+    background-color: @card_bg_color;
+    color: @card_fg_color;
+    border-color: @accent_inactive;
+}
+button:hover { background-color: @accent_inactive; color: @window_fg_color; }
+button:checked, button.suggested-action, selection, row:selected, .view:selected {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+progressbar progress, scale highlight, switch:checked { background-color: @accent_bg_color; }
