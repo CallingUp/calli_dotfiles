@@ -39,11 +39,16 @@ Clona en tu usuario (no con sudo):
 ```sh
 git clone --branch main https://github.com/CallingUp/calli_dotfiles.git ~/haku_shell
 cd ~/haku_shell
-./install.sh --dry-run --dependencies --apps --build --keyboard latam
+./install.sh
 ```
 
-Revisa el plan. Para instalar paquetes, compilar los cinco helpers e instalar
-configuraciones opcionales de aplicaciones:
+Sin argumentos se abre el asistente: detecta la distribución, pregunta el teclado,
+permite elegir Niri normal o SHORiN en Arch y muestra el plan antes de confirmar.
+Instala dependencias, compila cinco helpers, incluye temas de aplicaciones y
+habilita el servicio para la próxima sesión. Enter en la confirmación cancela.
+Requiere una terminal interactiva; no aplica cambios si la entrada está redirigida.
+
+Para uso avanzado o automatización, el equivalente con Niri normal es:
 
 ```sh
 ./install.sh --apply --dependencies --build --apps --enable --keyboard latam
@@ -78,14 +83,47 @@ de archivos; una nueva ejecución puede crear un manifiesto vacío.
 alias a él, pero nunca se reemplaza otro checkout existente. No muevas ni
 borres el checkout después: la shell carga QML y fallbacks desde allí.
 
+## Fork SHORiN (Arch y derivados)
+
+Ejecuta `./install.sh` y selecciona **2** cuando pregunte por Niri.
+También puedes solicitarlo con opciones explícitas:
+
+```sh
+./install.sh --apply --dependencies --build --apps --enable --shorin --keyboard latam
+```
+
+La receta revisable está en `installer/niri-shorin/PKGBUILD`. Descarga el código
+del [fork original](https://github.com/SHORiN-KiWATA/niri) fijado al commit
+`8ebd8b165bd84a9e5c3912f2f0792996769137eb`, compila y registra el paquete
+`niri-shorin-fork-git` con makepkg/pacman. No instala un binario suelto ni descarga
+una receta AUR para ejecutarla. Pacman confirma el reemplazo del Niri existente.
+
+Se incluyen binario, sesión, unidades systemd y archivos del portal. Se usan dos
+jobs de Cargo por defecto (ajustables con `CARGO_BUILD_JOBS`). La compilación
+puede tardar y consumir varios GB de disco; los archivos temporales de esta
+operación se limpian al terminar. No reinicia ni cierra el compositor actual.
+
+El fork no activa automáticamente el perfil personal: se mantiene el portable
+para no copiar monitores o ajustes específicos de otro equipo. Los paquetes de
+compositor no se revierten con `--restore`; para volver al normal en Arch:
+
+```sh
+sudo pacman -S niri
+```
+
+Revisa y confirma el conflicto de paquetes y vuelve a iniciar sesión después.
+La integración del empaquetado tiene pruebas mock; no se ha recompilado Niri
+como parte de las pruebas del instalador. En Debian/Ubuntu/NixOS no se promete
+instalación automática de este fork: se debe empaquetar/configurar por separado.
+
 ## Perfiles de Niri
 
 - `--profile portable` (predeterminado): sin monitor fijo, sin SSH/keyring
   personales, sin lupa/grid overview del fork. Conserva launcher, carrusel,
   clipboard, controles, reproductor, notificaciones y las tres islas hover.
 - `--profile personal`: copia tus KDL actuales, con las rutas del nuevo usuario.
-  Necesita tu fork [SHORiN](https://github.com/SHORiN-KiWATA/niri); no se compila
-  ni instala automáticamente. Conserva monitor/teclado/acciones personales;
+  Necesita el fork [SHORiN](https://github.com/SHORiN-KiWATA/niri), instalable
+  explícitamente con `--shorin` en Arch. Conserva monitor/teclado/acciones personales;
   revísalos. El instalador valida antes de reemplazar archivos.
 
 El perfil portable usa Mod+T para terminal, Mod+Enter launcher, Mod+O overview,

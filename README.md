@@ -33,13 +33,15 @@ históricas no se activan con el instalador.
 
 | Sistema | Método | Condición |
 | --- | --- | --- |
-| Arch y derivados | Instalador + pacman | Dependencias disponibles en tus repositorios |
+| Arch y derivados | Asistente + pacman | Niri normal o fork SHORiN |
 | Debian / Ubuntu | Instalador + apt | Niri, QuickShell y Qt compatibles disponibles |
 | NixOS | NixOS + Home Manager | Integración declarativa experimental |
 
-Requisitos: Linux con systemd de usuario, Niri reciente, QuickShell 0.3.x
-compatible con **Qt >= 6.9**, Git y Python 3.9+. Rust/Cargo reciente solo es
-necesario para compilar los helpers; de lo contrario se usan alternativas Python.
+Para abrir el instalador necesitas **Git y Python 3.9+**, en una terminal de
+tu usuario. El asistente instala las dependencias disponibles en tus repositorios.
+El escritorio requiere Linux con systemd de usuario, Niri reciente y QuickShell
+0.3.x compatible con **Qt >= 6.9**. También prepara Rust/Cargo para compilar los
+helpers; las alternativas Python siguen disponibles.
 
 No basta con tener QuickShell: su Qt también debe ser compatible. El instalador
 no añade AUR, PPA ni backports. Lee los [requisitos por distribución](docs/INSTALL.md#estado-y-límites).
@@ -56,16 +58,38 @@ git clone --branch main https://github.com/CallingUp/calli_dotfiles.git ~/haku_s
 cd ~/haku_shell
 ```
 
-### 2. Revisar el plan
+### 2. Instalar
 
 ```sh
-./install.sh --dry-run --dependencies --build --apps --keyboard latam
+./install.sh
 ```
 
-La vista previa no instala paquetes ni copia configuraciones. Sustituye
-`latam` por tu teclado, por ejemplo `es` o `us`.
+Eso es todo: el asistente detecta tu distro, pregunta el teclado y, en Arch,
+permite elegir Niri normal o el fork SHORiN. Muestra el plan y pide confirmación
+antes de instalar dependencias, compilar helpers, copiar temas y habilitar el
+servicio. Se crean respaldos de los archivos reemplazados. Pulsa Enter en la
+confirmación para cancelar sin aplicar cambios. No ejecutes el script con sudo:
+el gestor de paquetes lo solicita cuando es necesario.
 
-### 3. Aplicar
+**¿Quieres SHORiN?** En Arch/CachyOS y derivados, elige **2** cuando aparezca:
+
+```text
+Niri: [1] repositorios / [2] fork SHORiN [1]:
+```
+
+El asistente compila una revisión fijada del [fork SHORiN](https://github.com/SHORiN-KiWATA/niri)
+y la instala como paquete de pacman, con sus archivos de sesión y portal.
+Pacman pide confirmar el reemplazo si ya tienes otro Niri. Esto puede tardar;
+no cierra tu sesión actual. La configuración sigue siendo portable, sin copiar
+los monitores del equipo original.
+
+La instalación automática de SHORiN **solo está implementada para Arch y
+derivados**. Consulta [los detalles del fork](docs/INSTALL.md#fork-shorin-arch-y-derivados).
+
+<details>
+<summary>Opciones avanzadas (no necesarias para la instalación guiada)</summary>
+
+Para seleccionar opciones directamente, puedes usar:
 
 ```sh
 ./install.sh --apply --dependencies --build --apps --enable --keyboard latam
@@ -76,13 +100,15 @@ El instalador valida Niri y respalda individualmente los archivos reemplazados.
 
 | Opción | Función |
 | --- | --- |
-| `--apply` | Aplica cambios; sin ella solo muestra el plan |
+| `--apply` | Aplica cambios en el modo con parámetros; sin ella solo muestra el plan |
+| `--dry-run` | Muestra el plan sin instalar ni abrir el asistente |
 | `--dependencies` | Instala dependencias de los repositorios configurados |
 | `--build` | Compila los cinco helpers Rust |
 | `--apps` | Incluye Kitty, Alacritty, GTK 3/4 y Qt 5/6 |
 | `--enable` | Habilita el servicio para sesiones posteriores, sin arrancarlo ahora |
 | `--keyboard latam` | Teclado del perfil portable |
 | `--profile portable` | Perfil predeterminado, sin hardware personal |
+| `--shorin` | Compila e instala el fork SHORiN empaquetado, solo Arch/derivados |
 
 Si ya tienes las dependencias y no quieres compilar ni cambiar aplicaciones:
 
@@ -94,7 +120,9 @@ El perfil opcional `personal` necesita el fork SHORiN y conserva ajustes
 específicos del equipo original. Para otro equipo usa el portable.
 Consulta [las diferencias entre perfiles](docs/INSTALL.md#perfiles-de-niri).
 
-### 4. Primera sesión
+</details>
+
+### 3. Primera sesión
 
 1. Guarda tu trabajo e inicia una sesión Niri desde tu gestor de acceso.
 2. Añade imágenes a `~/Pictures/Wallpapers` y abre el carrusel con `Mod + ,`.
@@ -135,7 +163,7 @@ No se modifica automáticamente:
 - Drivers, discos, energía, SSH ni shell de login.
 - SDDM, su tema o políticas PAM.
 - Perfiles Zen, Vesktop, Neovim ni configuración del prompt.
-- El fork personal de Niri ni repositorios adicionales.
+- Repositorios adicionales. SHORiN solo se instala si lo eliges expresamente.
 
 No se incluyen wallpapers, fuentes personales, cookies, claves, juegos,
 cachés ni binarios compilados. El gestor integrado de paquetes requiere Arch

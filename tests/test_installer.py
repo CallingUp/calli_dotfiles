@@ -37,6 +37,104 @@ class InstallerTests(unittest.TestCase):
                 installer.main(['--distro', family, '--dry-run'])
             self.assertEqual(list(self.home.iterdir()), [])
 
+    def test_guided_cancel_no_changes(self):
+        with patch.object(installer, 'distro', return_value='arch'), \
+             patch.object(installer.Path, 'home', return_value=self.home), \
+             patch.object(installer.os, 'geteuid', return_value=1000), \
+             patch.object(installer.sys.stdin, 'isatty', return_value=True), \
+             patch('builtins.input', side_effect=['latam', '1', '']), \
+             patch.object(installer, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+            installer.main([])
+        run.assert_not_called()
+        self.assertEqual(list(self.home.iterdir()), [])
+
+    def test_guided_confirm_installs_default_bundle(self):
+        with patch.object(installer, 'distro', return_value='arch'), \
+             patch.object(installer.Path, 'home', return_value=self.home), \
+             patch.object(installer.os, 'geteuid', return_value=1000), \
+             patch.object(installer.sys.stdin, 'isatty', return_value=True), \
+             patch('builtins.input', side_effect=['latam', '1', 's']), \
+             patch.object(installer, 'install_dependencies') as dependencies, \
+             patch.object(installer, 'check_qt'), \
+             patch.object(installer.shutil, 'which', side_effect=lambda cmd, **kw: '/usr/bin/' + cmd), \
+             patch.object(installer, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+            installer.main([])
+        dependencies.assert_any_call('arch', True, False)
+        dependencies.assert_any_call('arch', True, True)
+        self.assertTrue((self.home / '.config/kitty/kitty.conf').is_file())
+        config = (self.home / '.config/niri/config.kdl').read_text()
+        self.assertIn('layout "latam"', config)
+        calls = [list(map(str, call.args[0])) for call in run.call_args_list]
+        self.assertEqual(sum(cmd[:2] == ['cargo', 'build'] for cmd in calls), 5)
+        self.assertIn(['systemctl', '--user', 'enable', 'haku-quickshell.service'], calls)
+
+    def test_guided_requires_terminal(self):
+        with patch.object(installer.os, 'geteuid', return_value=1000), \
+             patch.object(installer.sys.stdin, 'isatty', return_value=False):
+            with self.assertRaises(RuntimeError): installer.guided_install('arch')
+
+    def test_guided_interrupt_no_changes(self):
+        with patch.object(installer.os, 'geteuid', return_value=1000), \
+             patch.object(installer.sys.stdin, 'isatty', return_value=True), \
+             patch('builtins.input', side_effect=EOFError), \
+             patch.object(installer, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+            installer.guided_install('arch')
+        run.assert_not_called()
+
+    def test_guided_root_refused(self):
+        with patch.object(installer.os, 'geteuid', return_value=0):
+            with self.assertRaises(RuntimeError): installer.guided_install('arch')
+
+    def test_guided_nixos_only_instructions(self):
+        with patch.object(installer, 'distro', return_value='nixos'), \
+             patch('builtins.input') as prompt, \
+             patch.object(installer, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+            installer.main([])
+        prompt.assert_not_called()
+        run.assert_not_called()
+
+    def test_guided_shorin_selection(self):
+        with patch.object(installer.os, 'geteuid', return_value=1000), \
+             patch.object(installer.sys.stdin, 'isatty', return_value=True), \
+             patch('builtins.input', side_effect=['latam', '2', 's']), \
+             patch.object(installer, 'main') as main, contextlib.redirect_stdout(io.StringIO()):
+            installer.guided_install('arch')
+        self.assertEqual(main.call_count, 2)
+        self.assertIn('--shorin', main.call_args_list[0].args[0])
+        self.assertIn('--dry-run', main.call_args_list[0].args[0])
+        self.assertIn('--apply', main.call_args_list[1].args[0])
+
+    def test_shorin_plan_does_not_execute(self):
+        with patch.object(installer, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+            installer.install_shorin('arch', False)
+        run.assert_not_called()
+
+    def test_shorin_other_distros_refused(self):
+        for family in ('debian', 'ubuntu', 'nixos'):
+            with patch.object(installer, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaises(RuntimeError):
+                    installer.main(['--distro', family, '--shorin', '--apply'])
+            run.assert_not_called()
+
+    def test_shorin_dependencies_do_not_install_upstream_niri(self):
+        with patch.object(installer, 'available', return_value=True), \
+             patch.object(installer, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+            installer.install_dependencies('arch', True, True, shorin=True)
+        packages = run.call_args.args[0]
+        self.assertNotIn('niri', packages)
+        self.assertIn('base-devel', packages)
+
+    def test_shorin_build_uses_package_manager_and_limited_jobs(self):
+        with patch.object(installer.Path, 'home', return_value=self.home), \
+             patch.object(installer.os, 'geteuid', return_value=1000), \
+             patch.object(installer.shutil, 'which', return_value='/usr/bin/makepkg'), \
+             patch.dict(installer.os.environ, {'CARGO_BUILD_JOBS': '2'}), \
+             patch.object(installer, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+            installer.install_shorin('arch', True)
+        self.assertEqual(run.call_args.args[0], ['makepkg', '--syncdeps', '--install', '--needed'])
+        self.assertEqual(run.call_args.kwargs['env']['CARGO_BUILD_JOBS'], '2')
+        self.assertTrue(str(run.call_args.kwargs['cwd']).startswith(str(self.home / '.cache/haku-installer')))
+
     def test_plan_dependency_does_not_execute(self):
         with patch.object(installer, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
             installer.install_dependencies('ubuntu', True, False)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""File-scoped installer: dry run by default, explicit package/build actions."""
+"""Instalación guiada sin argumentos; opciones avanzadas con vista previa por defecto."""
 import argparse
 from datetime import datetime
 import hashlib
@@ -35,9 +35,9 @@ def distro(path=Path('/etc/os-release')):
     raise RuntimeError('Distribución no soportada: ' + data.get('ID', 'unknown'))
 
 
-def run(args):
+def run(args, **kwargs):
     print('+', shlex.join(map(str, args)), flush=True)
-    subprocess.run(list(map(str, args)), check=True)
+    subprocess.run(list(map(str, args)), check=True, **kwargs)
 
 
 def available(package, family):
@@ -48,10 +48,14 @@ def available(package, family):
     return bool(re.search(r'Candidate:\s+(?!\(none\))\S+', result.stdout))
 
 
-def install_dependencies(family, build, apply):
+def install_dependencies(family, build, apply, shorin=False):
     family = 'debian' if family == 'ubuntu' else family
     specs = json.loads((REPO / 'installer/packages.json').read_text())[family]
     packages = specs['base'] + (specs['build'] if build else [])
+    if shorin:
+        packages = [p for p in packages if p != 'niri']
+        packages += ['git', 'base-devel']
+    packages = list(dict.fromkeys(packages))
     if not apply:
         print('Paquetes:', ' '.join(packages), '+ awww o swww')
         print('Sin añadir PPA, backports ni AUR automáticamente.')
@@ -65,6 +69,27 @@ def install_dependencies(family, build, apply):
                            + '. Revisa docs/INSTALL.md; no se copiaron configuraciones.')
     prefix = ['sudo', 'pacman', '-S', '--needed'] if family == 'arch' else ['sudo', 'apt-get', 'install']
     run(prefix + packages + [wallpaper])
+
+
+def install_shorin(family, apply):
+    if family != 'arch':
+        raise RuntimeError('La instalación empaquetada de SHORiN solo está disponible en Arch/derivados; revisa docs/INSTALL.md.')
+    print('SHORiN: compilar receta local installer/niri-shorin/PKGBUILD y reemplazar Niri mediante pacman.')
+    print('Revisión fijada: 8ebd8b165bd84a9e5c3912f2f0792996769137eb. No reinicia la sesión actual.')
+    if not apply:
+        return
+    if os.geteuid() == 0:
+        raise RuntimeError('makepkg no debe ejecutarse como root.')
+    if not shutil.which('makepkg'):
+        raise RuntimeError('Falta makepkg; instala base-devel o usa --dependencies.')
+    cache = Path.home() / '.cache/haku-installer'
+    ensure_safe(cache / 'niri-build', Path.home())
+    cache.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='niri-shorin-', dir=cache) as folder:
+        shutil.copy2(REPO / 'installer/niri-shorin/PKGBUILD', Path(folder) / 'PKGBUILD')
+        env = {**os.environ, 'CARGO_BUILD_JOBS': os.environ.get('CARGO_BUILD_JOBS', '2')}
+        # makepkg/pacman still ask before installing dependencies or replacing Niri.
+        run(['makepkg', '--syncdeps', '--install', '--needed'], cwd=folder, env=env)
 
 
 def render(text, home):
@@ -208,12 +233,44 @@ def restore(backup, home, apply):
         print('Restaurados los archivos; paquetes, alias del checkout y habilitación del servicio no se revierten.')
 
 
+def guided_install(family):
+    if os.geteuid() == 0:
+        raise RuntimeError('Ejecuta ./install.sh como usuario, sin sudo.')
+    if not sys.stdin.isatty():
+        raise RuntimeError('Abre una terminal y ejecuta ./install.sh; para automatizar usa opciones explícitas (--help).')
+    print('\ncalli_dotfiles · instalación guiada')
+    print('Perfil portable, dependencias, helpers Rust, temas de aplicaciones y servicio de usuario.')
+    print('No cambia SDDM, PAM, drivers ni inicia otra shell en esta sesión.')
+    try:
+        keyboard = input('Distribución de teclado (us / es / latam) [us]: ').strip() or 'us'
+        options = ['--distro', family, '--dependencies', '--build', '--apps', '--enable',
+                   '--keyboard', keyboard]
+        if family == 'arch':
+            choice = input('Niri: [1] repositorios / [2] fork SHORiN [1]: ').strip() or '1'
+            if choice not in ('1', '2'):
+                raise RuntimeError('Selecciona 1 o 2 para el compositor.')
+            if choice == '2':
+                options.append('--shorin')
+        # Show the exact file/package plan before asking for any mutation.
+        main(options + ['--dry-run'])
+        answer = input('\n¿Instalar y respaldar los archivos reemplazados? [s/N]: ').strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        print('\nCancelado. No se aplicaron cambios.')
+        return
+    if answer not in ('s', 'si', 'sí', 'y', 'yes'):
+        print('Cancelado. No se aplicaron cambios.')
+        return
+    main(options + ['--apply'])
+
+
 def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--apply', action='store_true')
-    p.add_argument('--dry-run', action='store_true', help='Vista previa explícita (también es el valor por defecto)')
+    p.add_argument('--dry-run', action='store_true', help='Solo mostrar el plan, sin instalar')
     p.add_argument('--distro', choices=('auto', 'arch', 'debian', 'ubuntu', 'nixos'), default='auto')
     p.add_argument('--dependencies', action='store_true')
+    p.add_argument('--shorin', action='store_true', help='Compilar e instalar el fork SHORiN empaquetado (solo Arch)')
     p.add_argument('--build', action='store_true', help='Compilar cinco helpers Rust con --locked')
     p.add_argument('--enable', action='store_true', help='Habilitar servicio para la próxima sesión, sin arrancarlo')
     p.add_argument('--apps', action='store_true', help='Copiar paletas Kitty/Alacritty/GTK/Qt')
@@ -232,9 +289,14 @@ def main(argv=None):
     family = distro() if args.distro == 'auto' else args.distro
     if family == 'nixos':
         print('NixOS: usa nix/nixos.nix y nix/home.nix; instrucciones en docs/INSTALL.md.')
-        if args.apply or args.dependencies or args.build:
+        if args.apply or args.dependencies or args.build or args.shorin:
             raise RuntimeError('NixOS requiere los módulos declarativos, no instalación imperativa.')
         return
+    if not argv:
+        guided_install(family)
+        return
+    if args.shorin and family != 'arch':
+        raise RuntimeError('--shorin solo admite Arch/derivados por ahora; revisa docs/INSTALL.md.')
     if not re.fullmatch(r'[a-zA-Z0-9_,()-]+', args.keyboard):
         raise RuntimeError('Distribución de teclado inválida')
     if any(c in str(home) for c in ('"', "'", '\\', '\n', '\r')):
@@ -248,7 +310,12 @@ def main(argv=None):
     if args.profile == 'personal':
         print('Requiere fork SHORiN (grid overview, lupa, opacity toggle); no se instala automáticamente.')
     if args.dependencies:
-        install_dependencies(family, args.build, args.apply)
+        if args.shorin:
+            install_dependencies(family, args.build, args.apply, shorin=True)
+        else:
+            install_dependencies(family, args.build, args.apply)
+    if args.shorin and not args.apply:
+        install_shorin(family, False)
     planned = files(home, args.profile, args.apps, args.keyboard, family)
     for target in planned:
         if args.apply:
@@ -259,11 +326,13 @@ def main(argv=None):
     if not args.apply:
         print('Vista previa. Añade --apply para instalar.')
         return
+    check_qt(family)
+    if args.shorin:
+        install_shorin(family, True)
     required = ['niri', 'quickshell', 'kitty', 'wl-paste', 'cliphist', 'python3']
     missing = [cmd for cmd in required if not shutil.which(cmd)]
     if missing:
         raise RuntimeError('Faltan comandos: ' + ', '.join(missing) + '; usa --dependencies')
-    check_qt(family)
     if not shutil.which('awww') and not shutil.which('swww'):
         raise RuntimeError('Falta awww o swww para el wallpaper')
     if not shutil.which('magick') and not shutil.which('convert'):

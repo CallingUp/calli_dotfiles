@@ -1,0 +1,33 @@
+# Adapted from the niri-shorin-fork-git recipe maintained by Shorin.
+# Pinned to the revision used to validate this desktop; not a moving branch.
+pkgname=niri-shorin-fork-git
+pkgver=26.04.r296.g8ebd8b1
+pkgrel=1
+pkgdesc='Niri SHORiN fork for calli_dotfiles'
+arch=(x86_64 aarch64)
+url='https://github.com/SHORiN-KiWATA/niri'
+license=(GPL-3.0-or-later)
+depends=(cairo glib2 libdisplay-info libinput libpipewire libxkbcommon mesa pango pixman seatd xdg-desktop-portal)
+makedepends=(clang rust git pkgconf)
+provides=("niri=$pkgver" "niri-git=$pkgver")
+conflicts=(niri niri-git niri-bin)
+options=(!debug !lto !strip)
+source=('niri::git+https://github.com/SHORiN-KiWATA/niri.git#commit=8ebd8b165bd84a9e5c3912f2f0792996769137eb')
+b2sums=('SKIP')
+
+build() {
+    cd niri
+    cargo build --locked --release
+}
+
+package() {
+    cd niri
+    install -Dm755 target/release/niri "$pkgdir/usr/bin/niri"
+    install -Dm755 resources/niri-session "$pkgdir/usr/bin/niri-session"
+    install -Dm644 resources/default-config.kdl "$pkgdir/usr/share/doc/niri/default-config.kdl"
+    install -Dm644 resources/niri.desktop "$pkgdir/usr/share/wayland-sessions/niri.desktop"
+    install -Dm644 resources/niri-portals.conf "$pkgdir/usr/share/xdg-desktop-portal/niri-portals.conf"
+    install -Dm644 resources/niri.portal "$pkgdir/usr/share/xdg-desktop-portal/portals/niri.portal"
+    install -Dm644 resources/niri.service "$pkgdir/usr/lib/systemd/user/niri.service"
+    install -Dm644 resources/niri-shutdown.target "$pkgdir/usr/lib/systemd/user/niri-shutdown.target"
+}
