@@ -191,24 +191,6 @@ Del **perfil portable**. `Mod` normalmente es Super/Windows.
 El portable no replica los shaders, grid overview ni todas las funciones del
 fork personal. Las transiciones de wallpaper usan fade de awww/swww.
 
-## Restauración
-
-Los respaldos están en `~/.local/state/haku-installer/backups/`.
-Sustituye `FECHA` por el directorio mostrado al instalar:
-
-```sh
-# Revisar
-./install.sh --restore ~/.local/state/haku-installer/backups/FECHA
-
-# Aplicar
-./install.sh --restore ~/.local/state/haku-installer/backups/FECHA --apply
-systemctl --user daemon-reload
-```
-
-La restauración protege archivos editados después de instalar y señala
-conflictos. No desinstala paquetes ni deshabilita el servicio automáticamente.
-Consulta [los límites de restauración](docs/INSTALL.md#restaurar-configuraciones).
-
 ## Documentación y estructura
 
 | Ruta | Contenido |
